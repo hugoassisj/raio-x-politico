@@ -39,7 +39,8 @@ Abra http://localhost:3000.
 | `npm run pipeline:ai` | Gera resumos de IA com citações (requer `ANTHROPIC_API_KEY`) |
 | `npm run db:migrate` e `npm run pipeline:db` | Cria as tabelas e carrega o retrato no Postgres (requer `DATABASE_URL`) |
 | `npm test` | Testes de métricas, coletores (com respostas no formato das APIs oficiais), banco (Postgres em memória) e app |
-| `npm run lint` e `npm run typecheck` | Qualidade de código |
+| `npm run format`, `npm run lint` e `npm run typecheck` | Formatação (Prettier) e qualidade de código |
+| `npx tsx scripts/gerar-mapa.ts` | Regera o mapa do Brasil (`src/lib/mapa-br.ts`) a partir do GeoJSON em `scripts/dados/` |
 
 ### Variáveis de ambiente
 
@@ -73,11 +74,13 @@ src/
   db/                schema do Postgres (Drizzle)
 drizzle/             migrações do banco
 data/                retrato publicado (gerado pelo pipeline)
+public/fotos/        fotos oficiais otimizadas (geradas pelo pipeline)
+scripts/             geração do mapa do Brasil a partir de GeoJSON aberto
 ```
 
 ## Contribuir
 
-Encontrou um número errado? [Abra uma issue](../../issues/new?template=erro-nos-dados.yml) com o link da página e o link da fonte oficial. Melhorias de código são bem-vindas via pull request; rode `npm run lint && npm run typecheck && npm test` antes.
+Encontrou um número errado? [Abra uma issue](../../issues/new?template=erro-nos-dados.yml) com o link da página e o link da fonte oficial. Melhorias de código são bem-vindas via pull request; rode `npm run format && npm run lint && npm run typecheck && npm test` antes.
 
 ## Licença
 

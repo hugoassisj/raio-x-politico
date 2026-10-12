@@ -34,15 +34,18 @@ Os dados existem e são públicos, mas estão espalhados em dezenas de sites (C�
 
 | Página | Pergunta que responde |
 |---|---|
-| `/` Início | Quem me representa? O que foi votado e dito recentemente? |
+| `/` Início | Quem me representa (mapa do Brasil)? Como está dividido o Congresso hoje? O que foi votado e dito recentemente? |
 | `/estado/[uf]` | Quem são os 3 senadores, os deputados federais e os estaduais do meu estado? |
 | `/politico/[id]` | O que essa pessoa faz: presença, votos, gastos, projetos, emendas, falas, carreira, patrimônio, redes e fontes |
 | `/politicos` | Lista de todos, filtrável por casa, estado e partido, ordenável por qualquer critério |
-| `/votacoes` e `/votacao/[id]` | O que foi votado, o resultado, como cada partido orientou e como cada um votou |
+| `/votacoes` e `/votacao/[id]` | O que estava em jogo, quantos votos eram precisos, o resultado, o plenário cadeira por cadeira, como cada partido orientou e como cada um votou |
 | `/gastos` | Quanto se gasta da cota, em quê, com quais fornecedores, e o que merece um segundo olhar |
 | `/falas` | O que disseram sobre um tema, com link para o registro original |
 | `/comparar` | Até 4 pessoas lado a lado, incluindo votações em que divergiram |
-| `/partido/[sigla]` | Membros do partido e suas medianas comparadas com a casa |
+| `/partidos` | Tamanho de cada partido nas duas casas, se costuma votar com o governo e se vota unido |
+| `/partido/[sigla]` | Onde o partido senta no plenário, membros com foto, medianas comparadas com a casa e votações recentes |
+| `/como-funciona` | Como uma ideia vira lei e quantos votos cada tipo de proposta precisa, desenhado no plenário |
+| `/analises` | Cruzamentos simples (gasto x presença, experiência x presença, governo x unidade), sempre dizendo que relação não é causa |
 | `/dados` | Fontes, situação da última coleta, metodologia, limites e salários |
 
 ## Métricas
@@ -162,3 +165,10 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 | 2026-10-12 | Alertas de gastos recalibrados com a primeira coleta real | Códigos internos das casas eram contados como CNPJ inválido e compras repetidas como duplicidade; agora duplicidade exige o mesmo documento fiscal e o limiar de valor atípico passou para 0,1% |
 | 2026-10-12 | Janela de 12 meses de gastos só descarta até dois meses finais incompletos | Em ano eleitoral o gasto cai legitimamente e não pode ser confundido com dado faltante |
 | 2026-10-12 | Votos de 2022 vêm do arquivo consolidado do TSE | O JSON de resultados sai do ar depois de cada eleição |
+| 2026-10-12 | Plenários desenhados como semicírculo com corredor central, uma bolinha por cadeira | É a forma da sala real da Câmara e do Senado; ver cada cadeira torna 513 e 81 pessoas concretas |
+| 2026-10-12 | No plenário, partidos ordenados pelo quanto votam com o governo, não por "esquerda" ou "direita" | É um número medido nas votações; rótulos ideológicos seriam opinião |
+| 2026-10-12 | Toda votação mostra a regra de aprovação (PEC 3/5, lei complementar maioria absoluta, demais maioria simples) com o artigo da Constituição | Muita gente não sabe por que uma votação com mais Sim que Não pode não aprovar uma PEC |
+| 2026-10-12 | Votações secretas usam o total oficial publicado e mostram só quem participou | O voto individual não é divulgado; mostrar "outros" para todos dava uma leitura errada |
+| 2026-10-12 | Fotos oficiais servidas pelo próprio site em WebP; deputados estaduais com a foto de candidatura do TSE | Páginas mais rápidas e independentes dos servidores do governo; o link da foto original segue como fonte |
+| 2026-10-12 | Mapa do Brasil gerado em tempo de build a partir de GeoJSON aberto, sem biblioteca de mapas no navegador | Carrega rápido em celular simples e funciona sem JavaScript para os links de cada estado |
+| 2026-10-12 | Código formatado com Prettier, verificado no CI | Estilo uniforme para quem contribui |
