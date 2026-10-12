@@ -4,11 +4,7 @@ export const DATA_VERSION = 1;
 
 export type Casa = "camara" | "senado" | "assembleia";
 
-export type Cargo =
-  | "Deputado(a) Federal"
-  | "Senador(a)"
-  | "Deputado(a) Estadual"
-  | "Deputado(a) Distrital";
+export type Cargo = "Deputado(a) Federal" | "Senador(a)" | "Deputado(a) Estadual" | "Deputado(a) Distrital";
 
 /** Compact metrics, all optional: a missing value means "no data", never zero. */
 export interface Metricas {
@@ -182,6 +178,8 @@ export interface VotacaoResumo {
   nao: number;
   outros: number;
   orientacaoGoverno?: string;
+  /** Secret ballot: only official totals are published; the list of voters shows presence, not the vote */
+  secreta?: boolean;
   porPartido: { partido: string; sim: number; nao: number; outros: number }[];
 }
 

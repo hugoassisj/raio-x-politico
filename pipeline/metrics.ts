@@ -8,12 +8,21 @@ export { orientacaoDoPartido };
 // ---------------------------------------------------------------- votes
 
 const VOTO_POSICIONAL = /^(sim|n[aã]o|absten[cç][aã]o|obstru[cç][aã]o)$/i;
-const canon = (v: string) =>
-  v
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .trim();
+const canon = (v: string) => v.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+/** Recorded for each participant of a secret ballot, where the individual vote is not published. */
+export const VOTO_SECRETO = "Participou (voto secreto)";
+
+/** Official totals written in the vote description, e.g. "Sim: 404; Não: 61; Abstenção: 1". */
+export function totaisDoTexto(texto: string): { sim: number; nao: number; outros: number } | undefined {
+  const n = (re: RegExp) => Number(texto.match(re)?.[1] ?? NaN);
+  const sim = n(/\bsim:\s*(\d+)/i);
+  const nao = n(/\bn[ãa]o:\s*(\d+)/i);
+  if (!Number.isFinite(sim) || !Number.isFinite(nao)) return undefined;
+  const abst = n(/absten[çc][ãa]o:\s*(\d+)/i);
+  const obst = n(/obstru[çc][ãa]o:\s*(\d+)/i);
+  return { sim, nao, outros: (Number.isFinite(abst) ? abst : 0) + (Number.isFinite(obst) ? obst : 0) };
+}
 
 export function enriquecerVotacoes(vs: VotacaoDetalhe[]) {
   for (const v of vs) {
@@ -37,7 +46,14 @@ export function enriquecerVotacoes(vs: VotacaoDetalhe[]) {
         }
         pp.set(x.partido, g);
       }
-      if (v.casa === "camara" || !v.sim) Object.assign(v, { sim, nao, outros });
+      const oficial = totaisDoTexto(v.descricao);
+      if (!sim && !nao && oficial) {
+        // Secret ballot: the house lists who took part but publishes only the totals.
+        Object.assign(v, oficial, { secreta: true });
+        for (const x of v.votos) x.voto = VOTO_SECRETO;
+        v.porPartido = [];
+        continue;
+      } else if (v.casa === "camara" || !v.sim) Object.assign(v, { sim, nao, outros });
       v.porPartido = [...pp.values()].sort((a, b) => b.sim + b.nao + b.outros - (a.sim + a.nao + a.outros));
     }
   }
@@ -76,10 +92,7 @@ export function calcularVotos(vs: VotacaoDetalhe[], pols: PoliticoParcial[], pre
     if (!v.votos.length) continue;
     const maioria = maioriaPorPartido(v);
     const votosPorPid = new Map(v.votos.map((x) => [x.pid, x]));
-    const elegiveis =
-      v.casa === "camara"
-        ? pols.filter((p) => p.casa === "camara" && emExercicioEm(p, v.data))
-        : pols.filter((p) => p.casa === "senado" && votosPorPid.has(p.id));
+    const elegiveis = v.casa === "camara" ? pols.filter((p) => p.casa === "camara" && emExercicioEm(p, v.data)) : pols.filter((p) => p.casa === "senado" && votosPorPid.has(p.id));
 
     for (const p of elegiveis) {
       const a = acc.get(p.id) ?? { eleg: 0, votou: 0, seg: 0, naoSeg: 0, gov: 0, naoGov: 0, metodo: "orientacao" as const };
@@ -216,7 +229,10 @@ export function calcularGastos(desp: Despesa[], hoje: Date): Map<string, Gastos 
   const limiarCat = new Map<string, number>();
   for (const [cat, ds] of porCat) {
     if (ds.length < 1000) continue;
-    const q = quantile(ds.map((d) => d.valor), 0.999);
+    const q = quantile(
+      ds.map((d) => d.valor),
+      0.999,
+    );
     if (q) limiarCat.set(cat, q);
   }
   const refeicoes = desp.filter((d) => /aliment|refei/i.test(d.categoria)).map((d) => d.valor);
@@ -245,12 +261,33 @@ export function calcularGastos(desp: Despesa[], hoje: Date): Map<string, Gastos 
     const vistos = new Map<string, Despesa>();
     for (const d of ds) {
       if (documentoVerificavel(d.doc) && validDoc(d.doc) === false)
-        alertas.push({ regra: "documento_invalido", descricao: `CNPJ/CPF do fornecedor com dígito verificador inválido (${d.doc})`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
+        alertas.push({
+          regra: "documento_invalido",
+          descricao: `CNPJ/CPF do fornecedor com dígito verificador inválido (${d.doc})`,
+          valor: d.valor,
+          data: d.data,
+          fornecedor: d.fornecedor,
+          url: d.url,
+        });
       if (/aliment|refei/i.test(d.categoria) && limiarRefeicao > 0 && d.valor > limiarRefeicao)
-        alertas.push({ regra: "refeicao_atipica", descricao: `Refeição de valor muito acima do padrão da casa (limite estatístico R$ ${limiarRefeicao.toFixed(2)})`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
+        alertas.push({
+          regra: "refeicao_atipica",
+          descricao: `Refeição de valor muito acima do padrão da casa (limite estatístico R$ ${limiarRefeicao.toFixed(2)})`,
+          valor: d.valor,
+          data: d.data,
+          fornecedor: d.fornecedor,
+          url: d.url,
+        });
       const lc = limiarCat.get(d.categoria);
       if (lc && d.valor > lc && !/aliment|refei/i.test(d.categoria))
-        alertas.push({ regra: "valor_atipico", descricao: `Valor entre os 0,1% maiores da categoria "${d.categoria}"`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
+        alertas.push({
+          regra: "valor_atipico",
+          descricao: `Valor entre os 0,1% maiores da categoria "${d.categoria}"`,
+          valor: d.valor,
+          data: d.data,
+          fornecedor: d.fornecedor,
+          url: d.url,
+        });
       // A true duplicate is the same receipt reimbursed twice: supplier, receipt number, value and
       // issue date all identical. Placeholder numbers ("NF", "s/n", "001") and recurring bills that
       // reuse a contract number in different months are not duplicates.
@@ -259,7 +296,14 @@ export function calcularGastos(desp: Despesa[], hoje: Date): Map<string, Gastos 
         const k = `${d.doc}|${numero}|${d.valor.toFixed(2)}|${d.data}`;
         const prev = vistos.get(k);
         if (prev && prev.docId !== d.docId)
-          alertas.push({ regra: "duplicidade", descricao: `Mesmo documento fiscal (nº ${d.numeroDoc}, emitido em ${d.data}) reembolsado mais de uma vez`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
+          alertas.push({
+            regra: "duplicidade",
+            descricao: `Mesmo documento fiscal (nº ${d.numeroDoc}, emitido em ${d.data}) reembolsado mais de uma vez`,
+            valor: d.valor,
+            data: d.data,
+            fornecedor: d.fornecedor,
+            url: d.url,
+          });
         vistos.set(k, d);
       }
     }
@@ -274,7 +318,10 @@ export function calcularGastos(desp: Despesa[], hoje: Date): Map<string, Gastos 
 
     out.set(pid, {
       total12m: round(total12m, 2)!,
-      gastoAno: round(ds.filter((d) => d.ano === anoAtual).reduce((s, d) => s + d.valor, 0), 2)!,
+      gastoAno: round(
+        ds.filter((d) => d.ano === anoAtual).reduce((s, d) => s + d.valor, 0),
+        2,
+      )!,
       porMes: [...porMesM.entries()].map(([mes, valor]) => ({ mes, valor: round(valor, 2)! })),
       porCategoria: [...cat.entries()].map(([categoria, valor]) => ({ categoria, valor: round(valor, 2)! })).sort((a, b) => b.valor - a.valor),
       topFornecedores: top.slice(0, 10).map((f) => ({ ...f, valor: round(f.valor, 2)! })),

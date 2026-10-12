@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { nameSimilarity, nomeProprio, num, isoDate, validDoc, windows, norm } from "../lib/util";
-import { calcularGastos, calcularPresenca, calcularVotos, emExercicioEm, enriquecerVotacoes, janela12, orientacaoDoPartido, ultimoMesCompleto } from "../metrics";
+import {
+  calcularGastos,
+  calcularPresenca,
+  calcularVotos,
+  emExercicioEm,
+  enriquecerVotacoes,
+  janela12,
+  orientacaoDoPartido,
+  totaisDoTexto,
+  ultimoMesCompleto,
+  VOTO_SECRETO,
+} from "../metrics";
 import { periodosExercicio } from "../sources/camara";
 import { vincularTSE } from "../build";
 import { SEN_PRESENTE } from "../sources/senado";
@@ -111,6 +122,31 @@ describe("vote metrics", () => {
   });
   it("computes government alignment", () => expect(r.metricas.get("dep-1")!.governismo).toBeCloseTo(2 / 12));
   it("aggregates party totals", () => expect(votacoes[0].porPartido.find((p) => p.partido === "PL")!.nao).toBe(1));
+});
+
+describe("secret ballots", () => {
+  it("reads official totals from the description", () => {
+    expect(totaisDoTexto("Aprovado o PDL. Sim: 404; Não: 61; Abstenção: 1; Total: 466.")).toEqual({ sim: 404, nao: 61, outros: 1 });
+    expect(totaisDoTexto("Sem totais")).toBeUndefined();
+  });
+  it("uses official totals when individual votes are not published", () => {
+    const v: VotacaoDetalhe = {
+      id: "cam-s",
+      casa: "camara",
+      data: "2026-09-02",
+      titulo: "PDL 995/2026",
+      descricao: "Indicação | Aprovado. Sim: 404; Não: 61; Abstenção: 1; Total: 466.",
+      sim: 0,
+      nao: 0,
+      outros: 0,
+      porPartido: [],
+      orientacoes: [],
+      votos: [{ pid: "dep-1", nome: "a", partido: "PL", uf: "MG", voto: "" }],
+    };
+    enriquecerVotacoes([v]);
+    expect(v).toMatchObject({ sim: 404, nao: 61, outros: 1, secreta: true, porPartido: [] });
+    expect(v.votos[0].voto).toBe(VOTO_SECRETO);
+  });
 });
 
 describe("periods in office", () => {

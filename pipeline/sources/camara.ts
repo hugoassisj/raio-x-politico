@@ -76,11 +76,13 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
       const exercicio = periodosExercicio((histAtual ?? hist)?.dados ?? [], Number(us.idLegislatura ?? d.idLegislatura));
       for (const m of ext?.dados ?? []) {
         const a = Number(m.anoInicio);
-        if (!a) continue;
+        const f = Number(m.anoFim) || undefined;
+        // The source has typos (e.g. 1882-1988). No elective mandate lasts more than 8 years.
+        if (!a || a < 1946 || (f && (f < a || f - a > 8))) continue;
         carreira.push({
           cargo: m.cargo ?? "Mandato",
           inicio: a,
-          fim: Number(m.anoFim) || undefined,
+          fim: f,
           uf: m.siglaUf ?? undefined,
           municipio: m.municipio ?? undefined,
           partido: m.siglaPartidoEleicao ?? undefined,
@@ -185,7 +187,7 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
         if (!vs.length) return null;
         const d = det?.dados ?? {};
         const prop = (d.proposicoesAfetadas ?? [])[0] ?? d.ultimaApresentacaoProposicao ?? {};
-        const titulo = prop.siglaTipo ? `${prop.siglaTipo} ${prop.numero}/${prop.ano}` : v.proposicaoObjeto ?? "Votação no Plenário";
+        const titulo = prop.siglaTipo ? `${prop.siglaTipo} ${prop.numero}/${prop.ano}` : (v.proposicaoObjeto ?? "Votação no Plenário");
         const orientacoes = ((ori?.dados ?? []) as any[]).map((o) => ({ sigla: String(o.siglaPartidoBloco ?? ""), orientacao: String(o.orientacaoVoto ?? "") }));
         const det2: VotacaoDetalhe = {
           id: `cam-${vid}`,
@@ -253,21 +255,19 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
         4,
         async (id) => {
           const rows = await allPages(`${API}/deputados/${id}/despesas?ano=${ano}&itens=100&ordem=ASC&ordenarPor=mes`, 30, 20);
-          return rows.map(
-            (x: any): Despesa => ({
-              pid: `dep-${id}`,
-              ano: Number(x.ano) || ano,
-              mes: Number(x.mes),
-              data: isoDate(x.dataDocumento),
-              categoria: titleCase(x.tipoDespesa),
-              fornecedor: x.nomeFornecedor ?? "",
-              doc: String(x.cnpjCpfFornecedor ?? "").replace(/\D/g, ""),
-              valor: num(x.valorLiquido),
-              url: x.urlDocumento || undefined,
-              docId: String(x.codDocumento ?? ""),
-              numeroDoc: x.numDocumento ? String(x.numDocumento) : undefined,
-            }),
-          );
+          return rows.map((x: any): Despesa => ({
+            pid: `dep-${id}`,
+            ano: Number(x.ano) || ano,
+            mes: Number(x.mes),
+            data: isoDate(x.dataDocumento),
+            categoria: titleCase(x.tipoDespesa),
+            fornecedor: x.nomeFornecedor ?? "",
+            doc: String(x.cnpjCpfFornecedor ?? "").replace(/\D/g, ""),
+            valor: num(x.valorLiquido),
+            url: x.urlDocumento || undefined,
+            docId: String(x.codDocumento ?? ""),
+            numeroDoc: x.numDocumento ? String(x.numDocumento) : undefined,
+          }));
         },
         `Câmara cota ${ano} API`,
       );
@@ -283,10 +283,9 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
       4,
       async (p) => {
         const id = p.id.slice(4);
-        const { data, headers } = await getJsonWithHeaders(
-          `${API}/proposicoes?idDeputadoAutor=${id}&siglaTipo=PL,PLP,PEC,PDL&itens=100&ordem=DESC&ordenarPor=id`,
-          { ttlHours: 48 },
-        );
+        const { data, headers } = await getJsonWithHeaders(`${API}/proposicoes?idDeputadoAutor=${id}&siglaTipo=PL,PLP,PEC,PDL&itens=100&ordem=DESC&ordenarPor=id`, {
+          ttlHours: 48,
+        });
         const total = Number(headers["x-total-count"]) || (data?.dados ?? []).length;
         const lista: Proposicao[] = (data?.dados ?? []).map((x: any) => {
           const st = status.get(String(x.id));

@@ -74,7 +74,9 @@ export async function coletarSenado(opts: { hoje: Date; diasVotos: number; anosG
         perfil: {
           nascimento: isoDate(basicos.DataNascimento),
           naturalidade: [basicos.Naturalidade, basicos.UfNaturalidade].filter(Boolean).join(" - ") || undefined,
-          profissoes: arr(get(prof, "ProfissaoParlamentar.Parlamentar.Profissoes.Profissao")).map((x: any) => x.NomeProfissao).filter(Boolean),
+          profissoes: arr(get(prof, "ProfissaoParlamentar.Parlamentar.Profissoes.Profissao"))
+            .map((x: any) => x.NomeProfissao)
+            .filter(Boolean),
           email: idp.EmailParlamentar,
           telefone: tel?.NumeroTelefone ? `(61) ${tel.NumeroTelefone}` : undefined,
           gabinete: basicos.EnderecoParlamentar,
@@ -122,6 +124,7 @@ export async function coletarSenado(opts: { hoje: Date; diasVotos: number; anosG
         sim: num(v.totalVotosSim),
         nao: num(v.totalVotosNao),
         outros: num(v.totalVotosAbstencao),
+        secreta: secreta || undefined,
         porPartido: [],
         orientacoes: arr(v.orientacoes ?? v.orientacoesBancada).map((o: any) => ({
           sigla: String(o.siglaPartido ?? o.siglaBancada ?? o.partido ?? ""),

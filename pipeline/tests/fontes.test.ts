@@ -47,7 +47,14 @@ describe("Senado collector", () => {
         {
           MandatoParlamentar: {
             Parlamentar: {
-              Mandatos: { Mandato: { DescricaoParticipacao: "Titular", UfParlamentar: "PR", PrimeiraLegislaturaDoMandato: { DataInicio: "2019-02-01", DataFim: "2023-01-31" }, SegundaLegislaturaDoMandato: { DataFim: "2027-01-31" } } },
+              Mandatos: {
+                Mandato: {
+                  DescricaoParticipacao: "Titular",
+                  UfParlamentar: "PR",
+                  PrimeiraLegislaturaDoMandato: { DataInicio: "2019-02-01", DataFim: "2023-01-31" },
+                  SegundaLegislaturaDoMandato: { DataFim: "2027-01-31" },
+                },
+              },
             },
           },
         },
@@ -75,14 +82,33 @@ describe("Senado collector", () => {
       [
         /despesas_ceaps\/2026/,
         [
-          { id: 1, ano: 2026, mes: 3, codSenador: 1, nomeSenador: "ANA", tipoDespesa: "Passagens aéreas", cpfCnpj: "11.222.333/0001-81", fornecedor: "Cia", data: "2026-03-02", valorReembolsado: 1500.5 },
+          {
+            id: 1,
+            ano: 2026,
+            mes: 3,
+            codSenador: 1,
+            nomeSenador: "ANA",
+            tipoDespesa: "Passagens aéreas",
+            cpfCnpj: "11.222.333/0001-81",
+            fornecedor: "Cia",
+            data: "2026-03-02",
+            valorReembolsado: 1500.5,
+          },
           { id: 2, ano: 2026, mes: 3, codSenador: 777, nomeSenador: "FORA DO MANDATO", tipoDespesa: "X", fornecedor: "Y", valorReembolsado: 10 },
         ],
       ],
       [
         /processo\?codigoParlamentarAutor=1/,
         [
-          { id: 10, codigoMateria: 555, identificacao: "PL 12/2026", ementa: "Cria programa", dataApresentacao: "2026-02-01", situacaoAtual: "Transformada em Norma Jurídica", normaGerada: "Lei 1/2026" },
+          {
+            id: 10,
+            codigoMateria: 555,
+            identificacao: "PL 12/2026",
+            ementa: "Cria programa",
+            dataApresentacao: "2026-02-01",
+            situacaoAtual: "Transformada em Norma Jurídica",
+            normaGerada: "Lei 1/2026",
+          },
           { id: 11, identificacao: "REQ 3/2026", ementa: "Requer informações", dataApresentacao: "2026-02-02" },
         ],
       ],
@@ -127,12 +153,35 @@ describe("Câmara collector", () => {
             ufNascimento: "AP",
             escolaridade: "Superior",
             redeSocial: ["https://instagram.com/fulano"],
-            ultimoStatus: { nomeEleitoral: "Fulano", siglaPartido: "PP", siglaUf: "AP", idLegislatura: 57, urlFoto: dep.urlFoto, gabinete: { sala: "10", predio: "4", telefone: "3215-0000", email: "dep.fulano@camara.leg.br" } },
+            ultimoStatus: {
+              nomeEleitoral: "Fulano",
+              siglaPartido: "PP",
+              siglaUf: "AP",
+              idLegislatura: 57,
+              urlFoto: dep.urlFoto,
+              gabinete: { sala: "10", predio: "4", telefone: "3215-0000", email: "dep.fulano@camara.leg.br" },
+            },
           },
         },
       ],
-      [/historico-old/, { dados: [{ idLegislatura: 56, siglaPartido: "PP", siglaUf: "AP", situacao: "Exercício", dataHora: "2019-02-01T00:00" }, { idLegislatura: 57, siglaPartido: "PP", siglaUf: "AP", situacao: "Exercício", dataHora: "2023-02-01T00:00" }] }],
-      [/mandatosExternos/, { dados: [{ cargo: "Vereador(a)", siglaUf: "AP", municipio: "Macapá", anoInicio: "2013", anoFim: "2016", siglaPartidoEleicao: "PP" }] }],
+      [
+        /historico-old/,
+        {
+          dados: [
+            { idLegislatura: 56, siglaPartido: "PP", siglaUf: "AP", situacao: "Exercício", dataHora: "2019-02-01T00:00" },
+            { idLegislatura: 57, siglaPartido: "PP", siglaUf: "AP", situacao: "Exercício", dataHora: "2023-02-01T00:00" },
+          ],
+        },
+      ],
+      [
+        /mandatosExternos/,
+        {
+          dados: [
+            { cargo: "Vereador(a)", siglaUf: "AP", municipio: "Macapá", anoInicio: "2013", anoFim: "2016", siglaPartidoEleicao: "PP" },
+            { cargo: "Vereador(a)", siglaUf: "AP", anoInicio: "1882", anoFim: "1988" },
+          ],
+        },
+      ],
       [/\/orgaos\?/, { dados: [{ siglaOrgao: "CCJC", nomeOrgao: "Comissão de Constituição e Justiça", titulo: "Titular", dataFim: null }], links: [] }],
       [/\/frentes/, { dados: [{ titulo: "Frente Parlamentar da Saúde" }] }],
       [/\/profissoes/, { dados: [{ titulo: "Advogado" }] }],
@@ -141,9 +190,21 @@ describe("Câmara collector", () => {
       [/\/votacoes\?idOrgao=180/, { dados: [{ id: "2611313-34", dataHoraRegistro: "2026-09-03T17:29:39", descricao: "Aprovado. Sim: 300; Não: 100", aprovacao: 1 }], links: [] }],
       [/\/votacoes\/2611313-34$/, { dados: { idEvento: 82965, proposicoesAfetadas: [{ siglaTipo: "PLP", numero: 74, ano: 2026, ementa: "Regime fiscal" }] } }],
       [/\/votacoes\/2611313-34\/votos/, { dados: [{ tipoVoto: "Não", deputado_: { id: 204379, nome: "Fulano", siglaPartido: "PP", siglaUf: "AP" } }] }],
-      [/\/votacoes\/2611313-34\/orientacoes/, { dados: [{ siglaPartidoBloco: "Bl UniPpPsd...", orientacaoVoto: "Sim" }, { siglaPartidoBloco: "Governo", orientacaoVoto: "Sim" }] }],
+      [
+        /\/votacoes\/2611313-34\/orientacoes/,
+        {
+          dados: [
+            { siglaPartidoBloco: "Bl UniPpPsd...", orientacaoVoto: "Sim" },
+            { siglaPartidoBloco: "Governo", orientacaoVoto: "Sim" },
+          ],
+        },
+      ],
       [/proposicoes-20\d\d\.json/, { dados: [{ id: 900, siglaTipo: "PL", ultimoStatus: { descricaoSituacao: "Transformado em Norma Jurídica" } }] }],
-      [/\/proposicoes\?idDeputadoAutor=204379&siglaTipo=PL,PLP,PEC,PDL/, { dados: [{ id: 900, siglaTipo: "PL", numero: 1, ano: 2025, ementa: "Institui", dataApresentacao: "2025-03-01" }] }, { "x-total-count": "42" }],
+      [
+        /\/proposicoes\?idDeputadoAutor=204379&siglaTipo=PL,PLP,PEC,PDL/,
+        { dados: [{ id: 900, siglaTipo: "PL", numero: 1, ano: 2025, ementa: "Institui", dataApresentacao: "2025-03-01" }] },
+        { "x-total-count": "42" },
+      ],
       [/\/proposicoes\?idDeputadoAutor=204379&siglaTipo=PL&itens=1/, { dados: [] }, { "x-total-count": "40" }],
       [/\/proposicoes\?idDeputadoAutor=204379&siglaTipo=PEC&itens=1/, { dados: [] }, { "x-total-count": "2" }],
     ]);
@@ -195,7 +256,13 @@ describe("AI guardrails", () => {
           { tema: "Sem fonte", posicao: "Inventado", citacoes: [] },
         ],
         contradicoes: [
-          { descricao: "Disse A, votou B", citacoes: [{ ref: "f1", tipo: "fala" }, { ref: "cam-1", tipo: "voto" }] },
+          {
+            descricao: "Disse A, votou B",
+            citacoes: [
+              { ref: "f1", tipo: "fala" },
+              { ref: "cam-1", tipo: "voto" },
+            ],
+          },
           { descricao: "Fraca", citacoes: [{ ref: "f2", tipo: "fala" }] },
         ],
         mudancas: [{ descricao: "Mudou", antes: [{ ref: "f1", tipo: "fala" }], depois: [] }],

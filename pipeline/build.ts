@@ -61,7 +61,7 @@ function cpfCompativel(mascarado: string | undefined, cpf: string | undefined) {
  */
 export function vincularTSE(p: PoliticoParcial, porNascimento: Map<string, CandidatoTSE[]>, porUf: Map<string, CandidatoTSE[]>): CandidatoTSE[] {
   if (p.sqCandidato) {
-    const base = [...porUf.get(p.uf) ?? []].find((c) => c.sq === p.sqCandidato);
+    const base = [...(porUf.get(p.uf) ?? [])].find((c) => c.sq === p.sqCandidato);
     if (base) {
       const mesmos = (base.nascimento ? porNascimento.get(base.nascimento) : undefined) ?? [base];
       return mesmos.filter((c) => c === base || (c.cpf && c.cpf === base.cpf) || nameSimilarity(c.nome, base.nome) >= 0.85);
@@ -133,7 +133,10 @@ function vincularEmendas(p: PoliticoParcial, agg: Map<string, EmendaAgg>): Emend
   return {
     total: round(a.total, 2)!,
     porAno: [...a.porAno.entries()].map(([ano, valor]) => ({ ano, valor: round(valor, 2)! })).sort((x, y) => x.ano - y.ano),
-    destinos: [...a.destinos.values()].sort((x, y) => y.valor - x.valor).slice(0, 15).map((d) => ({ ...d, valor: round(d.valor, 2)! })),
+    destinos: [...a.destinos.values()]
+      .sort((x, y) => y.valor - x.valor)
+      .slice(0, 15)
+      .map((d) => ({ ...d, valor: round(d.valor, 2)! })),
     fonte: a.fonte,
   };
 }
@@ -149,7 +152,10 @@ export function montar(inp: BuildInput): BuildResult {
   const casaDe = new Map(inp.politicos.map((p) => [p.id, p.casa]));
   for (const [casa, ds] of groupBy(inp.despesas, (d) => casaDe.get(d.pid) ?? "?")) gastosPorCasa.set(casa, calcularGastos(ds, hoje));
 
-  const porNasc = groupBy(inp.tse.filter((c) => c.nascimento), (c) => c.nascimento!);
+  const porNasc = groupBy(
+    inp.tse.filter((c) => c.nascimento),
+    (c) => c.nascimento!,
+  );
   const porUf = groupBy(inp.tse, (c) => c.uf);
   const falasPorPid = groupBy(inp.falas, (f) => f.pid);
   const redesTodas: RedeSocial[] = [];
@@ -274,7 +280,10 @@ export function gastosGerais(desp: Despesa[], detalhes: PoliticoDetalhe[], hoje:
     }
     return {
       casa: casa as PoliticoDetalhe["casa"],
-      total: round(ds.reduce((s, d) => s + d.valor, 0), 2)!,
+      total: round(
+        ds.reduce((s, d) => s + d.valor, 0),
+        2,
+      )!,
       parlamentares: new Set(ds.map((d) => d.pid)).size,
       porMes: [...pm.entries()].map(([mes, valor]) => ({ mes, valor: round(valor, 2)! })),
     };
@@ -379,6 +388,7 @@ export function resumoVotacao(v: VotacaoDetalhe): VotacaoResumo {
     nao: v.nao,
     outros: v.outros,
     orientacaoGoverno: v.orientacaoGoverno,
+    secreta: v.secreta,
     porPartido: v.porPartido,
   };
 }
