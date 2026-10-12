@@ -4,6 +4,7 @@
  * everywhere and the official totals are never changed by what is shown.
  */
 import { CATEGORIAS_VOTO, rotuloVoto, type CategoriaVoto } from "./linguagem";
+import { orientacaoDoPartido } from "./orientacao";
 import type { PoliticoResumo, VotacaoDetalhe } from "./types";
 
 export type { CategoriaVoto };
@@ -37,6 +38,10 @@ export interface LinhaVoto {
   categoria: CategoriaVoto;
   rotulo: string;
   explicacao: string;
+  /** What the person's party (or its federation or bloc) asked, when the house published it */
+  orientacao?: string;
+  /** Voted Sim or Não while the party asked the opposite; never true without a recorded Sim or Não */
+  diferente?: boolean;
 }
 
 /**
@@ -48,6 +53,7 @@ export function linhasDaVotacao(v: VotacaoDetalhe, membros: PoliticoResumo[]): L
   const linhas: LinhaVoto[] = v.votos.map((x) => {
     const r = rotuloVoto(x.voto);
     const p = porId.get(x.pid);
+    const orientacao = orientacaoDoPartido(v.orientacoes, x.partido)?.trim() || undefined;
     return {
       pid: x.pid,
       nome: p?.nome ?? x.nome,
@@ -60,6 +66,8 @@ export function linhasDaVotacao(v: VotacaoDetalhe, membros: PoliticoResumo[]): L
       categoria: r.categoria,
       rotulo: r.rotulo,
       explicacao: r.explicacao,
+      orientacao,
+      diferente: votouDiferente(x.voto, orientacao),
     };
   });
   const sem = rotuloVoto("");
@@ -79,9 +87,32 @@ export function linhasDaVotacao(v: VotacaoDetalhe, membros: PoliticoResumo[]): L
       categoria: sem.categoria,
       rotulo: sem.rotulo,
       explicacao: sem.explicacao,
+      diferente: false,
     });
   }
   return linhas;
+}
+
+/** How the recorded Sim and Não votes compare with what each party asked. */
+export function compararComPartido(linhas: LinhaVoto[]): { diferente: number; igual: number; semOrientacao: number } {
+  const r = { diferente: 0, igual: 0, semOrientacao: 0 };
+  for (const l of linhas) {
+    if (l.categoria !== "sim" && l.categoria !== "nao") continue;
+    if (!l.orientacao || !POSICIONAL.test(canonVoto(l.orientacao))) r.semOrientacao++;
+    else if (l.diferente) r.diferente++;
+    else r.igual++;
+  }
+  return r;
+}
+
+/**
+ * Official open-data record that lists every vote of this roll call. The Câmara publishes one list
+ * per roll call; the Senado publishes the roll calls of a day in one list, so the link is to that day.
+ */
+export function urlListaOficial(v: Pick<VotacaoDetalhe, "id" | "casa" | "data">): string | undefined {
+  if (v.casa === "camara" && v.id.startsWith("cam-")) return `https://dadosabertos.camara.leg.br/api/v2/votacoes/${v.id.slice(4)}/votos`;
+  if (v.casa === "senado" && /^\d{4}-\d{2}-\d{2}$/.test(v.data)) return `https://legis.senado.leg.br/dadosabertos/votacao?dataInicio=${v.data}&dataFim=${v.data}`;
+  return undefined;
 }
 
 export type Contagem = Record<CategoriaVoto, number>;
@@ -93,7 +124,7 @@ export function contar(linhas: LinhaVoto[]): Contagem {
 }
 
 export type Ordem = "nome" | "partido" | "uf" | "voto";
-export type Visao = "lista" | "detalhe" | "partido";
+export type Visao = "lista" | "detalhe" | "partido" | "estado";
 
 export interface FiltroVotos {
   /** Groups shown; empty means all */
@@ -101,12 +132,14 @@ export interface FiltroVotos {
   partidos: string[];
   uf: string;
   q: string;
+  /** Only people who voted Sim or Não against what their party asked */
+  diferente: boolean;
   ordem: Ordem;
   visao: Visao;
   pagina: number;
 }
 
-export const FILTRO_INICIAL: FiltroVotos = { votos: [], partidos: [], uf: "", q: "", ordem: "nome", visao: "lista", pagina: 1 };
+export const FILTRO_INICIAL: FiltroVotos = { votos: [], partidos: [], uf: "", q: "", diferente: false, ordem: "nome", visao: "lista", pagina: 1 };
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -117,7 +150,9 @@ export const mostra = (f: FiltroVotos, c: CategoriaVoto) => !f.votos.length || f
 export function filtrarSemVoto(linhas: LinhaVoto[], f: FiltroVotos): LinhaVoto[] {
   const t = norm(f.q.trim());
   const partidos = new Set(f.partidos);
-  return linhas.filter((l) => (!partidos.size || partidos.has(l.partido)) && (!f.uf || l.uf === f.uf) && (!t || norm(`${l.nome} ${l.partido} ${l.uf}`).includes(t)));
+  return linhas.filter(
+    (l) => (!partidos.size || partidos.has(l.partido)) && (!f.uf || l.uf === f.uf) && (!f.diferente || l.diferente) && (!t || norm(`${l.nome} ${l.partido} ${l.uf}`).includes(t)),
+  );
 }
 
 export function filtrar(linhas: LinhaVoto[], f: FiltroVotos): LinhaVoto[] {
@@ -145,10 +180,14 @@ export function soEsta(f: FiltroVotos, c: CategoriaVoto): FiltroVotos {
   return { ...f, votos: ja ? [] : [c], pagina: 1 };
 }
 
-/** Shows or hides one group, keeping the others as they are. */
+/**
+ * Shows or hides one group, keeping the others as they are. Hiding the only group on screen means
+ * "everyone except this group", never an empty list.
+ */
 export function alternar(f: FiltroVotos, c: CategoriaVoto, presentes: CategoriaVoto[]): FiltroVotos {
   const atuais = f.votos.length ? f.votos : presentes;
-  const novos = atuais.includes(c) ? atuais.filter((x) => x !== c) : [...atuais, c];
+  let novos = atuais.includes(c) ? atuais.filter((x) => x !== c) : [...atuais, c];
+  if (novos.length === 0) novos = presentes.filter((x) => x !== c);
   const todos = presentes.every((p) => novos.includes(p));
   return { ...f, votos: todos ? [] : ORDEM_CATEGORIAS.filter((x) => novos.includes(x)), pagina: 1 };
 }
@@ -159,14 +198,14 @@ export function alternarPartido(f: FiltroVotos, partido: string): FiltroVotos {
 }
 
 /** True when anything narrows the list (view and order do not). */
-export const temFiltro = (f: FiltroVotos) => f.votos.length > 0 || f.partidos.length > 0 || !!f.uf || !!f.q.trim();
+export const temFiltro = (f: FiltroVotos) => f.votos.length > 0 || f.partidos.length > 0 || !!f.uf || !!f.q.trim() || f.diferente;
 
 export function limpar(f: FiltroVotos): FiltroVotos {
   return { ...FILTRO_INICIAL, ordem: f.ordem, visao: f.visao };
 }
 
 const ORDENS: Ordem[] = ["nome", "partido", "uf", "voto"];
-const VISOES: Visao[] = ["lista", "detalhe", "partido"];
+const VISOES: Visao[] = ["lista", "detalhe", "partido", "estado"];
 
 /** Reads the filter from the page address; unknown values are ignored. */
 export function lerFiltro(p: URLSearchParams): FiltroVotos {
@@ -183,6 +222,7 @@ export function lerFiltro(p: URLSearchParams): FiltroVotos {
     partidos: [...new Set(lista("partido"))].sort(),
     uf: (p.get("uf") ?? "").toUpperCase().slice(0, 2),
     q: (p.get("q") ?? "").slice(0, 80),
+    diferente: p.get("diferente") === "1",
     ordem: ORDENS.includes(ordem) ? ordem : "nome",
     visao: VISOES.includes(visao) ? visao : "lista",
     pagina: Number.isFinite(pagina) && pagina > 0 ? pagina : 1,
@@ -197,6 +237,7 @@ export function escreverFiltro(f: FiltroVotos, base = new URLSearchParams()): UR
     ["partido", f.partidos.join(",")],
     ["uf", f.uf],
     ["q", f.q.trim()],
+    ["diferente", f.diferente ? "1" : ""],
     ["ordem", f.ordem === "nome" ? "" : f.ordem],
     ["visao", f.visao === "lista" ? "" : f.visao],
     ["pagina", f.pagina > 1 ? String(f.pagina) : ""],
@@ -208,24 +249,31 @@ export function escreverFiltro(f: FiltroVotos, base = new URLSearchParams()): UR
   return p;
 }
 
-export interface GrupoPartido {
-  partido: string;
+export interface Grupo {
+  /** Party acronym or state code */
+  chave: string;
   linhas: LinhaVoto[];
   contagem: Contagem;
   /** Members with a recorded vote (any group except "sem-registro") */
   comRegistro: number;
 }
 
-/** Groups by party in alphabetical order, keeping every individual vote. */
-export function porPartido(linhas: LinhaVoto[]): GrupoPartido[] {
+/** Groups by party or by state in alphabetical order, keeping every individual vote. */
+export function agrupar(linhas: LinhaVoto[], por: "partido" | "uf"): Grupo[] {
   const m = new Map<string, LinhaVoto[]>();
-  for (const l of linhas) m.set(l.partido, [...(m.get(l.partido) ?? []), l]);
+  for (const l of linhas) m.set(l[por], [...(m.get(l[por]) ?? []), l]);
   return [...m.entries()]
     .sort(([a], [b]) => a.localeCompare(b, "pt-BR"))
-    .map(([partido, ls]) => {
+    .map(([chave, ls]) => {
       const contagem = contar(ls);
-      return { partido, linhas: ls, contagem, comRegistro: ls.length - contagem["sem-registro"] };
+      return { chave, linhas: ls, contagem, comRegistro: ls.length - contagem["sem-registro"] };
     });
+}
+
+export type GrupoPartido = Grupo & { partido: string };
+
+export function porPartido(linhas: LinhaVoto[]): GrupoPartido[] {
+  return agrupar(linhas, "partido").map((g) => ({ ...g, partido: g.chave }));
 }
 
 // ------------------------------------------------------------ one person's votes (profile)

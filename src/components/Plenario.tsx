@@ -117,7 +117,8 @@ export function Plenario({
                     type="button"
                     aria-pressed={filtro.ativo(l.id)}
                     onClick={() => filtro.aoTocar(l.id!)}
-                    className={`flex min-h-9 items-center gap-2 rounded-full px-3 transition-opacity hover:bg-surface-2 ${filtro.ativo(l.id) ? "" : "opacity-45"}`}
+                    className={`flex min-h-9 items-center gap-2 rounded-full px-3 transition-colors hover:bg-surface-2 ${filtro.ativo(l.id) ? "" : "line-through decoration-2 ring-1 ring-inset ring-line"}`}
+                    title={filtro.ativo(l.id) ? "Esconder este grupo da lista" : "Escondido da lista. Toque para mostrar"}
                   >
                     {conteudo}
                   </button>

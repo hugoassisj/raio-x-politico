@@ -15,7 +15,7 @@ import { getExplicacoes, getMaterias, getMeta, getPoliticos, getVotacao, getVota
 import { data, partesDescricao } from "@/lib/format";
 import { explicarEtapa, explicarSituacao } from "@/lib/linguagem";
 import { regraDaVotacao } from "@/lib/quorum";
-import { linhasDaVotacao } from "@/lib/votos";
+import { linhasDaVotacao, urlListaOficial } from "@/lib/votos";
 
 export const dynamicParams = false;
 
@@ -226,6 +226,7 @@ export default async function Votacao({ params }: PageProps<"/votacao/[id]">) {
               orientacoes={v.orientacoes}
               url={v.url}
               partidosComPagina={[...new Set(pols.map((p) => p.partido))]}
+              origem={{ idOficial: v.id.replace(/^(cam|sen)-/, ""), casa, data: v.data, listaOficial: urlListaOficial(v), coletadoEm: meta?.geradoEm }}
             />
           ) : (
             <p className="text-ink-2">

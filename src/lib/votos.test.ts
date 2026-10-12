@@ -12,6 +12,9 @@ import {
   votouDiferente,
   type FiltroVotosPerfil,
   type VotoDoPerfil,
+  agrupar,
+  compararComPartido,
+  urlListaOficial,
   alternar,
   alternarPartido,
   contar,
@@ -121,6 +124,9 @@ describe("filtros da lista de votos", () => {
     expect(filtrar(linhas, semSim).some((l) => l.categoria === "sim")).toBe(false);
     expect(filtrar(linhas, semSim)).toHaveLength(6);
     expect(alternar(semSim, "sim", [...presentes]).votos).toEqual([]);
+    // Hiding the only group on screen shows everyone else, never nobody
+    const soNao = soEsta(f(), "nao");
+    expect(alternar(soNao, "nao", [...presentes]).votos).toEqual(presentes.filter((c) => c !== "nao"));
   });
 
   it("combines vote group, party, state and search", () => {
@@ -176,6 +182,107 @@ describe("filtros da lista de votos", () => {
     expect(pt.contagem).toMatchObject({ sim: 1, outro: 1, "sem-registro": 1 });
     expect(pt.comRegistro).toBe(2);
     expect(ids(pt.linhas).sort()).toEqual(["ana", "fabi", "iara"]);
+  });
+});
+
+describe("comparação com o partido, estados e origem", () => {
+  it("marks a Sim or Não against the party request, never an abstention or a missing record", () => {
+    // PT asked Sim: Ana voted Sim (same), Fabi presided (not a choice), Iara has no record
+    const por = Object.fromEntries(linhas.map((l) => [l.pid, l]));
+    expect(por.ana).toMatchObject({ orientacao: "Sim", diferente: false });
+    expect(por.fabi.diferente).toBe(false);
+    expect(por.iara.diferente).toBe(false);
+    // PL published nothing: no one from PL can be "different"
+    expect(por.bia).toMatchObject({ orientacao: undefined, diferente: false });
+    const rebelde = linhasDaVotacao({ ...votacao, orientacoes: [{ sigla: "PL", orientacao: "Sim" }] }, membros).find((l) => l.pid === "bia")!;
+    expect(rebelde).toMatchObject({ orientacao: "Sim", original: "Não", diferente: true });
+    // A federation row covers its parties; "liberado" is not a Sim or Não and never counts
+    const fed = linhasDaVotacao(
+      {
+        ...votacao,
+        orientacoes: [
+          { sigla: "Fdr PT-PCdoB-PV", orientacao: "Não" },
+          { sigla: "PL", orientacao: "Liberado" },
+        ],
+      },
+      membros,
+    );
+    expect(fed.find((l) => l.pid === "ana")).toMatchObject({ orientacao: "Não", diferente: true });
+    expect(fed.find((l) => l.pid === "bia")).toMatchObject({ orientacao: "Liberado", diferente: false });
+    expect(compararComPartido(fed)).toEqual({ diferente: 1, igual: 0, semOrientacao: 4 });
+  });
+
+  it("filters to the people who voted differently and keeps it in the address", () => {
+    const ls = linhasDaVotacao({ ...votacao, orientacoes: [{ sigla: "PL", orientacao: "Sim" }] }, membros);
+    const filtro = f({ diferente: true });
+    expect(ids(filtrar(ls, filtro))).toEqual(["bia"]);
+    expect(temFiltro(filtro)).toBe(true);
+    expect(escreverFiltro(filtro).toString()).toBe("diferente=1");
+    expect(lerFiltro(new URLSearchParams("diferente=1")).diferente).toBe(true);
+    expect(lerFiltro(new URLSearchParams("diferente=sim")).diferente).toBe(false);
+    expect(limpar(filtro).diferente).toBe(false);
+    // Combined with a vote group the group still applies
+    expect(filtrar(ls, f({ diferente: true, votos: ["sim"] }))).toEqual([]);
+  });
+
+  it("groups by state alphabetically with each person's vote", () => {
+    const g = agrupar(linhas, "uf");
+    expect(g.map((x) => x.chave)).toEqual(["BA", "MG", "RJ", "RS", "SP"]);
+    const sp = g.find((x) => x.chave === "SP")!;
+    expect(ids(sp.linhas).sort()).toEqual(["ana", "caio", "edu", "gil", "iara"]);
+    expect(sp.contagem).toMatchObject({ sim: 2, nao: 1, obstrucao: 1, "sem-registro": 1 });
+    expect(sp.comRegistro).toBe(4);
+    expect(agrupar(linhas, "partido").map((x) => x.chave)).toEqual(porPartido(linhas).map((x) => x.partido));
+  });
+
+  it("links each roll call to the official open-data list of votes", () => {
+    expect(urlListaOficial({ id: "cam-2122125-115", casa: "camara", data: "2026-03-10" })).toBe("https://dadosabertos.camara.leg.br/api/v2/votacoes/2122125-115/votos");
+    expect(urlListaOficial({ id: "sen-7016", casa: "senado", data: "2026-03-10" })).toBe(
+      "https://legis.senado.leg.br/dadosabertos/votacao?dataInicio=2026-03-10&dataFim=2026-03-10",
+    );
+    expect(urlListaOficial({ id: "sen-x", casa: "senado", data: "" })).toBeUndefined();
+  });
+
+  it("keeps Senado codes and secret votes as the house published them", () => {
+    const senado: VotacaoDetalhe = {
+      ...votacao,
+      id: "sen-1",
+      casa: "senado",
+      orientacoes: [],
+      semRegistro: undefined,
+      votos: [
+        { pid: "a", nome: "A", partido: "MDB", uf: "AM", voto: "LS" },
+        { pid: "b", nome: "B", partido: "MDB", uf: "AM", voto: "P-NRV" },
+        { pid: "c", nome: "C", partido: "MDB", uf: "AM", voto: "Presidente (art. 51 RISF)" },
+      ],
+    };
+    const ls = linhasDaVotacao(senado, []);
+    expect(ls.map((l) => [l.categoria, l.original, l.perfil])).toEqual([
+      ["ausencia", "LS", false],
+      ["outro", "P-NRV", false],
+      ["outro", "Presidente (art. 51 RISF)", false],
+    ]);
+    expect(contar(ls)).toMatchObject({ sim: 0, nao: 0, ausencia: 1, outro: 2, "sem-registro": 0 });
+    // A secret vote lists only who took part; no Sim or Não is ever inferred
+    const secreta = linhasDaVotacao({ ...senado, secreta: true, votos: [{ pid: "a", nome: "A", partido: "MDB", uf: "AM", voto: "Participou (voto secreto)" }] }, []);
+    expect(secreta[0]).toMatchObject({ categoria: "outro", diferente: false });
+  });
+
+  it("pages the filtered list and goes back to page 1 when a filter changes", () => {
+    const muitos = Array.from({ length: 130 }, (_, i) => ({
+      ...linhas[0],
+      pid: `p${i}`,
+      nome: `Pessoa ${String(i).padStart(3, "0")}`,
+      categoria: i % 2 ? ("sim" as const) : ("nao" as const),
+    }));
+    const filtro = lerFiltro(new URLSearchParams("voto=sim&pagina=2"));
+    const visiveis = ordenar(filtrar(muitos, filtro), filtro.ordem);
+    expect(visiveis).toHaveLength(65);
+    expect(paginar(visiveis, filtro.pagina, 60)).toMatchObject({ pagina: 2, paginas: 2, inicio: 61, fim: 65 });
+    expect(paginar(visiveis, 9, 60).pagina).toBe(2);
+    expect(soEsta(filtro, "nao").pagina).toBe(1);
+    expect(alternarPartido(filtro, "PT").pagina).toBe(1);
+    expect(escreverFiltro({ ...filtro, pagina: 2 }).toString()).toBe("voto=sim&pagina=2");
   });
 });
 
