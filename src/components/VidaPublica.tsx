@@ -2,8 +2,9 @@ import Link from "next/link";
 import { ArrowRight, Repeat2 } from "lucide-react";
 import { documentoPublicavel, formatarCnpj } from "@/lib/cnpj";
 import type { CSSProperties } from "react";
-import { listaNatural, resumoEleicoes, rotuloResultado, trocasDePartido } from "@/lib/carreira";
-import { moeda, moedaCurta, numero, pct } from "@/lib/format";
+import { listaNatural, resumoEleicoes, rotuloResultado, trocasDePartido, type PeriodoPartido } from "@/lib/carreira";
+import { SiglaPartido } from "./Partido";
+import { data, moeda, moedaCurta, numero, pct } from "@/lib/format";
 import type { CampanhaFinancas, EleicaoTSE, Mandato } from "@/lib/types";
 import { Fonte } from "./ui";
 
@@ -315,5 +316,32 @@ function NomeEmpresa({ nome, cnpj }: { nome: string; cnpj?: string }) {
     </Link>
   ) : (
     texto
+  );
+}
+
+const quando = (q: string) => (q.length === 4 ? q : data(q));
+
+/** Party over time, only where a record shows it; between records nothing is assumed. */
+export function PartidosNoTempo({ periodos }: { periodos: PeriodoPartido[] }) {
+  if (!periodos.length) return null;
+  return (
+    <div className="cartao p-5">
+      <h3 className="font-semibold">Partido ao longo do tempo</h3>
+      <p className="mb-3 text-sm text-ink-3">Pelo que os registros mostram. Entre um registro e outro, não supomos nada.</p>
+      <ol className="space-y-2.5">
+        {[...periodos].reverse().map((x, i) => (
+          <li key={`${x.partido}-${x.de}-${i}`} className="flex gap-3">
+            <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-accent" aria-hidden />
+            <span className="min-w-0 text-sm">
+              <b className="text-base">
+                <SiglaPartido sigla={x.partido} />
+              </b>{" "}
+              <span className="text-ink-2">{x.de === x.ate ? `em ${quando(x.de)}` : `de ${quando(x.de)} a ${quando(x.ate)}`}</span>
+              <span className="block text-xs text-ink-3">Visto em: {x.fontes.join("; ")}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }

@@ -56,3 +56,26 @@ describe("cobertura do perfil", () => {
     expect(estado(p, "Falas", 3).estado).toBe("disponivel");
   });
 });
+
+describe("partido no tempo", () => {
+  it("joins records with the same party and never fills gaps", async () => {
+    const { filiacoesNoTempo } = await import("./carreira");
+    const r = filiacoesNoTempo({
+      eleicoes: [
+        { ano: 2014, cargo: "Deputado", uf: "SP", partido: "PSDB" },
+        { ano: 2018, cargo: "Deputado", uf: "SP", partido: "PSDB" },
+        { ano: 2022, cargo: "Deputado", uf: "SP", partido: "PL" },
+      ],
+      votos: [{ data: "2025-03-01", partido: "PL" }, { data: "2026-04-10", partido: "PP" }, { data: "2026-05-10" }],
+      partido: "PP",
+      atualizadoEm: "2026-10-12T00:00:00Z",
+      casa: "camara",
+    });
+    expect(r.map((x) => [x.partido, x.de, x.ate])).toEqual([
+      ["PSDB", "2014", "2018"],
+      ["PL", "2022", "2025-03-01"],
+      ["PP", "2026-04-10", "2026-10-12"],
+    ]);
+    expect(r[1].fontes).toEqual(["Candidatura 2022 (TSE)", "Votos no plenário (Câmara)"]);
+  });
+});

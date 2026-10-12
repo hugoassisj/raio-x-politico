@@ -80,6 +80,8 @@ export interface VotoItem {
   titulo: string;
   descricao?: string;
   voto: string;
+  /** Party recorded by the house in this vote */
+  partido?: string;
   orientacaoPartido?: string;
   orientacaoGoverno?: string;
   resultado?: string;

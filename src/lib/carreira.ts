@@ -60,3 +60,43 @@ export function listaNatural(itens: string[]) {
   if (itens.length <= 1) return itens.join("");
   return `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
 }
+
+/** One stretch of time in which the records show the same party. */
+export interface PeriodoPartido {
+  partido: string;
+  /** First and last time a record shows this party (year, or date for votes) */
+  de: string;
+  ate: string;
+  /** Where it was seen: "Candidatura 2018 (TSE)", "Votos na Câmara" */
+  fontes: string[];
+}
+
+/**
+ * Party over time from what the records show, never guessed in between: candidacies (TSE, one
+ * point per election), the party recorded in each roll call, and the current party. Consecutive
+ * points with the same party form one stretch; a change starts a new one. Gaps stay gaps.
+ */
+export function filiacoesNoTempo(p: {
+  eleicoes: EleicaoTSE[];
+  votos?: { data: string; partido?: string }[];
+  partido?: string;
+  atualizadoEm?: string;
+  casa?: string;
+}): PeriodoPartido[] {
+  const casa = p.casa === "senado" ? "Senado" : p.casa === "camara" ? "Câmara" : "Casa";
+  const pontos: { quando: string; partido: string; fonte: string }[] = [];
+  for (const e of p.eleicoes) if (e.partido) pontos.push({ quando: String(e.ano), partido: e.partido, fonte: `Candidatura ${e.ano} (TSE)` });
+  for (const v of p.votos ?? []) if (v.partido) pontos.push({ quando: v.data, partido: v.partido, fonte: `Votos no plenário (${casa})` });
+  if (p.partido && p.atualizadoEm) pontos.push({ quando: p.atualizadoEm.slice(0, 10), partido: p.partido, fonte: `Cadastro atual (${casa})` });
+  // Election years sort before any date of the same year (candidacies are registered mid-year)
+  pontos.sort((a, b) => a.quando.localeCompare(b.quando) || a.fonte.localeCompare(b.fonte));
+  const out: PeriodoPartido[] = [];
+  for (const x of pontos) {
+    const ultimo = out[out.length - 1];
+    if (ultimo && ultimo.partido === x.partido) {
+      ultimo.ate = x.quando;
+      if (!ultimo.fontes.includes(x.fonte)) ultimo.fontes.push(x.fonte);
+    } else out.push({ partido: x.partido, de: x.quando, ate: x.quando, fontes: [x.fonte] });
+  }
+  return out;
+}

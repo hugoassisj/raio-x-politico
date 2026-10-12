@@ -29,7 +29,8 @@ import { chaveDestino } from "@/lib/emendas";
 import { CicloEmenda } from "@/components/CicloEmenda";
 import { documentoPublicavel, formatarCnpj } from "@/lib/cnpj";
 import { ListaProjetos, type ProjetoLinha } from "@/components/ListaProjetos";
-import { BensDeclarados, Campanhas, LinhaDaVida, MandatosRegistrados, ResumoVida } from "@/components/VidaPublica";
+import { BensDeclarados, Campanhas, LinhaDaVida, MandatosRegistrados, PartidosNoTempo, ResumoVida } from "@/components/VidaPublica";
+import { filiacoesNoTempo } from "@/lib/carreira";
 
 export const dynamicParams = false;
 
@@ -545,6 +546,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
                 <LinhaDaVida eleicoes={p.eleicoes} sexo={p.sexo} />
                 <div className="space-y-6">
+                  <PartidosNoTempo periodos={filiacoesNoTempo(p)} />
                   <BensDeclarados eleicoes={p.eleicoes} />
                   {p.carreira.length > 0 && (
                     <div className="cartao p-5">

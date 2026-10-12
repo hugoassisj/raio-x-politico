@@ -130,6 +130,8 @@ export function calcularVotos(vs: VotacaoDetalhe[], pols: PoliticoParcial[], pre
         titulo: v.titulo,
         descricao: v.descricao?.slice(0, 280),
         voto,
+        // Party recorded by the house for this vote; absent when there is no record
+        partido: x?.partido,
         orientacaoPartido: oriP,
         orientacaoGoverno: oriG,
         resultado: v.resultado,
