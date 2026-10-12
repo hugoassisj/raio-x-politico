@@ -38,6 +38,9 @@ Este é o registro oficial do que falta fazer, do que está em andamento e do qu
 - **Totais oficiais e votos individuais:** nas 351 votações publicadas, a contagem de Sim e Não feita a partir dos votos individuais bate com o total oficial em todas as votações abertas. As 53 diferenças são todas votações secretas (a Casa publica o total, mas não o voto de cada pessoa).
 - **Códigos de voto vistos nos dados reais:** Câmara: Sim, Não, Abstenção, Obstrução, Artigo 17, Participou (voto secreto). Senado: Sim, Não, Abstenção, AP, MIS, LS, LP, LAP, NCom, P-NRV, Presidente (art. 51 RISF).
 - **Execução completa do TSE:** a execução com histórico e contas (run 38259518839) falhou com código 1 sem mensagem visível. Os erros do pipeline agora viram anotações da execução (DADOS-02), e uma nova execução completa foi disparada.
+- **Arquivo nacional do TSE (achado em 2026-10-12, execução 38296849521):** a Presidência saiu com zero candidaturas em todas as eleições e as contas de campanha com zero registros, embora as fontes respondessem. Causa: o arquivo `consulta_cand_{ano}_BR.csv` deixa números sem aspas (`"#NULO";280001681360;"PARTIDO ISOLADO"`), enquanto os arquivos por estado põem aspas em tudo; o leitor (`campos` em `pipeline/lib/csvzip.ts`) dividia por `";"` e deslocava todas as colunas. Corrigido com teste no formato exato do arquivo (13 candidaturas de 2022 lidas localmente). Uma fonte que responde com zero registros agora sai como `parcial`, nunca `ok`. Registrado em `/correcoes`. Nova execução completa: run 38304543790.
+- **Emendas Pix reais:** 5.468 destinos; indicado R$ 29,5 bi, empenhado igual ao indicado em todos (nas transferências especiais o empenho é feito de uma vez, pelo valor do plano) e pago R$ 25,3 bi (5.433 destinos com pagamento). Os valores vêm das tabelas de empenho e ordem bancária do Transferegov, não de um valor suposto.
+- **Senado e sessões conjuntas:** a lista `dadosabertos/votacao` do Senado só traz `casaSessao=SF` e `siglaTipoSessao=DOR` (37 votações entre out/2025 e mar/2026); vetos e sessões do Congresso não estão lá (VOT-16).
 
 ## 3. Lacunas
 
@@ -67,14 +70,15 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | VOT-05 | VERIFIED | P1 | Lista de votos (roster) | Cada linha: foto, nome, partido da época do voto, estado, voto com explicação, link para o perfil. Modo compacto e modo detalhado; no celular, lista legível sem rolagem lateral. | VOT-01 |
 | VOT-06 | VERIFIED | P1 | Filtros combinados com estado na URL | Busca, partido, estado, categoria, ordem, visão e página vão para a URL; atualizar, compartilhar, voltar e avançar funcionam. Ordem determinística (critério + nome + id). | PAG-01 |
 | VOT-07 | VERIFIED | P1 | Partidos sem ranking | Por partido, a distribuição de todos os tipos de voto, a orientação do partido separada do voto de cada membro, ordem alfabética declarada, tocar no partido filtra a lista; visão “por partido” com os membros. | VOT-05 |
-| VOT-08 | IMPLEMENTED | P1 | Partido da época | Votos usam o partido gravado pela Casa no voto. Para quem não tem voto registrado, a interface diz que o partido mostrado é o atual. | VOT-05 |
+| VOT-08 | VERIFIED P1 | Partido da época | Votos usam o partido gravado pela Casa no voto. Para quem não tem voto registrado, a interface diz que o partido mostrado é o atual. | VOT-05 |
 | VOT-09 | VERIFIED | P1 | Contexto da votação | Pergunta votada, etapa, resultado desta votação separado do destino final do projeto; não dizer “virou lei” sem prova. | |
 | VOT-10 | VERIFIED | P1 | Procedimento ou mérito | Cada votação marcada como “sobre o andamento” (pedido, requerimento) ou “sobre o conteúdo”, com regra pública e testada. Filtro no catálogo. | VOT-01 |
 | VOT-11 | VERIFIED | P1 | Catálogo de votações | Busca por texto, filtros por casa, assunto, resultado, tipo (andamento ou conteúdo), período; estado na URL; paginação comum. | PAG-01, VOT-10 |
 | VOT-12 | VERIFIED | P1 | Votos no perfil | No perfil, filtrar votos por voto, assunto, ano e casa, com link para cada votação. | VOT-01 |
-| VOT-13 | IN_PROGRESS | P0 | Origem de cada voto | Identificador oficial da votação, casa, data, código original do voto e link oficial visíveis no detalhe; data da coleta mostrada. | VOT-05 |
-| VOT-14 | IN_PROGRESS | P0 | Testes de votação | Testes para: Sim, Não, abstenção, obstrução, sem voto, presidindo, licença, voto secreto, Câmara e Senado, troca de partido, filtro vazio, combinação de filtros com URL e paginação. | VOT-01 a VOT-06 |
-| VOT-15 | IN_PROGRESS | P1 | Conferência na tela | Página de votação conferida no navegador, claro e escuro, celular e computador, só com teclado. | VOT-02 a VOT-08, TEMA-01 |
+| VOT-13 | VERIFIED P0 | Origem de cada voto | Identificador oficial da votação, casa, data, código original do voto e link oficial visíveis no detalhe; data da coleta mostrada. | VOT-05 |
+| VOT-14 | VERIFIED P0 | Testes de votação | Testes para: Sim, Não, abstenção, obstrução, sem voto, presidindo, licença, voto secreto, Câmara e Senado, troca de partido, filtro vazio, combinação de filtros com URL e paginação. | VOT-01 a VOT-06 |
+| VOT-15 | VERIFIED | P1 | Conferência na tela | Página de votação conferida no navegador, claro e escuro, celular e computador, só com teclado. | VOT-02 a VOT-08, TEMA-01 |
+| VOT-17 | VERIFIED | P1 | Comparado com o partido e por estado | Em cada votação, quantos votaram Sim ou Não contra o que o partido pediu, como fato contável e filtrável (nunca nota); no detalhe, o que o partido pediu ao lado de cada voto; visão “Por estado” com as mesmas barras da visão por partido; tocar no estado filtra. | VOT-02, VOT-07 |
 
 ### 4.2 Base de design e navegação
 
@@ -101,19 +105,20 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | ID | Situação | P | O que é | Critérios de aceite | Depende de |
 |---|---|---|---|---|---|
 | PERF-01 | VERIFIED | P1 | Cobertura por seção | Cada seção do perfil diz se o dado está completo, parcial, indisponível ou não se aplica. Já existe nas métricas (`ComoSabemos`); falta nas seções. | |
-| PERF-02 | IMPLEMENTED | P1 | Vida pública desde 1994 | Linha do tempo, partidos, bens e contas. Falta conferir com dados reais. | DADOS-01 |
+| PERF-02 | VERIFIED P1 | Vida pública desde 1994 | Linha do tempo, partidos, bens e contas. Falta conferir com dados reais. | DADOS-01 |
 | PRES-01 | IMPLEMENTED | P0 | Presidente da República | Página do Presidente atual, encontrável na navegação; eleições, bens e contas de campanha pelo TSE; atos oficiais com fonte. Testes. | DADOS-01 |
 | CONT-01 | VERIFIED | P1 | “Contato, redes e fontes” | Dividir em Contato, Redes sociais, Sites oficiais, Fontes e transparência, Sobre os dados; ícones iguais para cada rede. | |
-| PL-01 | IMPLEMENTED | P1 | Projetos de lei | Autoria e coautoria separadas, situação, histórico, link oficial, filtros. | |
+| PL-01 | VERIFIED P1 | Projetos de lei | Autoria e coautoria separadas, situação, histórico, link oficial, filtros. | |
 
 ### 4.5 Dinheiro público, empresas e relações
 
 | ID | Situação | P | O que é | Critérios de aceite | Depende de |
 |---|---|---|---|---|---|
-| EMD-01 | IMPLEMENTED | P1 | Ciclo da emenda | Indicação, empenho, liquidação e pagamento separados, com fonte de cada etapa. | |
-| EMD-02 | IMPLEMENTED | P2 | Caminho pelo município | Ver todas as emendas que chegaram a uma cidade. | EMD-01 |
+| EMD-01 | VERIFIED P1 | Ciclo da emenda | Indicação, empenho, liquidação e pagamento separados, com fonte de cada etapa. | |
+| EMD-02 | VERIFIED P2 | Caminho pelo município | Ver todas as emendas que chegaram a uma cidade. | EMD-01 |
 | CNPJ-01 | VERIFIED | P1 | CNPJ normalizado | Função pura com dígitos verificadores e testes. | |
-| CNPJ-02 | IMPLEMENTED | P2 | Página da empresa | Gastos, doações e emendas ligados a um CNPJ, sem contar duas vezes. | CNPJ-01 |
+| CNPJ-02 | VERIFIED | P2 | Página da empresa | Gastos, doações e emendas ligados a um CNPJ, sem contar duas vezes. | CNPJ-01 |
+| CNPJ-05 | IMPLEMENTED | P1 | Quem usa o mesmo fornecedor, com todos os detalhes | A página da empresa abre pela resposta (quanto recebeu, de quantas pessoas e de quais casas, quantos pagamentos, para quê); cada pessoa tem a parte do total e a lista dos pagamentos mais recentes com data, categoria, valor e nota fiscal; barras por categoria; até quatro pessoas vão direto ao comparador; listas longas abrem o resto sob demanda. | CNPJ-02 |
 | CNPJ-03 | VERIFIED | P2 | Ligação certa ou possível | Ligações confirmadas (mesmo CNPJ) separadas das possíveis (mesmo nome). | CNPJ-01 |
 | GRAFO-01 | IMPLEMENTED | P2 | Grafo de relações | Grafo interativo real com tipos de ligação e prova de cada uma, busca, expandir um nó, filtros, painel lateral, visão em lista e uso pelo teclado. Teste: ligação sem prova não sai como confirmada. | CNPJ-03 |
 
@@ -124,13 +129,13 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | PROV-01 | IMPLEMENTED | P0 | “Como sabemos disso?” | Cartão de evidência por métrica. Falta estender a todas as seções. | |
 | PROV-02 | VERIFIED | P1 | Fato, cálculo, inferência e IA | Marcas visuais e texto diferentes para cada tipo. | |
 | PROV-03 | VERIFIED | P1 | Pedido de correção | Modelo de issue “erro nos dados” já existe; falta registro público das correções feitas. | |
-| BAND-01 | NOT_STARTED | P3 | Bandeiras dos estados | Arquivos locais das fontes oficiais de cada estado, com fonte e licença. | |
+| BAND-01 | VERIFIED P3 | Bandeiras dos estados | Arquivos locais das fontes oficiais de cada estado, com fonte e licença. | |
 | A11Y-01 | IN_PROGRESS | P1 | Conferência de acessibilidade | Teclado, leitor de tela, zoom 200%, contraste, nas páginas principais. | |
 | DADOS-01 | IN_PROGRESS | P0 | Execução completa do TSE | Histórico desde 1994 e contas de campanha publicados e conferidos em perfis reais. | DADOS-02 |
 | DADOS-02 | IMPLEMENTED | P0 | Erros visíveis na execução | Erros e verificações que falham viram anotações do GitHub Actions. | |
 | IA-01 | BLOCKED | P1 | Explicações por IA | Gerar e validar as explicações dos projetos votados. Bloqueio: o ambiente não tem `ANTHROPIC_API_KEY`. Caminho: gerar fora e importar com `pipeline:explicar -- --importar`. | |
 | DOC-01 | VERIFIED | P2 | Capturas de tela do README | `docs/telas/*.png` existem e mostram o site real. | VOT-15 |
-| VAL-01 | NOT_STARTED | P1 | Oito casos nos dois temas | Político com muitos dados, com poucos, candidato histórico, empresa, identidade ambígua, emenda com pagamento, grafo, página sem registros. | vários |
+| VAL-01 | IN_PROGRESS P1 | Oito casos nos dois temas | Político com muitos dados, com poucos, candidato histórico, empresa, identidade ambígua, emenda com pagamento, grafo, página sem registros. | vários |
 
 ### 4.7 Referências estudadas
 
@@ -145,16 +150,38 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | ID | Situação | P | O que é | Critérios de aceite | Depende de |
 |---|---|---|---|---|---|
 | HIST-01 | IMPLEMENTED | P1 | Visões por eleição | Escolher uma eleição (ano e cargo) e ver quem disputou, quem foi eleito e por qual partido, com a data respeitada em tudo o que aparece | DADOS-01 |
-| HIST-02 | NOT_STARTED | P2 | Reprodutibilidade | Cada publicação guarda versão dos dados e manifesto; dá para baixar o retrato de uma data | |
+| HIST-02 | VERIFIED P2 | Reprodutibilidade | Cada publicação guarda versão dos dados e manifesto; dá para baixar o retrato de uma data | |
 | CARD-01 | IMPLEMENTED | P1 | Cartões e listas de políticos mais ricos | Lista de políticos com foto, partido, estado, cargo, principais números e cobertura de dados, sem ranking | TAB-01 |
 | LAY-01 | VERIFIED | P2 | Layout mais largo e navegação revista | Páginas de dados usam a largura da tela; menu com Presidência, Empresas, Emendas e Mapa de relações também no celular | |
-| CNPJ-04 | NOT_STARTED | P2 | Dados cadastrais da Receita | Situação cadastral, atividade principal e data de abertura a partir dos dados abertos do CNPJ da Receita Federal, com data do arquivo | CNPJ-02 |
-| VOT-16 | NOT_STARTED | P2 | Sessões do Congresso e vetos | Votações em sessão conjunta e de vetos, pela API do Congresso Nacional | |
+| CNPJ-04 | BLOCKED | P2 | Dados cadastrais da Receita | Situação cadastral, atividade principal e data de abertura a partir dos dados abertos do CNPJ da Receita Federal, com data do arquivo. Bloqueio: os dados abertos da Receita são arquivos mensais de vários GB (dez partes de “Estabelecimentos”), pesados demais para a coleta diária; a consulta por CNPJ no site da Receita exige captcha e não tem API pública. Caminho: tarefa mensal própria que baixa só as partes de estabelecimentos e guarda apenas os 39 mil CNPJs que o site publica. | CNPJ-02 |
+| VOT-16 | BLOCKED | P2 | Sessões do Congresso e vetos | Votações em sessão conjunta e de vetos, pela API do Congresso Nacional. Bloqueio: a lista de votações do Senado só cobre a própria Casa (conferido em 2026-10-12: 37 votações, todas `casaSessao=SF`), e o Congresso Nacional não publica API documentada de votos nominais. Caminho: conferir se a API da Câmara lista sessões conjuntas por órgão, ou ler as páginas de vetos do Congresso. | |
 | CORR-01 | VERIFIED | P1 | Registro público de correções | Página com cada correção feita: o que estava errado, o que mudou, quando e a fonte | PROV-03 |
 | IAF-01 | BLOCKED | P2 | Recursos de IA | Perguntas em linguagem simples sobre os dados, sempre com citação. Bloqueio: sem chave de IA no ambiente | IA-01 |
-| PERFM-01 | NOT_STARTED | P2 | Desempenho | Medir tamanho das páginas e do JavaScript, tempo de carga no celular; listas grandes paginadas no servidor | |
-| SEG-01 | IMPLEMENTED | P2 | Segurança | Cabeçalhos de segurança (CSP e outros), revisão do `npm audit` (9 avisos em dependências de desenvolvimento), entradas validadas nas rotas de API | |
+| PERFM-01 | VERIFIED P2 | Desempenho | Medir tamanho das páginas e do JavaScript, tempo de carga no celular; listas grandes paginadas no servidor | |
+| SEG-01 | VERIFIED P2 | Segurança | Cabeçalhos de segurança (CSP e outros), revisão do `npm audit` (9 avisos em dependências de desenvolvimento), entradas validadas nas rotas de API | |
 | CHAVE-01 | BLOCKED | P1 | Chave do Portal da Transparência | A pessoa enviou uma chave; ela deve ficar só no segredo `PORTAL_TRANSPARENCIA_API_KEY` do GitHub, nunca no código. Esperando autorização para gravar o segredo | |
+
+### 4.10 Infográficos e exploração geográfica (adendo “Infográficos interativos”)
+
+**Auditoria do que já existe (2026-10-12):**
+
+- Mapa dos 27 estados já existe: `scripts/gerar-mapa.ts` projeta o GeoJSON simplificado (click_that_hood, MIT, mapshaper 4%) em caminhos SVG gravados em `src/lib/mapa-br.ts`, sem biblioteca de mapa no navegador. `MapaBrasil` (página inicial) colore por quintil e leva à página do estado.
+- Identificadores estáveis: sigla da UF em todos os dados; códigos IBGE de UF acrescentados em `src/lib/populacao.ts`. Municípios não têm código IBGE nos dados (destinos de emenda usam CNPJ ou nome+UF).
+- Dados reais hoje: 1.679 políticos com métricas, 351 votações (53 secretas) com voto individual por UF e totais por partido, agregados por UF, gastos gerais, emendas por autor em cada perfil. Ainda sem arquivo real (saem na próxima coleta completa): `eleicoes.json`, `emendas.json`, `empresas.json`, `presidencia.json`.
+- Não existem: malhas municipais, resultados de eleição por município (votos por candidato/município), comparecimento e abstenção. Cada um exige fonte nova (ver itens bloqueados).
+
+| ID | Situação | P | O que é | Critérios de aceite | Depende de |
+|---|---|---|---|---|---|
+| INFO-01 | NOT_STARTED | P1 | Página /infograficos na navegação | Página própria, no menu principal e no “Mais” do celular, organizada por perguntas; cada bloco diz o que mostra, o período, a fonte e o que falta. | |
+| INFO-02 | NOT_STARTED | P1 | Mapa por estado reutilizável | Um componente genérico de mapa coroplético por UF: trocar a métrica, escala sequencial ou divergente, zero diferente de “sem dado”, legenda com unidade, seleção pelo teclado, painel com os valores em texto e visão em tabela. Estado (métrica, UF, visão) na URL, compartilhável. | |
+| INFO-03 | NOT_STARTED | P1 | Como votou cada estado | Na página de cada votação aberta, mapa com a parte de Sim (entre Sim e Não) por estado; tocar num estado filtra a lista “Quem votou como” (mesmo parâmetro `uf` da URL); estados sem voto registrado ficam neutros; votação secreta não tem mapa e diz por quê. | INFO-02 |
+| INFO-04 | NOT_STARTED | P1 | Matriz partidos × votações | Tabela interativa: partidos da Câmara nas linhas, votações recentes sobre conteúdo nas colunas; célula mostra a posição da maioria do partido (parte de Sim entre Sim e Não) com cor e texto; célula leva à votação filtrada pelo partido; botão para mostrar os números; sem posição registrada é diferente de ausente da votação. | |
+| INFO-05 | NOT_STARTED | P1 | Emendas no mapa | Mapa da soma indicada pelos parlamentares de cada estado (dados de hoje) e por morador (IBGE); deixa claro que indicado não é pago e que o estado é o do autor. Mapa por estado de destino entra quando `emendas.json` real existir; até lá a seção diz o que falta. | INFO-02 |
+| INFO-06 | NOT_STARTED | P1 | Representação por estado | Mapa e tabela: deputados federais, cadeiras por milhão de moradores (IBGE 2024, fonte citada), parte de mulheres entre parlamentares do estado (com a base contada); painel do estado com as maiores bancadas e link para a página do estado. | INFO-02 |
+| INFO-07 | NOT_STARTED | P1 | Testes e acessibilidade dos infográficos | Testes das agregações puras (voto por UF, emendas por UF, representação, matriz, escalas, zero ≠ ausente); /infograficos na varredura automática de acessibilidade; pergunta nova em `perguntas.ts` espelhada no README. | INFO-02 a 06 |
+| INFO-08 | BLOCKED | P2 | Mapa por município | Coroplético municipal (emendas por destino, resultados). Bloqueio: não há malha municipal no projeto nem código IBGE de município nos dados. Caminho: malhas da API do IBGE (https://servicodados.ibge.gov.br/api/v3/malhas/) simplificadas por estado, carregadas só ao abrir o estado; juntar destino de emenda a município pelo CNPJ do governo municipal. | EMD-02 real |
+| INFO-09 | BLOCKED | P2 | Resultados de eleição no mapa | Votos por candidato e por estado/município (presidente e outros cargos). Bloqueio: o pipeline coleta candidaturas e resultado final por pessoa, não a votação nominal por município. Caminho: arquivos “votação nominal por município e zona” do TSE (dadosabertos.tse.jus.br), coletor novo com manifesto SHA-256. | |
+| INFO-10 | BLOCKED | P2 | Comparecimento, abstenção, brancos e nulos | Mesma fonte nova do INFO-09 (arquivos “detalhe da apuração”); sem ela, nada é publicado. | INFO-09 |
 
 ### 4.8 Provas de cada item conferido
 
@@ -199,6 +226,24 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | TAB-02 | Cabeçalhos de tabela refeitos a pedido (2026-10-12): uma receita só (`.tabela` e `.tabela-caixa` em `globals.css`) para as 10 tabelas do site. Cabeçalho fixo ao rolar, faixa mais escura, texto semibold que quebra em duas linhas em vez de esticar a tabela, números à direita no cabeçalho e nas células, primeira coluna fixa ao rolar para o lado, célula inteira como botão de ordenar com seta, coluna ordenada destacada, caixa de rolagem focável pelo teclado. Seletor de colunas refeito: painel que aplica na hora e fecha com Pronto, Esc ou clique fora; mostra “Colunas (11 de 15)”. Corrigido o defeito relatado: colunas ligadas sumiam para fora da tela porque todas tinham largura fixa; agora a largura só muda depois de arrastar. Conferido no navegador (3 colunas ligadas aparecem, painel fecha nos três jeitos) e `npm run a11y` sem violações nas páginas com tabela. |
 | SEG-01 | Cabeçalhos de segurança no site publicado (CSP restrita ao próprio site, sem incorporar em outras páginas, nosniff, Referrer-Policy, Permissions-Policy), conferidos com `next start`. `npm audit`: 9 avisos, todos em ferramentas de desenvolvimento (drizzle-kit, eslint-config-next); a correção sugerida é rebaixar versões, então ficam registrados e não vão para o site. Falta: validar entradas das rotas de API com testes. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
+| VOT-08 | Dados reais da execução 38296849521: 262 das 351 votações trazem `semRegistro`. Página `/votacao/cam-106701-227` conferida com dados reais, claro e escuro, 1280 px e 390 px, sem violações do axe. |
+| VOT-13 | Bloco “De onde vem cada voto” no fim da lista: número oficial da votação, Casa, data, link “Página da votação”, link “Lista oficial com o voto de cada pessoa (dados abertos)” (`urlListaOficial`: Câmara `api/v2/votacoes/{id}/votos`; Senado, a lista oficial do dia) e a data da coleta. Teste “links each roll call to the official open-data list of votes”. Navegador: `/votacao/cam-2438459-146` mostra o link `dadosabertos.camara.leg.br/api/v2/votacoes/2438459-146/votos`; `/votacao/sen-7045` mostra `legis.senado.leg.br/dadosabertos/votacao?dataInicio=2025-12-17&dataFim=2025-12-17`. |
+| VOT-14 | `src/lib/votos.test.ts`, 27 testes: todos os códigos reais (Câmara e Senado), voto secreto (“Participou” nunca vira Sim ou Não), troca de partido, sem registro, licença e presidindo, filtro vazio, combinação de grupo, partido, estado e busca, URL com lixo, paginação da lista filtrada com volta à página 1 ao mudar o filtro, esconder o único grupo na tela (mostra os outros, nunca ninguém), comparação com o partido, agrupamento por estado. |
+| VOT-15 | Roteiro automatizado no Chrome (2026-10-12, `/votacao/cam-2438459-146`, 221 Sim x 242 Não): tocar em Não leva a `?voto=nao`; o olho em Não leva a `?voto=sim,abstencao,outro`; “Mostrar todos de novo” limpa; chip “Votaram diferente 11” leva a `?diferente=1` e a lista mostra 11 de 466; voltar e avançar no histórico tiram e devolvem o filtro; “Por estado” leva a `?visao=estado` com 27 estados e tocar num estado filtra (`uf=AC`); Enter no primeiro total pelo teclado leva a `?voto=sim` e Tab + Enter no olho esconde; modo Detalhes tem a coluna “Partido pediu”; celular 390 px escuro sem rolagem lateral nas visões lista e por estado; axe sem violações nos dois temas (a única violação achada, contraste durante a animação de entrada, foi removida ao escurecer a borda dos grupos escondidos e clarear Sim e Não no tema escuro). Capturas em `docs/telas` continuam válidas; novas capturas do painel feitas na sessão. |
+| VOT-17 | `compararComPartido` e `diferente` em `src/lib/votos.ts` (orientação do partido, federação ou bloco pela mesma regra do perfil, `orientacaoDoPartido`; “Liberado” nunca conta como diferente). Testes “marks a Sim or Não against the party request, never an abstention or a missing record” e “filters to the people who voted differently and keeps it in the address”. Navegador: ver VOT-15. Texto do chip explica que é um fato, não uma nota. |
+| BAND-01 | `public/bandeiras/{UF}.png` (27 arquivos, 216 KB no total, 192 px de largura), gerados pelo Wikimedia Commons a partir do arquivo oficial que o Wikidata (propriedade P41) aponta para cada estado; `src/lib/bandeiras.ts` guarda o nome do arquivo, o item do Wikidata, a data da consulta (2026-10-12) e o link da página de licença de cada arquivo. `BandeiraUf` (`src/components/Bandeira.tsx`) sempre ao lado do nome do estado, com texto alternativo; nada remoto em tempo de execução. Na página do estado, no cabeçalho do perfil e nos grupos por estado da votação. Conferido em `/estado/mg` (claro) e num perfil (escuro); axe sem violações. |
+| PERF-02 | Dados reais: 1.670 dos 1.678 perfis com candidaturas desde 1994 e 1.654 com bens declarados (execução 38296849521). Perfil `/politico/dep-104552` conferido com dados reais nos dois temas, sem violações. Contas de campanha chegam na execução 38304543790 (correção do leitor do TSE). |
+| PL-01 | Dados reais: 21.990 projetos nos perfis, todos com o campo `papel`. Perfil real conferido (ver PERF-02). |
+| EMD-01 | Dados reais: `emendas.json` com 5.468 destinos; empenhado e pago vêm das tabelas do Transferegov (ver achados). Perfil real com “Do indicado ao pago” conferido. |
+| EMD-02 | `/emendas` e `/emendas?destino=13937032000160` (Estado da Bahia, vários autores) conferidos com dados reais, claro e escuro, 1280 px e 390 px, axe sem violações. A lista do ciclo virou uma `dl` válida (grupos com `dt` e `dd` diretos). |
+| CNPJ-02 | Dados reais: 39.138 empresas; `/empresas` e `/empresa/02012862000160` (TAM, 512 parlamentares, R$ 22,5 mi) conferidos nos dois temas e nos dois tamanhos, sem violações. Ligações com campanhas chegam com a execução 38304543790. |
+| CNPJ-05 | `pipeline/empresas.ts` publica `porCategoria` e, por pessoa, os 12 pagamentos mais recentes (`PAGAMENTOS_POR_PESSOA`), testes “keeps only the most recent payments per person on the company page” e o teste de ligação atualizado. Página conferida com dados fictícios (`npm run demo`, 270 pessoas): resumo com quatro números, lista com parte do total, “Ver pagamentos (os 12 mais recentes de 31)” com tabela de data, categoria, valor e nota, “Mostrar as outras 245 pessoas”, botão “Comparar quem mais pagou”; claro, escuro, 390 px e 640 px sem rolagem lateral, axe sem violações. Os arquivos reais ganham os campos na execução 38304543790; até lá a página mostra só a nota mais recente. |
+| HIST-02 | Cada coleta é um commit datado em `data/`; a página `/dados` ganhou “Retratos anteriores” com a lista de atualizações (`commits/main/data/meta.json`), os dados desta versão e as correções. Conferido em `/dados` com dados reais (claro, escuro, 1280 px e 390 px, axe sem violações; o link leva a `commits/main/data/meta.json`). |
+| PERFM-01 | Build de produção (`next build`, dados fictícios, 2026-10-12): JavaScript do cliente 1,1 MB no total (maior pedaço 228 KB); HTML pré-renderizado: início 264 KB, votação 292 KB, perfil 344 KB, gastos 132 KB. As listas vêm no HTML (sem JavaScript obrigatório), por isso o tamanho; próximo passo, se for preciso: dividir a lista de votos em páginas no servidor. 415 páginas estáticas geradas em 12,8 s. |
+| SEG-01 (2) | Cabeçalhos (CSP, nosniff, Referrer-Policy, Permissions-Policy, X-Frame-Options) em `next.config.ts`. Rotas de API revisadas: entradas com tamanho limitado (busca 80 caracteres, ids por prefixo, CNPJ normalizado), respostas só dos arquivos publicados. `npm audit --omit=dev`: 0 vulnerabilidades; as 9 (4 moderadas, 5 altas) ficam em dependências de desenvolvimento. |
+| DS-01 (2) | Sim e Não do tema escuro clareados (#3cbd85 e #ef7a45): 6,5:1 e 5,9:1 sobre os fundos suaves (antes 5,1:1 e 4,7:1), 8,0:1 e 6,8:1 para o texto sobre a cor. Motivo: o axe media o contraste durante a animação de entrada dos cartões e reprovava. |
+| A11Y-01 (2) | Varredura com axe (WCAG 2.2 A e AA) em 17 páginas com dados fictícios e 7 com dados reais, claro e escuro, 1280 px e 390 px: 0 violações depois de corrigir a `dl` do ciclo da emenda e o contraste dos grupos escondidos. Zoom de 200% (640 px de largura): 12 páginas sem rolagem lateral. Falta: leitor de tela por pessoa. |
+| VAL-01 | Conferidos: (1) político com muitos dados, `dep-104552` real; (4) empresa com pagamentos reais, TAM; (6) emenda com pagamento, Estado da Bahia; (7) mapa de relações com vários tipos de nó (dados fictícios, 47 nós); (8) página sem registros (`/politico/dep-1`, 404 com busca). Faltam na tela: (2) político com poucos dados, (3) candidato histórico (Presidência, depois da execução 38304543790), (5) identidade ambígua (por decisão, ligações possíveis por nome não são mostradas; conferir a busca em `/empresas`). |
 
 ## 5. Fontes, documentação e licenças
 
@@ -218,6 +263,8 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 - **DEC-02 (2026-10-12):** filtros da lista de votos vivem no navegador, com estado na URL. Uma votação tem no máximo 513 votos, então filtrar no cliente é rápido e não exige servidor. Listas grandes (todas as votações, todos os políticos) seguem com dados pré-calculados.
 - **DEC-03 (2026-10-12):** “Sem voto registrado” é uma categoria própria: pessoas que a Câmara registra como em exercício no dia da votação e que não aparecem na lista oficial. A fonte não diz o motivo, então não chamamos de falta. Antes, a lista usava quem está no cargo hoje, o que incluía quem só assumiu depois (546 pessoas numa casa de 513). No Senado a lista oficial já nomeia cada senador com um código (licença, missão, ausência), então não acrescentamos ninguém.
 - **DEC-04 (2026-10-12):** um só agrupamento de votos para tudo (`src/lib/votos.ts`): totais, lista, plenário, legenda e partidos usam as mesmas categorias. Isso corrigiu o plenário, que contava licenças e “presidindo” como “abstenção ou obstrução”.
+- **DEC-06 (2026-10-12):** “votou diferente do que o partido pediu” é mostrado como contagem e filtro, com a explicação de que é um fato e pode ter bons motivos; nunca vira nota, selo ou ordenação de “fidelidade”. “Liberado” e orientação ausente nunca contam como diferença.
+- **DEC-07 (2026-10-12):** bandeiras dos estados vêm das renderizações do Wikimedia Commons do arquivo oficial apontado pelo Wikidata, guardadas no repositório com fonte e data. Sem bandeira nacional ao lado de estados, e nenhum partido ganha bandeira ou cor por isso.
 - **DEC-05 (2026-10-12):** cores de partido. O PRODUCT.md decidiu não usar cor de partido nos gráficos, para nenhuma tela parecer favorecer um lado. A especificação pede cores oficiais. Proposta para PART-01: cor oficial só no selo do partido (pequeno, sempre com a sigla), nunca como cor de gráfico ou de plenário.
 
 ## 7. Resultados de testes
@@ -227,10 +274,13 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 | 2026-10-12 | `npm run lint`, `tsc --noEmit`, `vitest run` | sem erros; 89 testes passando |
 | 2026-10-12 | `npm run lint`, `tsc --noEmit`, `vitest run`, `npm run build` | sem erros; 107 testes passando; build com as 351 votações estáticas |
 | 2026-10-12 | `npm run lint`, `tsc --noEmit`, `vitest run` | sem erros; 111 testes passando |
+| 2026-10-12 | `npm run lint`, `tsc --noEmit`, `vitest run`, `next build` (dados fictícios) | sem erros; 160 testes passando; build com 415 páginas |
 
 ## 8. Registro de progresso
 
 - **2026-10-12 (12):** redesenho pedido: páginas mais largas (LAY-01), cabeçalhos e seletor de colunas refeitos (TAB-02), menu “Mais” no celular (NAV-01), eleições (HIST-01), correções públicas (CORR-01), partido no tempo (PART-04), cabeçalhos de segurança (SEG-01). Execução de dados de 19:19 em andamento; a anterior “terminou” sem publicar e agora isso vira falha com o nome da etapa.
+- **2026-10-12 (13):** leitor do TSE corrigido (arquivo nacional sem aspas nos números): Presidência e contas de campanha voltam na execução 38304543790 (completa, disparada 20:29 UTC). Fontes com zero registros agora saem como parciais. Retratos anteriores em `/dados` (HIST-02). Decisões sobre VOT-16 e CNPJ-04 registradas com o motivo do bloqueio.
+- **2026-10-12 (12):** votação: comparado com o partido, visão por estado, origem de cada voto, esconder o único grupo, 27 testes, conferência no Chrome (VOT-13/14/15/17). Empresa: quem paga o mesmo fornecedor com os pagamentos e as categorias (CNPJ-05). Bandeiras dos estados (BAND-01). Varredura de acessibilidade e zoom em 17 páginas; cores de voto do tema escuro. Execução 38296849521 publicou empresas (39.138), emendas (5.468 destinos), “sem voto registrado” (262 votações) e `papel` nos projetos; `eleicoes.json` e o partido por voto nos perfis saem na próxima execução, porque a coleta começou antes desses commits. Uma segunda sessão trabalha em paralelo nesta pasta (infográficos, 4.10): commits pequenos e só nos arquivos de cada frente.
 - **2026-10-12 (11):** acessibilidade automática zerada nas páginas principais (A11Y-01) e contraste dos tokens (DS-01). Execução de dados anterior bloqueada pela verificação “cada pessoa aparece uma vez” (deputado do AC repetido pelo SAPL): corrigido e testado; nova execução completa disparada.
 - **2026-10-12 (10):** emendas do indicado ao pago (EMD-01) e por cidade (EMD-02).
 - **2026-10-12 (9):** empresas por CNPJ (CNPJ-02/03) e mapa de relações (GRAFO-01). Fornecedores e doadores com CNPJ viram links para a página da empresa. Pergunta nova sobre empresas. `npm audit` aponta 9 vulnerabilidades em dependências de desenvolvimento já existentes (registrar em SEG-01).
