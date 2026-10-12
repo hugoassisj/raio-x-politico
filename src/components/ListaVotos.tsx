@@ -3,14 +3,10 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { VotoItem } from "@/lib/types";
-import { data } from "@/lib/format";
+import { data, partesDescricao } from "@/lib/format";
 import { VotoChip } from "./ui";
 
-const canon = (s?: string) =>
-  (s ?? "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+const canon = (s?: string) => (s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const posicional = (s?: string) => /^(sim|nao|abstencao|obstrucao)$/.test(canon(s));
 
 type Filtro = "todos" | "contra" | "governo" | "ausente";
@@ -90,7 +86,7 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
                   <Link href={`/votacao/${v.votacaoId}`} className="font-semibold hover:underline">
                     {v.titulo}
                   </Link>
-                  {v.descricao && <p className="mt-0.5 line-clamp-2 text-sm text-ink-2">{v.descricao}</p>}
+                  {v.descricao && <Descricao texto={v.descricao} />}
                 </div>
                 <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm sm:grid sm:grid-cols-[auto_auto] sm:justify-end sm:gap-x-3">
                   <div className="flex items-center gap-1.5 sm:contents">
@@ -126,5 +122,16 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
         </button>
       )}
     </div>
+  );
+}
+
+function Descricao({ texto }: { texto: string }) {
+  const { ementa, procedimento } = partesDescricao(texto);
+  const etapa = procedimento.replace(/\s*Sim:.*$/s, "").trim();
+  return (
+    <>
+      <p className="mt-0.5 line-clamp-2 text-sm text-ink-2">{ementa}</p>
+      {etapa && <p className="mt-0.5 line-clamp-1 text-xs text-ink-3">Nesta etapa: {etapa}</p>}
+    </>
   );
 }

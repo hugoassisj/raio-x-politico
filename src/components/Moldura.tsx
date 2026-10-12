@@ -6,10 +6,16 @@ import { Container } from "./ui";
 
 const NAV = [
   { href: "/politicos", rotulo: "Políticos" },
+  { href: "/partidos", rotulo: "Partidos" },
   { href: "/votacoes", rotulo: "Votações" },
   { href: "/gastos", rotulo: "Gastos" },
   { href: "/falas", rotulo: "Falas" },
-  { href: "/comparar", rotulo: "Comparar" },
+  { href: "/como-funciona", rotulo: "Como funciona" },
+];
+
+const NAV_EXTRA = [
+  { href: "/comparar", rotulo: "Comparar políticos" },
+  { href: "/analises", rotulo: "Cruzamentos de dados" },
   { href: "/dados", rotulo: "Sobre os dados" },
 ];
 
@@ -30,7 +36,10 @@ export function Marca() {
 export function Cabecalho() {
   return (
     <header className="z-30 border-b border-line bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80 lg:sticky lg:top-0">
-      <a href="#conteudo" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-50 focus:rounded focus:bg-mark focus:px-3 focus:py-2 focus:text-mark-ink">
+      <a
+        href="#conteudo"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-50 focus:rounded focus:bg-mark focus:px-3 focus:py-2 focus:text-mark-ink"
+      >
         Pular para o conteúdo
       </a>
       <Container className="flex h-16 items-center gap-4">
@@ -46,15 +55,6 @@ export function Cabecalho() {
           <Busca />
         </div>
       </Container>
-      <nav aria-label="Principal (celular)" className="overflow-x-auto border-t border-line lg:hidden">
-        <Container className="flex gap-1 py-1.5">
-          {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className="shrink-0 rounded-md px-2.5 py-1 text-sm text-ink-2 hover:bg-surface-2">
-              {n.rotulo}
-            </Link>
-          ))}
-        </Container>
-      </nav>
     </header>
   );
 }
@@ -63,20 +63,20 @@ export async function Rodape() {
   const meta = await getMeta();
   const repo = process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/hugoassisj/raio-x-politico";
   return (
-    <footer className="mt-20 border-t border-line bg-surface">
+    <footer className="mt-20 border-t border-line bg-surface pb-20 lg:pb-0">
       <Container className="grid gap-8 py-10 text-sm text-ink-2 md:grid-cols-[1.4fr_1fr_1fr]">
         <div className="space-y-3">
           <Marca />
           <p className="max-w-md">
-            Projeto independente e apartidário. Todos os números vêm de dados públicos oficiais e cada um leva à sua fonte. Nenhuma métrica é uma nota ou um juízo: são fatos para você
-            tirar suas conclusões.
+            Projeto independente e apartidário. Todos os números vêm de dados públicos oficiais e cada um leva à sua fonte. Nenhuma métrica é uma nota ou um juízo: são fatos para
+            você tirar suas conclusões.
           </p>
           {meta && <p className="text-ink-3">Dados atualizados em {dataHora(meta.geradoEm)}.</p>}
         </div>
         <div>
           <h2 className="mb-2 font-semibold text-ink">Explorar</h2>
           <ul className="space-y-1.5">
-            {NAV.map((n) => (
+            {[...NAV, ...NAV_EXTRA].map((n) => (
               <li key={n.href}>
                 <Link href={n.href} className="hover:text-ink hover:underline">
                   {n.rotulo}

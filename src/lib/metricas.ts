@@ -16,6 +16,10 @@ export interface DefMetrica {
   titulo: string;
   /** Short question a regular person would ask */
   pergunta: string;
+  /** One-sentence explanation for someone who has never followed politics */
+  explicacao: string;
+  /** lucide icon name used next to the metric */
+  icone: "calendar-check" | "vote" | "flag" | "landmark" | "wallet" | "search-check" | "file-text" | "scroll" | "send" | "home" | "users";
   formato: (n: number | undefined) => string;
   /** Sentence template for the comparison line; `parcela` is already formatted, e.g. "72%" or "menos de 1%" */
   comparacao: (parcela: string, pares: string) => string;
@@ -32,6 +36,8 @@ const TSE = { nome: "TSE - Portal de Dados Abertos", url: "https://dadosabertos.
 export const METRICAS: DefMetrica[] = [
   {
     chave: "presenca",
+    explicacao: "Deputados e senadores devem ir às sessões do Plenário, onde as leis são votadas. Este número mostra em quantas delas a pessoa esteve.",
+    icone: "calendar-check",
     titulo: "Presença",
     pergunta: "Aparece para trabalhar?",
     formato: (n) => pct(n),
@@ -45,6 +51,8 @@ export const METRICAS: DefMetrica[] = [
   },
   {
     chave: "participacao",
+    explicacao: "Nas votações nominais, cada voto fica registrado com o nome de quem votou. Este número mostra em quantas a pessoa votou.",
+    icone: "vote",
     titulo: "Votações nominais",
     pergunta: "Vota quando é chamado?",
     formato: (n) => pct(n),
@@ -57,6 +65,8 @@ export const METRICAS: DefMetrica[] = [
   },
   {
     chave: "fidelidade",
+    explicacao: "Antes de cada votação, o partido diz como seus membros devem votar. Este número mostra quantas vezes a pessoa seguiu essa orientação.",
+    icone: "flag",
     titulo: "Segue o partido",
     pergunta: "Vota como o partido orienta?",
     formato: (n) => pct(n),
@@ -69,6 +79,8 @@ export const METRICAS: DefMetrica[] = [
   },
   {
     chave: "governismo",
+    explicacao: "O governo federal também diz como gostaria que cada proposta fosse votada. Este número mostra quantas vezes a pessoa votou igual ao governo.",
+    icone: "landmark",
     titulo: "Vota com o governo",
     pergunta: "Acompanha o governo federal?",
     formato: (n) => pct(n),
@@ -81,6 +93,8 @@ export const METRICAS: DefMetrica[] = [
   },
   {
     chave: "gasto12m",
+    explicacao: "Além do salário, cada parlamentar tem uma verba para pagar despesas do trabalho, como passagens, combustível e escritório. Este é o total gasto em 12 meses.",
+    icone: "wallet",
     titulo: "Gastos da cota",
     pergunta: "Quanto gastou de verba do mandato?",
     formato: (n) => moedaCurta(n),
@@ -92,10 +106,13 @@ export const METRICAS: DefMetrica[] = [
       { nome: "Câmara - Cota parlamentar", url: "https://www.camara.leg.br/transparencia/gastos-parlamentares" },
       { nome: "Senado - CEAPS", url: "https://www12.senado.leg.br/transparencia/sen/" },
     ],
-    limites: "O teto da cota varia por estado (passagens para Brasília custam diferente), por isso a comparação justa é com colegas do mesmo estado. Salários e verba de gabinete não entram.",
+    limites:
+      "O teto da cota varia por estado (passagens para Brasília custam diferente), por isso a comparação justa é com colegas do mesmo estado. Salários e verba de gabinete não entram.",
   },
   {
     chave: "alertas",
+    explicacao: "Gastos fora do padrão encontrados por regras automáticas. Não é acusação: é um convite para conferir a nota fiscal.",
+    icone: "search-check",
     titulo: "Gastos para conferir",
     pergunta: "Algum gasto merece um segundo olhar?",
     formato: (n) => numero(n),
@@ -108,17 +125,22 @@ export const METRICAS: DefMetrica[] = [
   },
   {
     chave: "proposicoes",
+    explicacao: "Projetos são ideias de novas leis ou de mudanças nas leis. Este é o número de projetos que a pessoa assinou como autora ou coautora.",
+    icone: "file-text",
     titulo: "Projetos apresentados",
     pergunta: "O que propõe?",
     formato: (n) => numero(n),
     comparacao: (p, pares) => `Apresentou mais projetos que ${p} ${pares}`,
     casas: ["camara", "senado"],
-    calculo: "Projetos de lei (PL), projetos de lei complementar (PLP), propostas de emenda à Constituição (PEC) e projetos de decreto legislativo (PDL) em que é autor ou coautor, em toda a carreira registrada pela casa.",
+    calculo:
+      "Projetos de lei (PL), projetos de lei complementar (PLP), propostas de emenda à Constituição (PEC) e projetos de decreto legislativo (PDL) em que é autor ou coautor, em toda a carreira registrada pela casa.",
     fontes: [CAM, SEN],
     limites: "Quantidade não mede qualidade nem impacto. Coautorias contam como autoria. Requerimentos e indicações não entram.",
   },
   {
     chave: "proposicoesLei",
+    explicacao: "Projetos que foram aprovados e viraram lei de fato.",
+    icone: "scroll",
     titulo: "Viraram lei",
     pergunta: "Algum projeto virou lei?",
     formato: (n) => numero(n),
@@ -130,6 +152,8 @@ export const METRICAS: DefMetrica[] = [
   },
   {
     chave: "emendas",
+    explicacao: "Parlamentares podem indicar dinheiro do orçamento federal para cidades e estados. As “emendas Pix” chegam direto ao caixa da prefeitura ou do estado.",
+    icone: "send",
     titulo: "Emendas Pix",
     pergunta: "Quanto dinheiro mandou para cidades?",
     formato: (n) => moedaCurta(n),
@@ -142,6 +166,8 @@ export const METRICAS: DefMetrica[] = [
   },
   {
     chave: "patrimonio",
+    explicacao: "Valor dos bens (casas, carros, aplicações) que a pessoa declarou ao se candidatar.",
+    icone: "home",
     titulo: "Patrimônio declarado",
     pergunta: "Quanto declarou ter de bens?",
     formato: (n) => moedaCurta(n),
@@ -153,6 +179,8 @@ export const METRICAS: DefMetrica[] = [
   },
   {
     chave: "votosRecebidos",
+    explicacao: "Quantas pessoas votaram nela na última eleição.",
+    icone: "users",
     titulo: "Votos em 2022",
     pergunta: "Quantos votos recebeu?",
     formato: (n) => numero(n),

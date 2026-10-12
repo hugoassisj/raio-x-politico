@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { cargoDe } from "@/components/Listas";
+import { GradeRostos } from "@/components/Rostos";
 import { TabelaPoliticos } from "@/components/TabelaPoliticos";
 import { Container, Vazio } from "@/components/ui";
 import { getPoliticos } from "@/lib/data";
@@ -76,8 +77,8 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
           {senadores.length ? (
             <div className="mt-5 grid gap-4 md:grid-cols-3">
               {senadores.map((p) => (
-                <Link key={p.id} href={`/politico/${p.id}`} className="flex gap-4 rounded-xl border border-line bg-surface p-4 hover:border-ink-3">
-                  <Avatar src={p.foto} nome={p.nome} size={64} />
+                <Link key={p.id} href={`/politico/${p.id}`} className="flex gap-4 rounded-2xl border border-line bg-surface p-4 transition-colors hover:border-ink-3">
+                  <Avatar src={p.foto} nome={p.nome} size={84} className="shadow-sm" />
                   <div className="min-w-0">
                     <p className="font-semibold">{p.nome}</p>
                     <p className="text-sm text-ink-3">
@@ -105,16 +106,34 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
           <p className="mt-1 text-ink-2">
             {federais.length} deputados federais de {partidos} partidos. Toque em um nome para ver o perfil completo.
           </p>
-          <div className="mt-5">{federais.length ? <TabelaPoliticos itens={federais} /> : <Vazio>Sem dados da Câmara para este estado na última coleta.</Vazio>}</div>
+          <div className="mt-5">
+            {federais.length ? (
+              <>
+                <GradeRostos membros={federais} detalhe={(m) => m.partido} />
+                <details className="mt-6">
+                  <summary className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-4 py-2 font-semibold hover:border-ink-3">
+                    Ver em tabela, com os números
+                  </summary>
+                  <div className="mt-4">
+                    <TabelaPoliticos itens={federais} />
+                  </div>
+                </details>
+              </>
+            ) : (
+              <Vazio>Sem dados da Câmara para este estado na última coleta.</Vazio>
+            )}
+          </div>
         </section>
 
         <section>
           <h2 className="display text-2xl font-bold sm:text-3xl">{uf === "DF" ? "Câmara Legislativa do DF" : "Assembleia Legislativa"}</h2>
           <p className="mt-1 max-w-3xl text-ink-2">
-            A lista vem das candidaturas eleitas em 2022 no TSE. Presença e votos de deputados estaduais dependem de cada assembleia publicar dados abertos, o que ainda é raro: por isso
-            muitos campos aparecem vazios.
+            A lista vem das candidaturas eleitas em 2022 no TSE. Presença e votos de deputados estaduais dependem de cada assembleia publicar dados abertos, o que ainda é raro: por
+            isso muitos campos aparecem vazios.
           </p>
-          <div className="mt-5">{estaduais.length ? <TabelaPoliticos itens={estaduais} /> : <Vazio>Sem dados da assembleia deste estado na última coleta.</Vazio>}</div>
+          <div className="mt-5">
+            {estaduais.length ? <GradeRostos membros={estaduais} detalhe={(m) => m.partido} /> : <Vazio>Sem dados da assembleia deste estado na última coleta.</Vazio>}
+          </div>
         </section>
       </Container>
     </>

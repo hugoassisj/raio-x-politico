@@ -63,3 +63,9 @@ export function iniciais(nome: string) {
   const p = nome.split(/\s+/).filter((x) => x.length > 2 || /^[A-ZÁÉÍÓÚ]/.test(x));
   return ((p[0]?.[0] ?? "") + (p.length > 1 ? p[p.length - 1][0] : "")).toUpperCase();
 }
+
+/** Splits a vote description into the bill summary and the procedural step that was voted. */
+export function partesDescricao(descricao: string) {
+  const [ementa, ...resto] = descricao.split(" | ");
+  return { ementa: ementa.trim(), procedimento: resto.join(" | ").trim() };
+}

@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
-import { TileMetrica, metricasDaCasa } from "@/components/Boletim";
+import { CartoesResumo, TileMetrica, metricasDaCasa } from "@/components/Boletim";
+import { MapPin } from "lucide-react";
+import { nomePartido } from "@/lib/partidos";
+import { resumoRapido } from "@/lib/resumo";
 import { GraficoMensal } from "@/components/GraficoMensal";
 import { cargoDe } from "@/components/Listas";
 import { ListaVotos } from "@/components/ListaVotos";
@@ -92,61 +95,67 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             / <span className="text-ink-2">{p.nome}</span>
           </nav>
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-            <div className="hidden sm:block">
-              <Avatar src={p.foto} nome={p.nome} size={120} className="ring-1 ring-line" />
+            <div className="flex items-start gap-4 sm:block">
+              <div className="hidden sm:block">
+                <Avatar src={p.foto} nome={p.nome} size={148} className="shadow-sm ring-1 ring-line" />
+              </div>
+              <div className="sm:hidden">
+                <Avatar src={p.foto} nome={p.nome} size={88} className="shadow-sm ring-1 ring-line" />
+              </div>
+              <div className="sm:hidden">
+                <p className="text-ink-2">{cargoDe(p)}</p>
+                <h1 className="display mt-1 text-3xl font-extrabold">{p.nome}</h1>
+              </div>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="float-right ml-4 sm:hidden">
-                <Avatar src={p.foto} nome={p.nome} size={72} className="ring-1 ring-line" />
-              </div>
-              <p className="text-ink-2">
+              <p className="hidden text-lg text-ink-2 sm:block">
                 {cargoDe(p)} · {NOME_CASA[p.casa]}
               </p>
-              <h1 className="display mt-1 text-4xl font-extrabold sm:text-5xl">{p.nome}</h1>
-              {p.nomeCivil && p.nomeCivil.toLowerCase() !== p.nome.toLowerCase() && <p className="mt-1 text-ink-3">Nome civil: {p.nomeCivil}</p>}
-              <div className="mt-4 flex flex-wrap gap-2 text-sm">
-                <Link href={`/partido/${encodeURIComponent(p.partido)}`} className="rounded-md bg-ink px-2.5 py-1 font-semibold text-paper hover:opacity-90">
-                  {p.partido}
+              <h1 className="display mt-1 hidden text-5xl font-extrabold sm:block">{p.nome}</h1>
+              {p.nomeCivil && p.nomeCivil.toLowerCase() !== p.nome.toLowerCase() && <p className="mt-1 text-ink-3">Nome completo: {p.nomeCivil}</p>}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link href={`/partido/${encodeURIComponent(p.partido)}`} className="inline-flex items-center gap-2 rounded-lg bg-ink px-3 py-1.5 text-paper hover:opacity-90">
+                  <b>{p.partido}</b> <span className="hidden text-sm opacity-80 sm:inline">{nomePartido(p.partido)}</span>
                 </Link>
-                <Link href={`/estado/${p.uf.toLowerCase()}`} className="rounded-md border border-line px-2.5 py-1 hover:border-ink-3">
-                  {nomeUf(p.uf)}
+                <Link href={`/estado/${p.uf.toLowerCase()}`} className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 hover:border-ink-3">
+                  <MapPin size={16} aria-hidden /> {nomeUf(p.uf)}
                 </Link>
-                <span className={`rounded-md px-2.5 py-1 ${p.emExercicio ? "bg-ok-bg text-sim" : "bg-surface-2 text-ink-2"}`}>{p.emExercicio ? "Em exercício" : "Fora do exercício"}</span>
                 {anos != null && (
-                  <span className="rounded-md border border-line px-2.5 py-1">
-                    Mandatos desde {p.inicioPolitica} ({anos} {anos === 1 ? "ano" : "anos"})
+                  <span className="rounded-lg border border-line px-3 py-1.5">
+                    Na política desde {p.inicioPolitica} ({anos} {anos === 1 ? "ano" : "anos"})
                   </span>
                 )}
-                {p.eleicao2026 && <span className="rounded-md bg-mark px-2.5 py-1 font-semibold text-mark-ink">Eleições 2026: {p.eleicao2026}</span>}
+                {!p.emExercicio && <span className="rounded-lg bg-surface-2 px-3 py-1.5 text-ink-2">Fora do exercício</span>}
+                {p.eleicao2026 && <span className="rounded-lg bg-mark px-3 py-1.5 font-semibold text-mark-ink">Eleições 2026: {p.eleicao2026}</span>}
               </div>
-              <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
+              <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
                 {id_ != null && (
                   <div>
-                    <dt className="text-ink-3">Idade</dt>
-                    <dd>{id_} anos</dd>
+                    <dt className="text-sm text-ink-3">Idade</dt>
+                    <dd className="font-semibold">{id_} anos</dd>
                   </div>
                 )}
                 {p.perfil.naturalidade && (
                   <div>
-                    <dt className="text-ink-3">Natural de</dt>
-                    <dd>{p.perfil.naturalidade}</dd>
+                    <dt className="text-sm text-ink-3">Nasceu em</dt>
+                    <dd className="font-semibold">{p.perfil.naturalidade}</dd>
                   </div>
                 )}
                 {p.perfil.escolaridade && (
                   <div>
-                    <dt className="text-ink-3">Escolaridade</dt>
-                    <dd>{p.perfil.escolaridade}</dd>
+                    <dt className="text-sm text-ink-3">Escolaridade</dt>
+                    <dd className="font-semibold">{p.perfil.escolaridade}</dd>
                   </div>
                 )}
                 {!!p.perfil.profissoes?.length && (
                   <div>
-                    <dt className="text-ink-3">Profissão</dt>
-                    <dd>{p.perfil.profissoes.slice(0, 2).join(", ")}</dd>
+                    <dt className="text-sm text-ink-3">Profissão</dt>
+                    <dd className="font-semibold">{p.perfil.profissoes.slice(0, 2).join(", ")}</dd>
                   </div>
                 )}
               </dl>
             </div>
-            <div className="flex flex-col gap-2 sm:items-end">
+            <div className="flex flex-row flex-wrap gap-2 sm:flex-col sm:items-end">
               <Link href={`/comparar?ids=${p.id}`} className="rounded-lg border-2 border-ink px-4 py-2 text-center font-semibold hover:bg-ink hover:text-paper">
                 Comparar com outro
               </Link>
@@ -168,7 +177,13 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
 
       <Container>
         <section id="resumo" className="scroll-mt-32 pt-8">
-          {fraseResumo(p) && <p className="max-w-3xl text-xl leading-relaxed sm:text-2xl">{fraseResumo(p)}</p>}
+          <h2 className="display text-3xl font-bold">Em resumo</h2>
+          {fraseResumo(p) && <p className="mt-3 max-w-3xl text-xl leading-relaxed">{fraseResumo(p)}</p>}
+          <div className="mt-6">
+            <CartoesResumo itens={resumoRapido(p, todos)} />
+          </div>
+          <h2 className="display mt-14 text-2xl font-bold">Todos os números</h2>
+          <p className="mt-1 text-ink-2">Cada cartão mostra onde esta pessoa fica entre todos os colegas. Toque em &ldquo;O que é isso&rdquo; para entender cada número.</p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {defs.map((d, i) => (
               <TileMetrica
@@ -188,16 +203,16 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                         : d.chave === "proposicoes" && p.m.proposicoes != null
                           ? `${numero(p.m.proposicoesLei ?? 0)} ${p.m.proposicoesLei === 1 ? "virou lei" : "viraram lei"}`
                           : d.chave === "fidelidade" && p.m.fidelidadeMetodo === "maioria"
-                          ? "Comparado com a maioria da bancada"
-                          : undefined
+                            ? "Comparado com a maioria da bancada"
+                            : undefined
                 }
               />
             ))}
           </div>
           <Origem titulo="Como ler estes números">
             <p>
-              Cada cartão mostra o valor desta pessoa, uma linha com o menor e o maior valor entre todos os colegas da mesma casa, a faixa onde estão 80% deles (retângulo) e a mediana (traço
-              vertical). O ponto escuro é esta pessoa.
+              Cada cartão mostra o valor desta pessoa, uma linha com o menor e o maior valor entre todos os colegas da mesma casa, a faixa onde estão 80% deles (retângulo) e a
+              mediana (traço vertical). O ponto escuro é esta pessoa.
             </p>
             <p>Nenhum número é uma nota. Faltar, gastar ou seguir o partido podem ter boas explicações: use os dados como ponto de partida e confira as fontes.</p>
           </Origem>
@@ -221,8 +236,8 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               <>
                 <p>{metrica("fidelidade").calculo}</p>
                 <p>
-                  Os votos individuais e as orientações de cada partido são publicados pela {p.casa === "camara" ? "Câmara" : "Senado"} para cada votação nominal. Toque em uma votação para ver
-                  como todos votaram.
+                  Os votos individuais e as orientações de cada partido são publicados pela {p.casa === "camara" ? "Câmara" : "Senado"} para cada votação nominal. Toque em uma
+                  votação para ver como todos votaram.
                 </p>
               </>
             }
@@ -246,8 +261,8 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                 <p>{metrica("gasto12m").calculo}</p>
                 <p>{metrica("gasto12m").limites}</p>
                 <p>
-                  A cota reembolsa despesas do mandato (passagens, combustível, escritório, divulgação). Não inclui salário ({moeda(46366.19)} para deputados federais e senadores) nem verba
-                  de gabinete.
+                  A cota reembolsa despesas do mandato (passagens, combustível, escritório, divulgação). Não inclui salário ({moeda(46366.19)} para deputados federais e senadores)
+                  nem verba de gabinete.
                 </p>
               </>
             }
@@ -255,7 +270,11 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
               <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
                 <h3 className="font-semibold">Gasto por mês</h3>
-                <GraficoMensal meses={p.gastos.porMes} referencia={p.gastos.mediaPares12m ? p.gastos.mediaPares12m / 12 : undefined} rotuloReferencia="média mensal dos colegas do estado" />
+                <GraficoMensal
+                  meses={p.gastos.porMes}
+                  referencia={p.gastos.mediaPares12m ? p.gastos.mediaPares12m / 12 : undefined}
+                  rotuloReferencia="média mensal dos colegas do estado"
+                />
               </div>
               <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
                 <h3 className="mb-3 font-semibold">Em que gastou</h3>
@@ -294,7 +313,9 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
                 <h3 className="mb-3 font-semibold">Fornecedores que mais receberam</h3>
                 <Barras
-                  itens={p.gastos.topFornecedores.slice(0, 6).map((f) => ({ rotulo: f.nome || "Sem nome", valor: f.valor, detalhe: `${f.n} ${f.n === 1 ? "pagamento" : "pagamentos"}${f.doc ? ` · ${f.doc}` : ""}` }))}
+                  itens={p.gastos.topFornecedores
+                    .slice(0, 6)
+                    .map((f) => ({ rotulo: f.nome || "Sem nome", valor: f.valor, detalhe: `${f.n} ${f.n === 1 ? "pagamento" : "pagamentos"}${f.doc ? ` · ${f.doc}` : ""}` }))}
                   formato={moedaCurta}
                 />
               </div>
@@ -379,12 +400,12 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             origem={
               <>
                 <p>
-                  Discursos vêm das transcrições oficiais da Câmara e dos pronunciamentos do Senado. Publicações em redes sociais só entram quando coletadas pela API oficial da plataforma
-                  (hoje, YouTube), sempre com o link original.
+                  Discursos vêm das transcrições oficiais da Câmara e dos pronunciamentos do Senado. Publicações em redes sociais só entram quando coletadas pela API oficial da
+                  plataforma (hoje, YouTube), sempre com o link original.
                 </p>
                 <p>
-                  Os resumos de IA são gerados apenas a partir desses registros e dos votos nominais. Cada afirmação precisa apontar para um registro existente, ou é descartada antes de ser
-                  publicada.
+                  Os resumos de IA são gerados apenas a partir desses registros e dos votos nominais. Cada afirmação precisa apontar para um registro existente, ou é descartada
+                  antes de ser publicada.
                 </p>
               </>
             }
@@ -450,8 +471,8 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
           origem={
             <>
               <p>
-                Mandatos vêm do histórico da {p.casa === "senado" ? "Senado" : "Câmara"} e das candidaturas eleitas registradas no TSE (2018, 2022 e 2026). A ligação com o TSE usa data de
-                nascimento e nome{p.casa === "camara" ? ", conferidos com os dígitos visíveis do CPF publicados pela Câmara" : ""}.
+                Mandatos vêm do histórico da {p.casa === "senado" ? "Senado" : "Câmara"} e das candidaturas eleitas registradas no TSE (2018, 2022 e 2026). A ligação com o TSE usa
+                data de nascimento e nome{p.casa === "camara" ? ", conferidos com os dígitos visíveis do CPF publicados pela Câmara" : ""}.
               </p>
               <p>{metrica("patrimonio").limites}</p>
             </>

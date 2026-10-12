@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AvisoDemo, Cabecalho, Rodape } from "@/components/Moldura";
+import { BarraInferior } from "@/components/BarraInferior";
 import "./globals.css";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://raio-x-politico.vercel.app";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AvisoDemo />
         <main id="conteudo">{children}</main>
         <Rodape />
+        <BarraInferior />
       </body>
     </html>
   );

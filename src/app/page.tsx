@@ -1,165 +1,236 @@
 import Link from "next/link";
+import { ArrowRight, BookOpen, Landmark, MapPin, Users } from "lucide-react";
+import { Avatar } from "@/components/Avatar";
 import { Busca } from "@/components/Busca";
 import { CartaoVotacao, LinhaPolitico } from "@/components/Listas";
-import { Avatar } from "@/components/Avatar";
+import { MapaBrasil, type CamadaMapa } from "@/components/MapaBrasil";
+import { Plenario } from "@/components/Plenario";
 import { Container, Fonte } from "@/components/ui";
+import { cadeirasPorPartido } from "@/lib/cadeiras";
 import { getFalasRecentes, getMeta, getPoliticos, getVotacoes } from "@/lib/data";
 import { data, moedaCurta, numero, pct, plural } from "@/lib/format";
-import { ESTADOS } from "@/lib/ufs";
+import { resumirPartidos } from "@/lib/partidos";
+import { median } from "@/lib/stats";
 import type { PoliticoResumo } from "@/lib/types";
+import { ESTADOS } from "@/lib/ufs";
 
-function MapaEstados() {
-  return (
-    <nav aria-label="Escolha seu estado">
-      <ol className="grid grid-cols-7 gap-1.5 sm:gap-2" style={{ gridTemplateRows: "repeat(8, minmax(0, 1fr))" }}>
-        {ESTADOS.map((e) => (
-          <li key={e.uf} style={{ gridColumn: e.col, gridRow: e.row }}>
-            <Link
-              href={`/estado/${e.uf.toLowerCase()}`}
-              title={e.nome}
-              className="flex aspect-square items-center justify-center rounded-lg border border-line bg-surface font-display text-sm font-bold tracking-wide text-ink transition-colors hover:border-ink hover:bg-mark hover:text-mark-ink sm:text-base"
-            >
-              <span aria-hidden>{e.uf}</span>
-              <span className="sr-only">{e.nome}</span>
-            </Link>
-          </li>
-        ))}
-      </ol>
-    </nav>
-  );
+function porUf(pols: PoliticoResumo[], f: (ps: PoliticoResumo[]) => number | undefined) {
+  return Object.fromEntries(ESTADOS.map((e) => [e.uf, f(pols.filter((p) => p.uf === e.uf))]));
 }
 
-function ordenar(pols: PoliticoResumo[], casa: PoliticoResumo["casa"], k: keyof PoliticoResumo["m"], dir: 1 | -1, n = 5) {
+function ordenar(pols: PoliticoResumo[], k: keyof PoliticoResumo["m"], dir: 1 | -1, n = 5) {
   return pols
-    .filter((p) => p.casa === casa && p.emExercicio && typeof p.m[k] === "number")
+    .filter((p) => p.casa === "camara" && p.emExercicio && typeof p.m[k] === "number")
     .sort((a, b) => dir * ((a.m[k] as number) - (b.m[k] as number)))
     .slice(0, n);
 }
 
+/** Most recent speeches, one per person, so a single long session does not fill the section. */
+function variedade<T extends { pid: string }>(falas: T[], n = 6): T[] {
+  const vistos = new Set<string>();
+  return falas.filter((f) => !vistos.has(f.pid) && vistos.add(f.pid)).slice(0, n);
+}
+
 export default async function Home() {
   const [pols, votacoes, falas, meta] = await Promise.all([getPoliticos(), getVotacoes(), getFalasRecentes(), getMeta()]);
+  const ativos = pols.filter((p) => p.emExercicio);
+  const fed = ativos.filter((p) => p.casa === "camara");
+  const sen = ativos.filter((p) => p.casa === "senado");
+  const est = ativos.filter((p) => p.casa === "assembleia");
   const porId = new Map(pols.map((p) => [p.id, p]));
-  const fed = pols.filter((p) => p.casa === "camara").length;
-  const sen = pols.filter((p) => p.casa === "senado").length;
-  const est = pols.filter((p) => p.casa === "assembleia").length;
-  const gastoTotal = pols.reduce((s, p) => s + (p.m.gasto12m ?? 0), 0);
-  const recentes = votacoes.slice(0, 6);
+  const partidos = resumirPartidos(pols, votacoes);
+  const camara = cadeirasPorPartido(fed, partidos);
+  const senado = cadeirasPorPartido(sen, partidos);
+
+  const mediana = (k: keyof PoliticoResumo["m"]) => (ps: PoliticoResumo[]) =>
+    median(
+      ps
+        .filter((p) => p.casa === "camara")
+        .map((p) => p.m[k])
+        .filter((x): x is number => typeof x === "number"),
+    );
+  const camadas: CamadaMapa[] = [
+    { id: "estados", rotulo: "Estados", valores: {}, formato: "numero", legenda: "" },
+    {
+      id: "deputados",
+      rotulo: "Deputados por estado",
+      valores: porUf(fed, (ps) => ps.length || undefined),
+      formato: "numero",
+      legenda: "Deputados federais: quanto mais gente no estado, mais cadeiras.",
+    },
+    {
+      id: "gasto",
+      rotulo: "Gasto da cota",
+      valores: porUf(fed, mediana("gasto12m")),
+      formato: "moeda",
+      legenda: "Gasto típico (mediana) de um deputado federal do estado em 12 meses.",
+    },
+    { id: "presenca", rotulo: "Presença", valores: porUf(fed, mediana("presenca")), formato: "pct", legenda: "Presença típica (mediana) dos deputados federais do estado." },
+  ];
+  const resumoUf = Object.fromEntries(
+    ESTADOS.map((e) => [
+      e.uf,
+      { senadores: sen.filter((p) => p.uf === e.uf).length, federais: fed.filter((p) => p.uf === e.uf).length, estaduais: est.filter((p) => p.uf === e.uf).length },
+    ]),
+  );
 
   return (
     <>
-      <section className="border-b border-line">
-        <Container className="grid items-center gap-10 py-10 sm:py-14 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
+      <section className="border-b border-line bg-surface">
+        <Container className="grid items-center gap-8 py-10 sm:py-14 lg:grid-cols-[1fr_1.1fr] lg:gap-14">
           <div>
             <h1 className="display text-[2.6rem] font-extrabold sm:text-6xl">Quem te representa?</h1>
             <p className="mt-4 max-w-xl text-lg text-ink-2 sm:text-xl">
-              Veja se seus senadores e deputados aparecem para trabalhar, como votam, o que propõem e quanto gastam. Tudo com dados públicos oficiais e a fonte de cada número.
+              Veja o que fazem seus senadores e deputados: se vão trabalhar, como votam, o que propõem e quanto gastam. Tudo explicado de um jeito simples, com a fonte oficial de
+              cada número.
             </p>
             <div className="mt-7 max-w-xl">
               <Busca grande />
             </div>
-            <p className="mt-3 text-sm text-ink-3">Ou toque no seu estado para ver todos os seus representantes.</p>
+            <p className="mt-3 flex items-center gap-1.5 text-sm text-ink-3">
+              <MapPin size={16} aria-hidden /> Ou toque no seu estado no mapa.
+            </p>
           </div>
-          <div className="mx-auto w-full max-w-[360px] sm:max-w-[400px]">
-            <MapaEstados />
-          </div>
+          <MapaBrasil camadas={camadas} resumoUf={resumoUf} />
         </Container>
       </section>
 
-      {pols.length > 0 && (
-        <section className="border-b border-line bg-surface">
-          <Container className="grid grid-cols-2 gap-6 py-8 md:grid-cols-4">
-            <div>
-              <p className="figure text-3xl font-bold">{numero(sen)}</p>
-              <p className="text-sm text-ink-2">senadores</p>
-            </div>
-            <div>
-              <p className="figure text-3xl font-bold">{numero(fed)}</p>
-              <p className="text-sm text-ink-2">deputados federais</p>
-            </div>
-            <div>
-              <p className="figure text-3xl font-bold">{numero(est)}</p>
-              <p className="text-sm text-ink-2">deputados estaduais e distritais</p>
-            </div>
-            <div>
-              <p className="figure text-3xl font-bold">
-                <span className="grifo">{moedaCurta(gastoTotal)}</span>
-              </p>
-              <p className="text-sm text-ink-2">gastos com a cota parlamentar em 12 meses</p>
-            </div>
-          </Container>
-        </section>
-      )}
-
-      <Container className="space-y-16 pt-12">
-        {recentes.length > 0 && (
+      <Container className="space-y-20 pt-14">
+        {fed.length > 0 && (
           <section>
-            <div className="mb-5 flex items-end justify-between gap-4">
-              <div>
-                <h2 className="display text-2xl font-bold sm:text-3xl">Votações mais recentes</h2>
-                <p className="mt-1 text-ink-2">Votações nominais no Plenário, em que cada voto fica registrado.</p>
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="max-w-2xl">
+                <h2 className="display text-3xl font-bold sm:text-4xl">O Congresso hoje</h2>
+                <p className="mt-2 text-lg text-ink-2">
+                  Cada bolinha é uma cadeira. As cores mostram o quanto o partido de cada pessoa costuma votar junto com o governo federal, calculado a partir das votações
+                  registradas.
+                </p>
               </div>
-              <Link href="/votacoes" className="link shrink-0 text-sm">
+              <Link href="/partidos" className="inline-flex items-center gap-1.5 rounded-lg border-2 border-ink px-4 py-2 font-semibold hover:bg-ink hover:text-paper">
+                Ver partidos <ArrowRight size={18} aria-hidden />
+              </Link>
+            </div>
+            <div className="mt-8 grid gap-10 lg:grid-cols-[1.5fr_1fr]">
+              <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+                <h3 className="text-center font-semibold">
+                  Câmara dos Deputados <span className="text-ink-3">· {fed.length} deputados</span>
+                </h3>
+                <Plenario cadeiras={camara.cadeiras} legenda={camara.legenda} titulo="Plenário da Câmara dos Deputados por posição do partido" />
+              </div>
+              <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+                <h3 className="text-center font-semibold">
+                  Senado Federal <span className="text-ink-3">· {sen.length} senadores</span>
+                </h3>
+                <Plenario cadeiras={senado.cadeiras} legenda={senado.legenda} titulo="Plenário do Senado por posição do partido" />
+                <p className="mt-2 text-center text-xs text-ink-3">No Senado, a cor usa a posição do partido medida na Câmara.</p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <section>
+          <h2 className="display text-3xl font-bold sm:text-4xl">Entenda em 1 minuto</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {[
+              {
+                Icone: Landmark,
+                titulo: "Câmara dos Deputados",
+                numero: "513 deputados federais",
+                texto: "Representam a população. Estados com mais gente têm mais deputados. Mandato de 4 anos. Criam e votam leis para o país inteiro.",
+              },
+              {
+                Icone: Users,
+                titulo: "Senado Federal",
+                numero: "81 senadores",
+                texto: "Representam os estados: são 3 por estado, do Acre a São Paulo. Mandato de 8 anos. Revisam as leis que vêm da Câmara.",
+              },
+              {
+                Icone: MapPin,
+                titulo: "Assembleias Legislativas",
+                numero: `${numero(est.length)} deputados estaduais`,
+                texto: "Cuidam das leis do seu estado, como regras da polícia estadual, escolas estaduais e impostos estaduais. Mandato de 4 anos.",
+              },
+            ].map(({ Icone, titulo, numero: n, texto }) => (
+              <div key={titulo} className="rounded-2xl border border-line bg-surface p-5">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-mark text-mark-ink" aria-hidden>
+                  <Icone size={22} />
+                </span>
+                <h3 className="mt-3 text-lg font-bold">{titulo}</h3>
+                <p className="figure mt-1 text-2xl font-bold">{n}</p>
+                <p className="mt-2 text-ink-2">{texto}</p>
+              </div>
+            ))}
+          </div>
+          <Link href="/como-funciona" className="mt-5 inline-flex items-center gap-2 text-lg font-semibold text-link hover:underline">
+            <BookOpen size={20} aria-hidden /> Como uma lei é aprovada e quantos votos ela precisa
+          </Link>
+        </section>
+
+        {votacoes.length > 0 && (
+          <section>
+            <div className="mb-6 flex items-end justify-between gap-4">
+              <div>
+                <h2 className="display text-3xl font-bold sm:text-4xl">Votações mais recentes</h2>
+                <p className="mt-2 text-lg text-ink-2">Em cada uma você vê o que estava em jogo, quantos votos eram precisos e como cada pessoa votou.</p>
+              </div>
+              <Link href="/votacoes" className="link shrink-0">
                 Ver todas
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {recentes.map((v) => (
+              {votacoes.slice(0, 6).map((v) => (
                 <CartaoVotacao key={v.id} v={v} />
               ))}
             </div>
           </section>
         )}
 
-        {pols.length > 0 && (
+        {fed.length > 0 && (
           <section>
-            <h2 className="display text-2xl font-bold sm:text-3xl">Ordene todos por um critério</h2>
-            <p className="mt-1 max-w-2xl text-ink-2">Os extremos de cada lista, sem nota nem juízo. Toque em um critério para ver a lista completa e entender como ele é calculado.</p>
-            <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <h2 className="display text-3xl font-bold sm:text-4xl">Quem está nos extremos</h2>
+            <p className="mt-2 max-w-2xl text-lg text-ink-2">Sem nota nem juízo: só os números. Toque em um nome para entender o contexto.</p>
+            <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {(
                 [
                   ["presenca", "Menor presença no Plenário", 1, pct],
                   ["gasto12m", "Maiores gastos com a cota", -1, moedaCurta],
-                  ["participacao", "Menos votações nominais", 1, pct],
+                  ["participacao", "Menos votações registradas", 1, pct],
                 ] as const
-              ).map(([k, titulo, dir, fmt]) => {
-                const lista = ordenar(pols, "camara", k, dir);
-                if (!lista.length) return null;
-                return (
-                  <div key={k} className="rounded-xl border border-line bg-surface p-3">
-                    <div className="flex items-center justify-between px-2 pb-2 pt-1">
-                      <h3 className="font-semibold">{titulo}</h3>
-                      <span className="text-xs text-ink-3">deputados federais</span>
-                    </div>
-                    {lista.map((p) => (
-                      <LinhaPolitico key={p.id} p={p} valor={fmt(p.m[k])} />
-                    ))}
-                    <Link href={`/politicos?casa=camara&ordem=${k}&dir=${dir === 1 ? "asc" : "desc"}`} className="link mt-1 block px-2 pb-1 text-sm">
-                      Ver lista completa
-                    </Link>
+              ).map(([k, titulo, dir, fmt]) => (
+                <div key={k} className="rounded-2xl border border-line bg-surface p-3">
+                  <div className="px-2 pb-1 pt-2">
+                    <h3 className="font-bold">{titulo}</h3>
+                    <p className="text-xs text-ink-3">Deputados federais, últimos 12 meses</p>
                   </div>
-                );
-              })}
+                  {ordenar(pols, k, dir).map((p) => (
+                    <LinhaPolitico key={p.id} p={p} valor={fmt(p.m[k])} />
+                  ))}
+                  <Link href={`/politicos?casa=camara&ordem=${k}&dir=${dir === 1 ? "asc" : "desc"}`} className="link mt-1 block px-2 pb-2 text-sm">
+                    Ver a lista completa
+                  </Link>
+                </div>
+              ))}
             </div>
           </section>
         )}
 
         {falas.length > 0 && (
           <section>
-            <div className="mb-5 flex items-end justify-between gap-4">
+            <div className="mb-6 flex items-end justify-between gap-4">
               <div>
-                <h2 className="display text-2xl font-bold sm:text-3xl">O que estão dizendo</h2>
-                <p className="mt-1 text-ink-2">Discursos oficiais e publicações recentes, com link para o registro original.</p>
+                <h2 className="display text-3xl font-bold sm:text-4xl">O que estão dizendo</h2>
+                <p className="mt-2 text-lg text-ink-2">Discursos oficiais mais recentes, com link para o registro original.</p>
               </div>
-              <Link href="/falas" className="link shrink-0 text-sm">
-                Buscar nas falas
+              <Link href="/falas" className="link shrink-0">
+                Buscar por tema
               </Link>
             </div>
-            <ul className="divide-y divide-line rounded-xl border border-line bg-surface">
-              {falas.slice(0, 6).map((f) => {
+            <ul className="grid gap-4 md:grid-cols-2">
+              {variedade(falas).map((f) => {
                 const p = porId.get(f.pid);
                 return (
-                  <li key={f.id} className="flex gap-3 p-4">
-                    {p && <Avatar src={p.foto} nome={p.nome} size={40} />}
+                  <li key={f.id} className="flex gap-4 rounded-2xl border border-line bg-surface p-4">
+                    {p && <Avatar src={p.foto} nome={p.nome} size={52} />}
                     <div className="min-w-0">
                       <p className="text-sm text-ink-3">
                         {p ? (
@@ -167,10 +238,12 @@ export default async function Home() {
                             {p.nome}
                           </Link>
                         ) : null}
-                        {p ? ` (${p.partido}-${p.uf})` : ""} · {data(f.data)} · {f.titulo ?? f.tipo}
+                        {p ? ` · ${p.partido}-${p.uf}` : ""} · {data(f.data)}
                       </p>
-                      <p className="mt-1 line-clamp-2">{f.texto}</p>
-                      <Fonte href={f.url}>{f.fonte}</Fonte>
+                      <p className="mt-1 line-clamp-3">{f.resumoOficial ?? f.texto}</p>
+                      <p className="mt-2">
+                        <Fonte href={f.url}>Ver registro oficial</Fonte>
+                      </p>
                     </div>
                   </li>
                 );
@@ -179,19 +252,23 @@ export default async function Home() {
           </section>
         )}
 
-        <section className="grid gap-6 rounded-2xl bg-ink p-6 text-paper sm:p-10 md:grid-cols-[1.3fr_1fr] md:items-center">
+        <section className="grid gap-6 rounded-3xl bg-ink p-6 text-paper sm:p-10 md:grid-cols-[1.3fr_1fr] md:items-center">
           <div>
-            <h2 className="display text-2xl font-bold sm:text-3xl">Nenhum número sem fonte</h2>
+            <h2 className="display text-3xl font-bold">Nenhum número sem fonte</h2>
             <p className="mt-3 max-w-xl text-paper/80">
-              Cada dado vem de um site oficial: Câmara, Senado, TSE, Transferegov e assembleias. Ao lado de cada número há uma explicação de como foi calculado e um link para o registro original. Os
-              dados completos podem ser baixados e o código é aberto.
+              Cada dado vem de um site oficial: Câmara, Senado, TSE, Transferegov e assembleias. Ao lado de cada número há a explicação de como foi calculado e o link para o
+              registro original. Os dados completos podem ser baixados e o código é aberto.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 md:justify-end">
             <Link href="/dados" className="rounded-lg bg-mark px-4 py-2.5 font-semibold text-mark-ink hover:opacity-90">
               Ver fontes e metodologia
             </Link>
-            {meta && <p className="w-full text-sm text-paper/60 md:text-right">{plural(meta.fontes.filter((f) => f.status !== "ignorado").length, "fonte consultada", "fontes consultadas")} na última atualização</p>}
+            {meta && (
+              <p className="w-full text-sm text-paper/60 md:text-right">
+                {plural(meta.fontes.filter((f) => f.status !== "ignorado").length, "fonte consultada", "fontes consultadas")} na última atualização
+              </p>
+            )}
           </div>
         </section>
       </Container>

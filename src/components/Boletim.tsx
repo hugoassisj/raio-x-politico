@@ -1,5 +1,6 @@
 import type { Casa } from "@/lib/types";
 import { METRICAS, NOME_PARES, parcela, percentil, type ChaveMetrica, type DefMetrica } from "@/lib/metricas";
+import { IconeTema } from "./Icone";
 import { Fonte } from "./ui";
 
 type Dist = { min: number; max: number; mediana: number; p10: number; p90: number; n: number; valores: number[] };
@@ -52,9 +53,14 @@ export function TileMetrica({
           : undefined
       : undefined;
   return (
-    <article className="flex flex-col rounded-xl border border-line bg-surface p-4 sm:p-5">
-      <h3 className="text-sm font-semibold text-ink-2">{def.pergunta}</h3>
-      <p className="mt-0.5 text-xs text-ink-3">{def.titulo}</p>
+    <article className="flex flex-col rounded-2xl border border-line bg-surface p-4 sm:p-5">
+      <div className="flex items-center gap-3">
+        <IconeTema nome={def.icone} tamanho={16} />
+        <div>
+          <h3 className="font-semibold leading-tight">{def.titulo}</h3>
+          <p className="text-sm text-ink-3">{def.pergunta}</p>
+        </div>
+      </div>
       {valor == null ? (
         <p className="mt-3 text-ink-3">Sem dados para esta pessoa nas fontes consultadas.</p>
       ) : (
@@ -65,7 +71,12 @@ export function TileMetrica({
           {nota && <p className="mt-1 text-sm text-ink-3">{nota}</p>}
           {dist && dist.n >= 5 && (
             <>
-              <Faixa valor={valor} dist={dist} chave={def.chave} rotulo={`${def.formato(valor)}; mediana ${def.formato(dist.mediana)}; de ${def.formato(dist.min)} a ${def.formato(dist.max)}`} />
+              <Faixa
+                valor={valor}
+                dist={dist}
+                chave={def.chave}
+                rotulo={`${def.formato(valor)}; mediana ${def.formato(dist.mediana)}; de ${def.formato(dist.min)} a ${def.formato(dist.max)}`}
+              />
               <div className="flex justify-between text-[11px] text-ink-3 tnum">
                 <span>{def.formato(dist.min)}</span>
                 <span>mediana {def.formato(dist.mediana)}</span>
@@ -77,8 +88,9 @@ export function TileMetrica({
         </>
       )}
       <details className="group mt-auto pt-3 text-sm">
-        <summary className="text-ink-3 underline decoration-dotted underline-offset-4 hover:text-ink">Como calculamos</summary>
+        <summary className="text-ink-3 underline decoration-dotted underline-offset-4 hover:text-ink">O que é isso e como calculamos</summary>
         <div className="mt-2 space-y-2 text-ink-2">
+          <p className="text-ink">{def.explicacao}</p>
           <p>{def.calculo}</p>
           <p className="text-ink-3">{def.limites}</p>
           <p className="flex flex-wrap gap-x-3">
@@ -97,4 +109,26 @@ export function TileMetrica({
 /** Tiles shown on a profile. "Became law" is folded into the bills tile as a note. */
 export function metricasDaCasa(casa: Casa) {
   return METRICAS.filter((d) => d.casas.includes(casa) && d.chave !== "proposicoesLei");
+}
+
+/**
+ * The four answers most people want first, each in one plain sentence with what is typical among
+ * colleagues. Details and methodology live in the tiles below.
+ */
+export function CartoesResumo({ itens }: { itens: { def: DefMetrica; valor: number | undefined; frase: string; tipico?: string }[] }) {
+  return (
+    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {itens.map(({ def, valor, frase, tipico }) => (
+        <li key={def.chave} className="flex flex-col rounded-2xl border border-line bg-surface p-5">
+          <div className="flex items-center gap-3">
+            <IconeTema nome={def.icone} tamanho={18} />
+            <h3 className="font-semibold leading-tight text-ink-2">{def.pergunta}</h3>
+          </div>
+          <p className="figure mt-4 text-[2.6rem] font-bold">{def.formato(valor)}</p>
+          <p className="mt-2 text-ink">{frase}</p>
+          {tipico && <p className="mt-auto pt-3 text-sm text-ink-3">{tipico}</p>}
+        </li>
+      ))}
+    </ul>
+  );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { PoliticoResumo, VotacaoResumo } from "@/lib/types";
-import { data } from "@/lib/format";
+import { data, partesDescricao } from "@/lib/format";
+import { regraDaVotacao, votosNecessarios } from "@/lib/quorum";
 import { Avatar } from "./Avatar";
 
 /** Gendered job titles: [masculine, feminine, unknown] */
@@ -62,21 +63,29 @@ export function BarraVotos({ sim, nao, outros, alto = false }: { sim: number; na
   );
 }
 
+/** The bill summary comes first in our descriptions; the procedural text after " | ". */
 export function CartaoVotacao({ v }: { v: VotacaoResumo }) {
+  const regra = regraDaVotacao(v.titulo, v.descricao);
+  const casa = v.casa === "senado" ? "senado" : "camara";
+  const { ementa } = partesDescricao(v.descricao);
   return (
-    <Link href={`/votacao/${v.id}`} className="flex flex-col rounded-xl border border-line bg-surface p-4 hover:border-ink-3">
+    <Link href={`/votacao/${v.id}`} className="group flex flex-col rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-ink-3">
       <div className="flex items-center justify-between gap-3 text-sm text-ink-3">
         <span>
           {v.casa === "camara" ? "Câmara" : "Senado"} · {data(v.data)}
         </span>
         {v.resultado && (
-          <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${v.resultado === "Aprovada" ? "bg-ok-bg text-sim" : "bg-alerta-bg text-nao"}`}>{v.resultado}</span>
+          <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${v.resultado === "Aprovada" ? "bg-ok-bg text-sim" : "bg-alerta-bg text-nao"}`}>{v.resultado}</span>
         )}
       </div>
-      <h3 className="mt-2 font-semibold">{v.titulo}</h3>
-      <p className="mt-1 line-clamp-3 text-sm text-ink-2">{v.descricao}</p>
+      {regra && <p className="mt-3 text-sm font-semibold text-ink-2">{regra.nome}</p>}
+      <h3 className="mt-0.5 text-lg font-bold leading-snug group-hover:underline">{v.titulo}</h3>
+      <p className="mt-1 line-clamp-3 text-ink-2">{ementa}</p>
       <div className="mt-auto pt-4">
         <BarraVotos sim={v.sim} nao={v.nao} outros={v.outros} />
+        {regra && (
+          <p className="mt-2 text-xs text-ink-3">Para aprovar: {regra.exigencia === "simples" ? "mais Sim do que Não" : `${votosNecessarios(regra.exigencia, casa)} votos Sim`}</p>
+        )}
       </div>
     </Link>
   );
