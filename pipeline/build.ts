@@ -7,6 +7,7 @@ import {
   type Emendas,
   type Fala,
   type CampanhaFinancas,
+  type Presidencia,
   type Mandato,
   type MateriaVotada,
   type Metricas,
@@ -219,6 +220,28 @@ export function marcarSemRegistro(votacoes: VotacaoDetalhe[], politicos: Politic
   }
 }
 
+/** One candidacy as shown on the site: plain result, assets, campaign money and its TSE page. */
+export function eleicaoDe(c: CandidatoTSE, contas?: Map<string, CampanhaFinancas>): EleicaoTSE {
+  return {
+    ano: c.ano,
+    cargo: capitalizar(c.cargo),
+    uf: c.uf,
+    municipio: c.municipio ? nomeProprioMunicipio(c.municipio) : undefined,
+    partido: c.partido,
+    numero: c.numero,
+    situacao: c.situacao,
+    resultado: resultadoDe(c.situacao),
+    situacaoRegistro: c.situacaoRegistro,
+    votos: c.votos,
+    patrimonio: c.patrimonio != null ? round(c.patrimonio, 2) : undefined,
+    bens: c.bens?.slice(0, 12),
+    ocupacao: c.ocupacao ? capitalizar(c.ocupacao) : undefined,
+    instrucao: c.instrucao ? capitalizar(c.instrucao) : undefined,
+    campanha: contas?.get(`${c.ano}:${c.sq}`),
+    url: ELEICAO_DIVULGA[c.ano] && c.uf.length === 2 ? `${DIVULGA}/${c.ano}/${ELEICAO_DIVULGA[c.ano]}/${c.uf}/${c.sq}` : undefined,
+  };
+}
+
 // ------------------------------------------------------------ main
 
 export function montar(inp: BuildInput): BuildResult {
@@ -241,24 +264,7 @@ export function montar(inp: BuildInput): BuildResult {
 
   const detalhes: PoliticoDetalhe[] = inp.politicos.map((p) => {
     const cands = juntarCandidaturas(vincularTSE(p, porNasc, porUf), inp.historico?.get(p.id) ?? []);
-    const eleicoes: EleicaoTSE[] = cands.map((c) => ({
-      ano: c.ano,
-      cargo: capitalizar(c.cargo),
-      uf: c.uf,
-      municipio: c.municipio ? nomeProprioMunicipio(c.municipio) : undefined,
-      partido: c.partido,
-      numero: c.numero,
-      situacao: c.situacao,
-      resultado: resultadoDe(c.situacao),
-      situacaoRegistro: c.situacaoRegistro,
-      votos: c.votos,
-      patrimonio: c.patrimonio != null ? round(c.patrimonio, 2) : undefined,
-      bens: c.bens?.slice(0, 12),
-      ocupacao: c.ocupacao ? capitalizar(c.ocupacao) : undefined,
-      instrucao: c.instrucao ? capitalizar(c.instrucao) : undefined,
-      campanha: inp.contas?.get(`${c.ano}:${c.sq}`),
-      url: ELEICAO_DIVULGA[c.ano] && c.uf.length === 2 ? `${DIVULGA}/${c.ano}/${ELEICAO_DIVULGA[c.ano]}/${c.uf}/${c.sq}` : undefined,
-    }));
+    const eleicoes: EleicaoTSE[] = cands.map((c) => eleicaoDe(c, inp.contas));
     const carreira = mesclarCarreira(p.carreira ?? [], mandatosTSE(cands));
     const comPatrimonio = eleicoes.filter((e) => e.patrimonio != null);
     const ultimoPat = comPatrimonio[comPatrimonio.length - 1];
@@ -325,6 +331,7 @@ export function montar(inp: BuildInput): BuildResult {
       votos: (v.votos.get(p.id) ?? []).slice(0, 400),
       proposicoesLista: (p.proposicoesLista ?? []).slice(0, 100),
       proposicoesPorTipo: p.proposicoesPorTipo ?? {},
+      proposicoesPorPapel: p.proposicoesPorPapel,
       gastos: g ? { ...g, mediaPares12m: undefined } : undefined,
       comissoes: p.comissoes ?? [],
       frentes: p.frentes ?? [],
@@ -503,6 +510,8 @@ export interface PublicarOpts {
   materias?: MateriaVotada[];
   arquivos?: Meta["arquivos"];
   qualidade?: Meta["qualidade"];
+  /** Presidency page; written only when the stage produced it */
+  presidencia?: Presidencia;
   fontes: FonteStatus[];
   totais: Record<string, number>;
   hoje: Date;
@@ -528,6 +537,7 @@ export async function publicar(out: string, r: BuildResult, falas: Fala[], o: Pu
   files["votacoes.json"] = r.votacoes.map(resumoVotacao).sort((a, b) => b.data.localeCompare(a.data));
   files["falas-recentes.json"] = todas.slice(0, 300).map((f) => ({ ...f, texto: f.texto.slice(0, 600) }));
   if (r.gastosGerais) files["gastos.json"] = r.gastosGerais;
+  if (o.presidencia?.pessoas.length || o.presidencia?.atos.length) files["presidencia.json"] = o.presidencia;
   files["agregados.json"] = {
     porCasa: agregar(resumos, (x) => x.casa),
     porPartido: agregar(resumos, (x) => `${x.casa}|${x.partido}`),

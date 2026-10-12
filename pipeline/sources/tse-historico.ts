@@ -8,6 +8,7 @@
  * A key shared by two different people is dropped: we prefer missing a candidacy to attributing
  * someone else's.
  */
+import { createHash } from "node:crypto";
 import { rm } from "node:fs/promises";
 import { baixarArquivo } from "../lib/http";
 import { log } from "../lib/log";
@@ -171,4 +172,96 @@ export async function coletarHistoricoTSE(
   }
   for (const l of porPessoa.values()) l.sort((a, b) => a.ano - b.ano || a.codCargo - b.codCargo);
   return { porPessoa, arquivos, avisos };
+}
+
+// ------------------------------------------------------------ Presidency
+
+/** TSE code of the office of President of the Republic */
+export const CARGO_PRESIDENTE = 1;
+
+/**
+ * Every candidacy for President since 1994, from the national file ("_BR") of each general
+ * election. The archives stay on disk so the full scan right after reuses them.
+ */
+export async function coletarCandidaturasPresidente(anos = ANOS_GERAIS): Promise<{ candidaturas: CandidatoTSE[]; arquivos: string[]; avisos: string[] }> {
+  const candidaturas: CandidatoTSE[] = [];
+  const arquivos: string[] = [];
+  const avisos: string[] = [];
+  for (const ano of anos) {
+    const url = `${CDN}/consulta_cand/consulta_cand_${ano}.zip`;
+    try {
+      const { caminho } = await baixarArquivo(url, { ttlHours: 24 });
+      arquivos.push(url);
+      const doAno = new Map<string, CandidatoTSE>();
+      await percorrerCsvZipArquivo(
+        caminho,
+        (row) => {
+          const c = candidaturaDaLinha(row, ano);
+          if (!c || c.codCargo !== CARGO_PRESIDENTE) return;
+          const prev = doAno.get(c.sq);
+          if (prev && (prev.turno ?? 1) > (c.turno ?? 1)) return;
+          doAno.set(c.sq, c);
+        },
+        { arquivo: (n) => /_BR\.(csv|txt)$/i.test(n) },
+      );
+      if (!doAno.size) avisos.push(`Presidência ${ano}: nenhuma candidatura no arquivo nacional`);
+      candidaturas.push(...doAno.values());
+    } catch (e) {
+      avisos.push(`Presidência ${ano}: ${(e as Error).message}`);
+    }
+  }
+  log.info(`TSE Presidência: ${candidaturas.length} candidaturas desde ${anos[0]}`);
+  return { candidaturas, arquivos, avisos };
+}
+
+/**
+ * Groups presidential candidacies into people. Someone already followed by the site (a member of
+ * Congress or of an assembly) keeps that profile; everyone else gets a stable "pres-" id derived
+ * from the título (or CPF, or birth date and name), never exposing the number itself.
+ */
+export function agruparPresidenciaveis(candidaturas: CandidatoTSE[], acompanhadas: ChavesPessoa[]): { novas: ChavesPessoa[]; donoPorCandidatura: Map<string, string> } {
+  const idx = indicesIdentidade(acompanhadas);
+  const chaveDe = (c: CandidatoTSE) => (c.titulo ? `t:${c.titulo}` : c.cpf ? `c:${c.cpf}` : c.nascimento ? `n:${c.nascimento}|${norm(c.nome)}` : `s:${c.ano}:${c.sq}`);
+  // Different years of the same person may carry different keys: join them through any shared one
+  const pai = new Map<string, string>();
+  const achar = (k: string): string => {
+    const p = pai.get(k) ?? k;
+    if (p === k) return k;
+    const r = achar(p);
+    pai.set(k, r);
+    return r;
+  };
+  const unir = (a: string, b: string) => {
+    const ra = achar(a);
+    const rb = achar(b);
+    if (ra !== rb) pai.set(rb, ra);
+  };
+  const chaves = (c: CandidatoTSE) => [c.titulo && `t:${c.titulo}`, c.cpf && `c:${c.cpf}`, c.nascimento && `n:${c.nascimento}|${norm(c.nome)}`].filter((k): k is string => !!k);
+  for (const c of candidaturas) {
+    const ks = chaves(c);
+    for (const k of ks.slice(1)) unir(ks[0], k);
+  }
+
+  const grupos = new Map<string, CandidatoTSE[]>();
+  for (const c of candidaturas) {
+    const raiz = achar(chaves(c)[0] ?? chaveDe(c));
+    grupos.set(raiz, [...(grupos.get(raiz) ?? []), c]);
+  }
+
+  const novas: ChavesPessoa[] = [];
+  const donoPorCandidatura = new Map<string, string>();
+  for (const [raiz, cs] of grupos) {
+    const existente = cs.map((c) => donoDaCandidatura(c, idx)).find(Boolean);
+    const pid = existente ?? `pres-${createHash("sha256").update(raiz).digest("hex").slice(0, 12)}`;
+    if (!existente)
+      novas.push({
+        pid,
+        titulos: [...new Set(cs.map((c) => c.titulo).filter((x): x is string => !!x))],
+        cpfs: [...new Set(cs.map((c) => c.cpf).filter((x): x is string => !!x))],
+        nascimento: cs.find((c) => c.nascimento)?.nascimento,
+        nomes: [...new Set(cs.map((c) => c.nome))],
+      });
+    for (const c of cs) donoPorCandidatura.set(`${c.ano}:${c.sq}`, pid);
+  }
+  return { novas, donoPorCandidatura };
 }

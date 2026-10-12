@@ -4,6 +4,7 @@ import path from "node:path";
 import { cache } from "react";
 import { REPO_URL } from "./site";
 import type {
+  Presidencia,
   Agregado,
   ExplicacaoIA,
   Fala,
@@ -45,6 +46,7 @@ export const getAgregados = cache(
 export const getMaterias = cache(async () => new Map(((await ler<MateriaVotada[]>("materias.json")) ?? []).map((m) => [m.id, m])));
 export const getExplicacoes = cache(async () => new Map(Object.entries((await ler<Record<string, ExplicacaoIA>>("explicacoes.json")) ?? {})));
 export const getGastosGerais = cache(() => ler<GastosGerais>("gastos.json"));
+export const getPresidencia = cache(() => ler<Presidencia>("presidencia.json"));
 export const getPolitico = cache((id: string) => (seguro(id) ? ler<PoliticoDetalhe>(`politicos/${id}.json`) : Promise.resolve(undefined)));
 export const getVotacao = cache((id: string) => (seguro(id) ? ler<VotacaoDetalhe>(`votacoes/${id}.json`) : Promise.resolve(undefined)));
 export const getFalas = cache(async (id: string) => (seguro(id) ? ((await ler<FalasArquivo>(`falas/${id}.json`))?.falas ?? []) : []));

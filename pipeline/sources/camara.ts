@@ -287,7 +287,8 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
   // The yearly bulk files list every bill since 1988 with its current status and its authors, so
   // totals and "became law" cover the whole career, not only recent activity.
   try {
-    const autoria = await autoriaProposicoes(opts.hoje.getUTCFullYear());
+    const { porDeputado: autoria, executivo } = await autoriaProposicoes(opts.hoje.getUTCFullYear());
+    out.atosExecutivo = executivo;
     for (const p of out.politicos) {
       const todas = autoria.get(p.id.slice(4)) ?? [];
       if (!todas.length) continue;
@@ -296,6 +297,7 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
       for (const x of todas) porTipo[x.tipo] = (porTipo[x.tipo] ?? 0) + 1;
       p.proposicoesLista = todas.slice(0, 100);
       p.proposicoesPorTipo = porTipo;
+      p.proposicoesPorPapel = { autor: todas.filter((x) => x.papel === "autor").length, coautor: todas.filter((x) => x.papel === "coautor").length };
       p.proposicoesTotal = todas.length;
       p.proposicoesLei = todas.filter((x) => x.virouLei).length;
     }
@@ -331,13 +333,20 @@ export const PRIMEIRO_ANO_PROPOSICOES = 1988;
 const TIPOS_PROJETO = new Set(["PL", "PLP", "PEC", "PDL"]);
 const VIROU_LEI = /transformad[oa] (em|na) (norma|lei)|norma jur[ií]dica/i;
 
+/** Acts the President sends to Congress, from the same yearly files */
+export type AtoExecutivo = Proposicao & { origem: "medida-provisoria" | "projeto-do-executivo" };
+
+const EXECUTIVO = /poder executivo|presid[eê]ncia da rep[uú]blica/i;
+
 /**
- * Every bill of the four main kinds presented since 1988, grouped by deputy author (authors and
- * co-authors who signed it as proponents). Bills come from proposicoes-{ano}.json and authorship
- * from proposicoesAutores-{ano}.json, both official yearly files.
+ * Every bill of the four main kinds presented since 1988, grouped by deputy author: the first
+ * signer is the author, the others co-authors (only those who signed as proponents). Also returns
+ * the medidas provisórias and the bills presented by the Executive. Bills come from
+ * proposicoes-{ano}.json and authorship from proposicoesAutores-{ano}.json, both official files.
  */
-export async function autoriaProposicoes(anoAtual: number): Promise<Map<string, Proposicao[]>> {
+export async function autoriaProposicoes(anoAtual: number): Promise<{ porDeputado: Map<string, Proposicao[]>; executivo: AtoExecutivo[] }> {
   const porDeputado = new Map<string, Proposicao[]>();
+  const executivo = new Map<string, AtoExecutivo>();
   for (let ano = PRIMEIRO_ANO_PROPOSICOES; ano <= anoAtual; ano++) {
     const ttlHours = ano >= anoAtual - 1 ? 24 : 24 * 30;
     try {
@@ -347,11 +356,12 @@ export async function autoriaProposicoes(anoAtual: number): Promise<Map<string, 
       ]);
       const doAno = new Map<string, Proposicao>();
       for (const x of props?.dados ?? []) {
-        if (!TIPOS_PROJETO.has(x.siglaTipo)) continue;
+        const tipo = String(x.siglaTipo ?? "");
+        if (!TIPOS_PROJETO.has(tipo) && tipo !== "MPV") continue;
         const situacao = get(x, "ultimoStatus.descricaoSituacao") ?? x.ultimoStatus_descricaoSituacao;
-        doAno.set(String(x.id), {
+        const prop: Proposicao = {
           id: String(x.id),
-          tipo: x.siglaTipo,
+          tipo,
           numero: Number(x.numero) || undefined,
           ano: Number(x.ano) || ano,
           ementa: String(x.ementa ?? "").trim(),
@@ -359,21 +369,29 @@ export async function autoriaProposicoes(anoAtual: number): Promise<Map<string, 
           situacao: situacao ? String(situacao) : undefined,
           virouLei: situacao ? VIROU_LEI.test(String(situacao)) : undefined,
           url: `https://www.camara.leg.br/propostas-legislativas/${x.id}`,
-        });
+        };
+        if (tipo === "MPV") executivo.set(prop.id, { ...prop, origem: "medida-provisoria" });
+        else doAno.set(prop.id, prop);
       }
       for (const a of autores?.dados ?? []) {
         const prop = doAno.get(String(a.idProposicao));
+        if (!prop) continue;
+        if (EXECUTIVO.test(`${a.nomeAutor ?? ""} ${a.tipoAutor ?? ""}`)) {
+          executivo.set(prop.id, { ...prop, origem: "projeto-do-executivo" });
+          continue;
+        }
         const dep = String(a.idDeputadoAutor ?? a.uriAutor?.match(/deputados\/(\d+)/)?.[1] ?? "");
-        if (!prop || !dep || dep === "undefined" || Number(a.proponente) === 0) continue;
+        if (!dep || dep === "undefined" || Number(a.proponente) === 0) continue;
         const l = porDeputado.get(dep) ?? [];
-        if (!l.some((x) => x.id === prop.id)) l.push(prop);
+        if (!l.some((x) => x.id === prop.id)) l.push({ ...prop, papel: Number(a.ordemAssinatura) === 1 ? "autor" : "coautor" });
         porDeputado.set(dep, l);
       }
     } catch (e) {
       log.warn(`proposições ${ano}: ${(e as Error).message}`);
     }
   }
-  return porDeputado;
+  const atos = [...executivo.values()].sort((a, b) => (b.data ?? "").localeCompare(a.data ?? "") || Number(b.id) - Number(a.id));
+  return { porDeputado, executivo: atos };
 }
 
 function titleCase(s?: string) {

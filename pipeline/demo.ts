@@ -9,6 +9,7 @@
 import path from "node:path";
 import type { Fala, VotacaoDetalhe } from "../src/lib/types";
 import { montar, publicar } from "./build";
+import { montarPresidencia } from "./presidencia";
 import type { CandidatoTSE, Despesa, EmendaAgg, PoliticoParcial, Sessao } from "./model";
 import { UFS, addDays, ymd } from "./lib/util";
 
@@ -279,8 +280,53 @@ export function gerarDemo(saida = path.resolve("data-demo"), hoje = new Date()) 
   }
 
   const r = montar({ hoje, politicos, votacoes, despesas, sessoes, tse, tseRedes: new Map(), emendas, falas });
+
+  // Fictional presidential elections: invented names and parties, same build code as the real data
+  const presCands: CandidatoTSE[] = [];
+  const donos = new Map<string, string>();
+  const nomes = ["ALBA RIBEIRO", "BRUNO TAVARES", "CLARA MOTTA", "DIOGO PRADO"];
+  for (const [i, ano] of [2018, 2022, 2026].entries()) {
+    for (const [j, nome] of nomes.entries()) {
+      const sq = `${ano}${j}`;
+      const resultado = ano === 2026 ? (j < 2 ? "2º TURNO" : "NÃO ELEITO") : j === i ? "ELEITO" : "NÃO ELEITO";
+      presCands.push({
+        ano,
+        sq,
+        nome,
+        nomeUrna: nome.split(" ")[0],
+        uf: "BR",
+        cargo: "PRESIDENTE",
+        codCargo: 1,
+        partido: `PD${j + 1}`,
+        numero: String(10 + j),
+        situacao: resultado,
+        patrimonio: 100_000 * (j + 1) * (i + 1),
+        genero: j % 2 ? "MASCULINO" : "FEMININO",
+      });
+      donos.set(`${ano}:${sq}`, `pres-demo${j}`);
+    }
+  }
+  const presidencia = montarPresidencia({
+    hoje,
+    candidaturas: presCands,
+    donoPorCandidatura: donos,
+    historico: new Map(),
+    perfis: new Set(),
+    atos: Array.from({ length: 40 }, (_, k) => ({
+      id: String(9000 + k),
+      tipo: k % 4 ? "MPV" : "PL",
+      numero: 1000 + k,
+      ano: 2026 - (k % 3),
+      ementa: `Ato fictício de demonstração número ${k + 1}.`,
+      data: ymd(addDays(hoje, -k * 20)),
+      url: "https://www.camara.leg.br",
+      origem: k % 4 ? ("medida-provisoria" as const) : ("projeto-do-executivo" as const),
+    })),
+  });
+
   return publicar(saida, r, falas, {
     demo: true,
+    presidencia,
     hoje,
     fontes: [{ id: "demo", nome: "Dados fictícios de demonstração", url: "", status: "ok", registros: politicos.length, duracaoMs: 0 }],
     totais: { deputadosFederais: 140, senadores: 40, deputadosEstaduais: 90, despesas: despesas.length, candidaturasTSE: tse.length },

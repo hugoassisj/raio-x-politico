@@ -9,6 +9,7 @@ import { REPO_URL, urlCorrecao } from "@/lib/site";
 
 const NAV = [
   { href: "/politicos", rotulo: "Políticos" },
+  { href: "/presidencia", rotulo: "Presidência" },
   { href: "/partidos", rotulo: "Partidos" },
   { href: "/votacoes", rotulo: "Votações" },
   { href: "/gastos", rotulo: "Gastos" },

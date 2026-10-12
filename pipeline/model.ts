@@ -1,4 +1,4 @@
-import type { PoliticoDetalhe, VotacaoDetalhe, EleicaoTSE } from "../src/lib/types";
+import type { Proposicao, PoliticoDetalhe, VotacaoDetalhe, EleicaoTSE } from "../src/lib/types";
 
 /** A politician record as assembled by a source, before metrics are computed. */
 export type PoliticoParcial = Partial<Omit<PoliticoDetalhe, "id" | "casa" | "cargo" | "nome" | "partido" | "uf" | "emExercicio" | "m">> &
@@ -10,6 +10,7 @@ export type PoliticoParcial = Partial<Omit<PoliticoDetalhe, "id" | "casa" | "car
     /** Periods in office in the current legislature (Câmara); end is exclusive, open when still in office */
     exercicio?: { ini: string; fim?: string }[];
     proposicoesTotal?: number;
+    proposicoesPorPapel?: { autor: number; coautor: number };
     proposicoesLei?: number;
     /** TSE candidate sequence number when the record came from TSE */
     sqCandidato?: string;
@@ -46,6 +47,8 @@ export interface SourceOutput {
   despesas: Despesa[];
   sessoes: Sessao[];
   avisos: string[];
+  /** Câmara only: medidas provisórias and bills presented by the Executive */
+  atosExecutivo?: (Proposicao & { origem: "medida-provisoria" | "projeto-do-executivo" })[];
 }
 
 export interface CandidatoTSE {

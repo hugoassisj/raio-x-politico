@@ -261,3 +261,34 @@ describe("situação do projeto", () => {
     expect(explicarSituacao(undefined)).toBeUndefined();
   });
 });
+
+describe("Presidência", () => {
+  const e = (ano: number, cs: [string, string][]) => ({ ano, candidatos: cs.map(([pessoa, resultado]) => ({ pessoa, nomeUrna: pessoa, resultado: resultado as never })) });
+  const eleicoes = [
+    e(2018, [
+      ["a", "eleito"],
+      ["b", "nao-eleito"],
+    ]),
+    e(2022, [
+      ["c", "eleito"],
+      ["a", "nao-eleito"],
+    ]),
+    e(2026, [
+      ["c", "segundo-turno"],
+      ["d", "segundo-turno"],
+      ["e", "nao-eleito"],
+    ]),
+  ];
+
+  it("names who holds the office from the last election whose term began", async () => {
+    const { situacaoDaPresidencia } = await import("./presidencia");
+    const s = situacaoDaPresidencia(eleicoes, new Date("2026-10-12"));
+    expect(s.emExercicio).toMatchObject({ ano: 2022, candidato: { pessoa: "c" }, inicio: 2023, fim: 2026 });
+    expect(s.proxima?.segundoTurno.map((c) => c.pessoa)).toEqual(["c", "d"]);
+    expect(s.proxima?.eleito).toBeUndefined();
+    // After the new term starts, the 2026 winner is the one in office
+    const depois = situacaoDaPresidencia([...eleicoes.slice(0, 2), e(2026, [["d", "eleito"]])], new Date("2027-02-01"));
+    expect(depois.emExercicio).toMatchObject({ ano: 2026, candidato: { pessoa: "d" } });
+    expect(depois.proxima).toBeUndefined();
+  });
+});

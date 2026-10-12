@@ -110,7 +110,7 @@ export const CARGOS: Cargo[] = [
     mandato: "4 anos, com uma reeleição seguida permitida",
     comoEleito: "Precisa de mais da metade dos votos válidos, senão há 2º turno",
     artigo: "Constituição, arts. 76 a 84",
-    acompanhado: false,
+    acompanhado: true,
   },
 ];
 

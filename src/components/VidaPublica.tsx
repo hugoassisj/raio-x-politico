@@ -248,3 +248,57 @@ export function MandatosRegistrados({ carreira }: { carreira: Mandato[] }) {
     </ul>
   );
 }
+
+/** Assets declared in each election, with the full list of the latest declaration a tap away. */
+export function BensDeclarados({ eleicoes }: { eleicoes: EleicaoTSE[] }) {
+  if (!eleicoes.some((e) => e.patrimonio != null)) return null;
+  const ultima = [...eleicoes].filter((e) => e.bens?.length).sort((a, b) => b.ano - a.ano)[0];
+  return (
+    <div className="cartao p-5">
+      <h3 className="mb-4 font-semibold">Bens declarados em cada eleição</h3>
+      <CurvaPatrimonio eleicoes={eleicoes} />
+      {!!ultima?.bens?.length && (
+        <details className="mt-4 text-sm">
+          <summary className="font-semibold text-accent-ink underline decoration-dotted underline-offset-4">Ver os bens declarados em {ultima.ano}</summary>
+          <ul className="mt-2 divide-y divide-line">
+            {ultima.bens.map((b, i) => (
+              <li key={i} className="flex justify-between gap-4 py-1.5">
+                <span className="min-w-0">
+                  <span className="block">{b.tipo}</span>
+                  <span className="block truncate text-ink-3">{b.descricao}</span>
+                </span>
+                <span className="tnum shrink-0">{moeda(b.valor)}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
+  );
+}
+
+/** Every campaign with filed accounts: the latest open, the others a tap away. */
+export function Campanhas({ eleicoes, sexo }: { eleicoes: EleicaoTSE[]; sexo?: string }) {
+  const campanhas = [...eleicoes].filter((e) => e.campanha).sort((a, b) => b.ano - a.ano);
+  if (!campanhas.length) return null;
+  return (
+    <div className="space-y-6">
+      <div className="cartao p-5 sm:p-6">
+        <DinheiroCampanha c={campanhas[0].campanha!} sexo={sexo} />
+      </div>
+      {campanhas.slice(1).map((e) => (
+        <details key={`${e.ano}-${e.cargo}`} className="cartao p-5">
+          <summary className="flex flex-wrap items-center justify-between gap-2 font-semibold">
+            <span>
+              Campanha de {e.ano}: {e.cargo.toLowerCase()}
+            </span>
+            <span className="tnum text-ink-2">{moedaCurta(e.campanha!.receitas)}</span>
+          </summary>
+          <div className="mt-4">
+            <DinheiroCampanha c={e.campanha!} sexo={sexo} />
+          </div>
+        </details>
+      ))}
+    </div>
+  );
+}

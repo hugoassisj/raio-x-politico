@@ -226,6 +226,8 @@ describe("Câmara collector", () => {
             { id: 901, siglaTipo: "PEC", numero: 2, ano: 2025, ementa: "Altera", dataApresentacao: "2025-06-01", ultimoStatus: { descricaoSituacao: "Aguardando Parecer" } },
             { id: 902, siglaTipo: "REQ", numero: 3, ano: 2025, ementa: "Requer", dataApresentacao: "2025-07-01" },
             { id: 903, siglaTipo: "PL", numero: 4, ano: 2025, ementa: "Outro", dataApresentacao: "2025-08-01" },
+            { id: 904, siglaTipo: "MPV", numero: 1300, ano: 2025, ementa: "Abre crédito", dataApresentacao: "2025-09-01" },
+            { id: 905, siglaTipo: "PLP", numero: 9, ano: 2025, ementa: "Orçamento", dataApresentacao: "2025-10-01" },
           ],
         },
       ],
@@ -237,6 +239,7 @@ describe("Câmara collector", () => {
             { idProposicao: 901, uriAutor: "https://dadosabertos.camara.leg.br/api/v2/deputados/204379", proponente: 1, ordemAssinatura: 2 },
             { idProposicao: 902, idDeputadoAutor: 204379, proponente: 1, ordemAssinatura: 1 },
             { idProposicao: 903, idDeputadoAutor: 204379, proponente: 0, ordemAssinatura: 3 },
+            { idProposicao: 905, nomeAutor: "Poder Executivo", tipoAutor: "Órgão do Poder Executivo", proponente: 1, ordemAssinatura: 1 },
           ],
         },
       ],
@@ -270,7 +273,15 @@ describe("Câmara collector", () => {
     expect(p.proposicoesPorTipo).toEqual({ PL: 1, PEC: 1 });
     expect(p.proposicoesLei).toBe(1);
     expect(p.proposicoesLista?.map((x) => x.id)).toEqual(["901", "900"]);
-    expect(p.proposicoesLista?.[1]).toMatchObject({ virouLei: true, url: "https://www.camara.leg.br/propostas-legislativas/900" });
+    expect(p.proposicoesLista?.[1]).toMatchObject({ virouLei: true, url: "https://www.camara.leg.br/propostas-legislativas/900", papel: "autor" });
+    expect(p.proposicoesLista?.[0].papel).toBe("coautor");
+    expect(p.proposicoesPorPapel).toEqual({ autor: 1, coautor: 1 });
+
+    // Medidas provisórias and the Executive's own bills, newest first
+    expect(r.atosExecutivo?.map((a) => [a.id, a.tipo, a.origem])).toEqual([
+      ["905", "PLP", "projeto-do-executivo"],
+      ["904", "MPV", "medida-provisoria"],
+    ]);
   });
 });
 
@@ -535,6 +546,115 @@ describe("TSE lifelong history", () => {
     ]);
     expect(idx.porCpf.has("11144477735")).toBe(false);
     expect(idx.porTitulo.get("1")).toBe("a");
+  });
+});
+
+describe("TSE Presidency", () => {
+  const pres = (o: Record<string, string>) => ({
+    SQ_CANDIDATO: "",
+    NR_TITULO_ELEITORAL_CANDIDATO: "",
+    NR_CPF_CANDIDATO: "",
+    NM_CANDIDATO: "MARIA DAS DORES",
+    NM_URNA_CANDIDATO: "MARIA",
+    DT_NASCIMENTO: "01/01/1960",
+    SG_UF: "BR",
+    NM_UE: "BRASIL",
+    CD_CARGO: "1",
+    DS_CARGO: "PRESIDENTE",
+    SG_PARTIDO: "AAA",
+    NR_CANDIDATO: "10",
+    NR_TURNO: "1",
+    DS_SIT_TOT_TURNO: "2º TURNO",
+    DS_SITUACAO_CANDIDATURA: "APTO",
+    ...o,
+  });
+
+  it("reads only the national file, keeps the run-off and joins each person across years", async () => {
+    const z2018 = zipTse({
+      "consulta_cand_2018_BR.csv": [
+        pres({ SQ_CANDIDATO: "1", NR_TITULO_ELEITORAL_CANDIDATO: "111" }),
+        pres({ SQ_CANDIDATO: "1", NR_TITULO_ELEITORAL_CANDIDATO: "111", NR_TURNO: "2", DS_SIT_TOT_TURNO: "ELEITO" }),
+        pres({ SQ_CANDIDATO: "2", NR_TITULO_ELEITORAL_CANDIDATO: "222", NM_CANDIDATO: "JOSE", NM_URNA_CANDIDATO: "ZÉ", DS_SIT_TOT_TURNO: "NÃO ELEITO" }),
+        // Vice-president rows are not candidacies for President
+        pres({ SQ_CANDIDATO: "3", CD_CARGO: "2", DS_CARGO: "VICE-PRESIDENTE" }),
+      ],
+      // A deputy in a state file, and the national file repeating everyone: both ignored here
+      "consulta_cand_2018_SP.csv": [pres({ SQ_CANDIDATO: "9", CD_CARGO: "6", SG_UF: "SP" })],
+      "consulta_cand_2018_BRASIL.csv": [pres({ SQ_CANDIDATO: "1", NR_TITULO_ELEITORAL_CANDIDATO: "111" })],
+    });
+    const z2022 = zipTse({
+      // Same person with only the CPF this time, joined through the CPF seen together with the título
+      "consulta_cand_2022_BR.csv": [pres({ SQ_CANDIDATO: "50", NR_CPF_CANDIDATO: "11144477735", DS_SIT_TOT_TURNO: "NÃO ELEITO" })],
+    });
+    const z2018b = zipTse({ "consulta_cand_2018_BR.csv": [pres({ SQ_CANDIDATO: "1", NR_TITULO_ELEITORAL_CANDIDATO: "111", NR_CPF_CANDIDATO: "11144477735" })] });
+    mockFetch([
+      [/consulta_cand_2018\.zip/, z2018],
+      [/consulta_cand_2022\.zip/, z2022],
+    ]);
+    const { coletarCandidaturasPresidente, agruparPresidenciaveis } = await import("../sources/tse-historico");
+    const r = await coletarCandidaturasPresidente([2018, 2022]);
+    expect(r.candidaturas.map((c) => [c.ano, c.sq, c.situacao])).toEqual([
+      [2018, "1", "ELEITO"],
+      [2018, "2", "NÃO ELEITO"],
+      [2022, "50", "NÃO ELEITO"],
+    ]);
+
+    // The link título <-> CPF comes from a row that carries both
+    const ponte = await (async () => {
+      mockFetch([[/consulta_cand_2018\.zip/, z2018b]]);
+      return (await coletarCandidaturasPresidente([2018])).candidaturas[0];
+    })();
+    const { novas, donoPorCandidatura } = agruparPresidenciaveis([...r.candidaturas, ponte], [{ pid: "sen-7", titulos: ["222"], cpfs: [], nomes: [] }]);
+    const maria = donoPorCandidatura.get("2018:1")!;
+    expect(maria).toMatch(/^pres-[0-9a-f]{12}$/);
+    expect(donoPorCandidatura.get("2022:50")).toBe(maria);
+    // Someone already followed keeps their profile id
+    expect(donoPorCandidatura.get("2018:2")).toBe("sen-7");
+    expect(novas.map((n) => n.pid)).toEqual([maria]);
+    // The id never contains the título or CPF
+    expect(maria).not.toMatch(/111|11144477735/);
+  });
+
+  it("builds elections and acts without ranking anyone beyond the official result", async () => {
+    const { montarPresidencia } = await import("../presidencia");
+    const c = (ano: number, sq: string, nomeUrna: string, situacao: string) => ({
+      ano,
+      sq,
+      nome: nomeUrna,
+      nomeUrna,
+      uf: "BR",
+      cargo: "PRESIDENTE",
+      codCargo: 1,
+      partido: "X",
+      numero: "1",
+      situacao,
+    });
+    const p = montarPresidencia({
+      hoje: new Date("2026-10-12"),
+      candidaturas: [c(2022, "1", "BETA", "NÃO ELEITO"), c(2022, "2", "ALFA", "ELEITO"), c(2022, "3", "GAMA", "NÃO ELEITO")],
+      donoPorCandidatura: new Map([
+        ["2022:1", "pres-b"],
+        ["2022:2", "pres-a"],
+        ["2022:3", "dep-9"],
+      ]),
+      historico: new Map(),
+      perfis: new Set(["dep-9"]),
+      atos: [
+        { id: "2", tipo: "MPV", ementa: "x", data: "2026-02-01", origem: "medida-provisoria" },
+        { id: "1", tipo: "PL", ementa: "y", data: "2025-03-01", origem: "projeto-do-executivo" },
+      ],
+    });
+    expect(p.eleicoes[0].candidatos.map((x) => [x.nomeUrna, x.resultado])).toEqual([
+      ["Alfa", "eleito"],
+      ["Beta", "nao-eleito"],
+      ["Gama", "nao-eleito"],
+    ]);
+    expect(p.pessoas.find((x) => x.id === "dep-9")?.perfil).toBe("dep-9");
+    expect(p.pessoas.find((x) => x.id === "pres-a")?.perfil).toBeUndefined();
+    expect(p.atosPorAno).toEqual([
+      { ano: 2025, medidasProvisorias: 0, projetos: 1 },
+      { ano: 2026, medidasProvisorias: 1, projetos: 0 },
+    ]);
   });
 });
 

@@ -12,7 +12,7 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { classificarAssuntos } from "../src/lib/assuntos";
-import type { CampanhaFinancas, Fala, FonteStatus, MateriaVotada, Meta, RedeSocial } from "../src/lib/types";
+import type { CampanhaFinancas, Fala, FonteStatus, MateriaVotada, Meta, Presidencia, RedeSocial } from "../src/lib/types";
 import { ancorasTSE, chavesDaPessoa, juntarCandidaturas, montar, publicar } from "./build";
 import { manifesto, stats } from "./lib/http";
 import { exigirQualidade, verificarQualidade } from "./qualidade";
@@ -26,7 +26,8 @@ import { coletarDiscursos, coletarYouTube } from "./sources/falas";
 import { coletarSenado } from "./sources/senado";
 import { coletarConectoresSociais } from "./sources/social-connectors";
 import { coletarTSE } from "./sources/tse";
-import { coletarHistoricoTSE } from "./sources/tse-historico";
+import { agruparPresidenciaveis, coletarCandidaturasPresidente, coletarHistoricoTSE } from "./sources/tse-historico";
+import { montarPresidencia } from "./presidencia";
 import { ANOS_CONTAS, coletarContasCampanha } from "./sources/tse-contas";
 import { baixarFotos, baixarFotosTSE } from "./fotos";
 
@@ -182,15 +183,28 @@ async function main() {
     "historico",
     "TSE - Todas as candidaturas desde 1994 (pessoas acompanhadas)",
     "https://dadosabertos.tse.jus.br/dataset/?groups=candidatos",
-    () => coletarHistoricoTSE([...ancoras].map(([pid, cs]) => chavesDaPessoa(pid, cs, porPid.get(pid)))),
+    async () => {
+      // Presidential candidates first, so their whole life is followed in the same scan
+      const pres = await coletarCandidaturasPresidente();
+      const acompanhadas = [...ancoras].map(([pid, cs]) => chavesDaPessoa(pid, cs, porPid.get(pid)));
+      const { novas, donoPorCandidatura } = agruparPresidenciaveis(pres.candidaturas, acompanhadas);
+      const h = await coletarHistoricoTSE([...acompanhadas, ...novas]);
+      return { ...h, avisos: [...pres.avisos, ...h.avisos], presidencia: { candidaturas: pres.candidaturas, donoPorCandidatura } };
+    },
     (h) => [...h.porPessoa.values()].reduce((n, l) => n + l.length, 0),
-    { porPessoa: new Map<string, CandidatoTSE[]>(), arquivos: [] as string[], avisos: [] as string[] },
+    {
+      porPessoa: new Map<string, CandidatoTSE[]>(),
+      arquivos: [] as string[],
+      avisos: [] as string[],
+      presidencia: { candidaturas: [] as CandidatoTSE[], donoPorCandidatura: new Map<string, string>() },
+    },
   );
 
   // Campaign finance of every candidacy of those people in years with filings in the current layout
   const alvosContas = new Map<number, Set<string>>();
-  for (const [pid, cs] of ancoras)
-    for (const c of juntarCandidaturas(cs, historico.porPessoa.get(pid) ?? []))
+  const pidsPresidencia = new Set(historico.presidencia?.donoPorCandidatura.values() ?? []);
+  for (const pid of new Set([...ancoras.keys(), ...pidsPresidencia]))
+    for (const c of juntarCandidaturas(ancoras.get(pid) ?? [], historico.porPessoa.get(pid) ?? []))
       if (ANOS_CONTAS.includes(c.ano)) alvosContas.set(c.ano, (alvosContas.get(c.ano) ?? new Set()).add(c.sq));
   const contas = await etapa(
     "contas",
@@ -300,8 +314,26 @@ async function main() {
 
   log.step(`Gravando dados em ${OUT}`);
   const todasFalas = [...discursos.falas, ...falasSociais];
+  const presidencia = montarPresidencia({
+    hoje: HOJE,
+    candidaturas: historico.presidencia?.candidaturas ?? [],
+    donoPorCandidatura: historico.presidencia?.donoPorCandidatura ?? new Map(),
+    historico: historico.porPessoa,
+    contas: contas.contas,
+    perfis: new Set(r.detalhes.map((d) => d.id)),
+    atos: camara.atosExecutivo ?? [],
+  });
+  // On days a stage is skipped and has no saved result, keep what was last published
+  if (!presidencia.pessoas.length || !presidencia.atos.length) {
+    const ant = await readFile(path.join(OUT, "presidencia.json"), "utf8")
+      .then((t) => JSON.parse(t) as Presidencia)
+      .catch(() => undefined);
+    if (ant && !presidencia.pessoas.length) Object.assign(presidencia, { pessoas: ant.pessoas, eleicoes: ant.eleicoes });
+    if (ant && !presidencia.atos.length) Object.assign(presidencia, { atos: ant.atos, atosPorAno: ant.atosPorAno });
+  }
   await publicar(OUT, r, todasFalas, {
     demo: false,
+    presidencia,
     materias: materias.materias,
     arquivos: [...manifesto.values()].sort((a, b) => a.url.localeCompare(b.url)),
     qualidade,

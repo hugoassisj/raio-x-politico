@@ -16,14 +16,15 @@ import { data, idade, moeda, moedaCurta, numero, plural } from "@/lib/format";
 import { distribuicao, metrica, NOME_CASA } from "@/lib/metricas";
 import { fraseResumo } from "@/lib/resumo";
 import { nomeUf } from "@/lib/ufs";
-import { encurtar, explicarCategoria, explicarEtapa } from "@/lib/linguagem";
+import { encurtar, explicarCategoria, explicarEtapa, explicarSituacao } from "@/lib/linguagem";
 import { partesDescricao } from "@/lib/format";
 import type { VotoLinha } from "@/components/ListaVotos";
 import { votouDiferente } from "@/lib/votos";
 import { NOME_REDE, separarRedes } from "@/lib/redes";
 import { urlCorrecao } from "@/lib/site";
 import { IconeRede } from "@/components/IconeRede";
-import { CurvaPatrimonio, DinheiroCampanha, LinhaDaVida, MandatosRegistrados, ResumoVida } from "@/components/VidaPublica";
+import { ListaProjetos, type ProjetoLinha } from "@/components/ListaProjetos";
+import { BensDeclarados, Campanhas, LinhaDaVida, MandatosRegistrados, ResumoVida } from "@/components/VidaPublica";
 
 export const dynamicParams = false;
 
@@ -73,9 +74,15 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
   const anos = p.inicioPolitica ? anoAtual - p.inicioPolitica : undefined;
   const id_ = idade(p.perfil.nascimento);
   const campanhas = [...p.eleicoes].filter((e) => e.campanha).sort((a, b) => b.ano - a.ano);
-  const ultimaComBens = [...p.eleicoes].filter((e) => e.bens?.length).sort((a, b) => b.ano - a.ano)[0];
   const defs = metricasDaCasa(p.casa);
   const redes = separarRedes(p.redes);
+  // Each bill arrives explained: plain summary when there is one, plain status, and the vote that decided it
+  const projetos: ProjetoLinha[] = p.proposicoesLista.map((x) => {
+    const chave = p.casa === "camara" ? `cam-${x.id}` : `sen-${x.id}`;
+    const ex = explicacoes.get(chave);
+    const s = explicarSituacao(x.situacao);
+    return { ...x, resumo: ex?.resumo, ia: !!ex, situacaoSimples: s && { titulo: s.titulo, texto: s.texto }, votacao: votacoes.find((v) => v.materia === chave)?.id };
+  });
   const paginaNaCasa = p.casa === "camara" ? "Página na Câmara dos Deputados" : p.casa === "senado" ? "Página no Senado Federal" : "Página na Assembleia Legislativa";
   // The three most recent candidacies with a public page at the TSE
   const candidaturasTSE = [...p.eleicoes]
@@ -378,6 +385,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             subtitulo={
               <>
                 {numero(p.m.proposicoes)} projetos como autor ou coautor
+                {p.proposicoesPorPapel ? ` (${numero(p.proposicoesPorPapel.autor)} como primeiro autor)` : ""}
                 {p.m.proposicoesLei ? `, ${p.m.proposicoesLei} transformados em lei` : ""}.
               </>
             }
@@ -398,36 +406,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                   </div>
                 ))}
             </div>
-            <ul className="divide-y divide-line cartao rounded-xl">
-              {p.proposicoesLista.slice(0, 15).map((x) => (
-                <li key={x.id} className="p-4">
-                  <p className="text-sm text-ink-3">
-                    {x.tipo} {x.numero}/{x.ano} · apresentado em {data(x.data)}
-                    {x.virouLei && <span className="ml-2 rounded bg-ok-bg px-1.5 py-0.5 text-xs font-semibold text-sim">Virou lei</span>}
-                  </p>
-                  {(() => {
-                    const chave = p.casa === "camara" ? `cam-${x.id}` : `sen-${x.id}`;
-                    const ex = explicacoes.get(chave);
-                    const votada = votacoes.find((v) => v.materia === chave);
-                    return (
-                      <>
-                        <p className="mt-1">{ex?.resumo ?? x.ementa}</p>
-                        {ex && <p className="mt-0.5 text-xs text-ink-3">Em linguagem simples, feito por IA a partir do texto oficial. Ementa: {x.ementa}</p>}
-                        <p className="mt-1 flex flex-wrap items-center gap-x-3 text-sm text-ink-2">
-                          {x.situacao && <span>Situação: {x.situacao}</span>}
-                          {votada && (
-                            <Link href={`/votacao/${votada.id}`} className="link">
-                              Foi votado no Plenário: ver como cada um votou
-                            </Link>
-                          )}
-                          {x.url && <Fonte href={x.url}>Tramitação completa</Fonte>}
-                        </p>
-                      </>
-                    );
-                  })()}
-                </li>
-              ))}
-            </ul>
+            <ListaProjetos projetos={projetos} tipos={TIPOS} />
           </Secao>
         )}
 
@@ -530,28 +509,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
                 <LinhaDaVida eleicoes={p.eleicoes} sexo={p.sexo} />
                 <div className="space-y-6">
-                  {p.eleicoes.some((e) => e.patrimonio != null) && (
-                    <div className="cartao p-5">
-                      <h3 className="mb-4 font-semibold">Bens declarados em cada eleição</h3>
-                      <CurvaPatrimonio eleicoes={p.eleicoes} />
-                      {!!ultimaComBens?.bens?.length && (
-                        <details className="mt-4 text-sm">
-                          <summary className="font-semibold text-accent-ink underline decoration-dotted underline-offset-4">Ver os bens declarados em {ultimaComBens.ano}</summary>
-                          <ul className="mt-2 divide-y divide-line">
-                            {ultimaComBens.bens.map((b, i) => (
-                              <li key={i} className="flex justify-between gap-4 py-1.5">
-                                <span className="min-w-0">
-                                  <span className="block">{b.tipo}</span>
-                                  <span className="block truncate text-ink-3">{b.descricao}</span>
-                                </span>
-                                <span className="tnum shrink-0">{moeda(b.valor)}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
-                      )}
-                    </div>
-                  )}
+                  <BensDeclarados eleicoes={p.eleicoes} />
                   {p.carreira.length > 0 && (
                     <div className="cartao p-5">
                       <h3 className="mb-3 font-semibold">Mandatos registrados</h3>
@@ -612,24 +570,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               </>
             }
           >
-            <div className="space-y-6">
-              <div className="cartao p-5 sm:p-6">
-                <DinheiroCampanha c={campanhas[0].campanha!} sexo={p.sexo} />
-              </div>
-              {campanhas.slice(1).map((e) => (
-                <details key={e.ano} className="cartao p-5">
-                  <summary className="flex flex-wrap items-center justify-between gap-2 font-semibold">
-                    <span>
-                      Campanha de {e.ano}: {e.cargo.toLowerCase()}
-                    </span>
-                    <span className="tnum text-ink-2">{moedaCurta(e.campanha!.receitas)}</span>
-                  </summary>
-                  <div className="mt-4">
-                    <DinheiroCampanha c={e.campanha!} sexo={p.sexo} />
-                  </div>
-                </details>
-              ))}
-            </div>
+            <Campanhas eleicoes={p.eleicoes} sexo={p.sexo} />
           </Secao>
         )}
 

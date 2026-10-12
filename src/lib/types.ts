@@ -97,6 +97,8 @@ export interface Proposicao {
   situacao?: string;
   virouLei?: boolean;
   url?: string;
+  /** Câmara bills: "autor" signed first, "coautor" signed after (both as proponents) */
+  papel?: "autor" | "coautor";
 }
 
 export interface Alerta {
@@ -186,6 +188,8 @@ export interface PoliticoDetalhe extends PoliticoResumo {
   votos: VotoItem[];
   proposicoesLista: Proposicao[];
   proposicoesPorTipo: Record<string, number>;
+  /** Câmara: bills signed first (author) and after (co-author), over the whole career */
+  proposicoesPorPapel?: { autor: number; coautor: number };
   gastos?: Gastos;
   comissoes: { sigla?: string; nome: string; papel?: string; atual: boolean }[];
   frentes: string[];
@@ -384,4 +388,37 @@ export interface GastosGerais {
   categorias: { casa: Casa; categoria: string; valor: number }[];
   fornecedores: { nome: string; doc?: string; valor: number; parlamentares: number; n: number }[];
   alertasPorRegra: Record<string, number>;
+}
+
+/** A person who ran for President, with every candidacy found for them (any office). */
+export interface PessoaPresidencia {
+  /** "pres-…" for people the site does not follow elsewhere, or the profile id when it does */
+  id: string;
+  nome: string;
+  nomeUrna: string;
+  /** Profile on this site, when the same person is a member of Congress or a state assembly */
+  perfil?: string;
+  candidaturas: EleicaoTSE[];
+}
+
+/** One presidential election as published by the TSE. */
+export interface EleicaoPresidencial {
+  ano: number;
+  candidatos: { pessoa: string; nomeUrna: string; partido?: string; numero?: string; resultado?: EleicaoTSE["resultado"]; situacao?: string; sexo?: "F" | "M" }[];
+}
+
+/**
+ * The Presidency: who was elected, every presidential election since 1994, and acts the Executive
+ * sent to Congress. Built only from the TSE files and the Câmara bulk files; impeachments and
+ * substitutions are not in those files, which the page says.
+ */
+export interface Presidencia {
+  atualizadoEm: string;
+  pessoas: PessoaPresidencia[];
+  eleicoes: EleicaoPresidencial[];
+  /** Medidas provisórias and bills presented by the Executive, newest first */
+  atos: (Proposicao & { origem: "medida-provisoria" | "projeto-do-executivo" })[];
+  /** How many acts per year and kind, over the whole period of the files */
+  atosPorAno: { ano: number; medidasProvisorias: number; projetos: number }[];
+  fontes: { nome: string; url: string }[];
 }
