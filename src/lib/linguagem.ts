@@ -448,3 +448,22 @@ export function explicarSituacao(situacao: string | undefined): { titulo: string
   const r = SITUACOES.find(([re]) => re.test(t))?.[1] ?? { titulo: situacao.trim(), texto: "Situação como a Casa publica.", final: false };
   return { ...r, original: situacao.trim() };
 }
+
+/**
+ * The four kinds of information on the site, always marked so a calculation or an AI text is never
+ * mistaken for an official record.
+ */
+export type Natureza = "oficial" | "calculo" | "ligacao" | "ia";
+
+export const NATUREZAS: Record<Natureza, { rotulo: string; explicacao: string }> = {
+  oficial: { rotulo: "Dado oficial", explicacao: "Copiado do registro oficial, sem mudança." },
+  calculo: { rotulo: "Cálculo do site", explicacao: "Conta feita por nós a partir dos dados oficiais, com a regra explicada ao lado." },
+  ligacao: {
+    rotulo: "Ligação feita pelo site",
+    explicacao: "Juntamos registros de fontes diferentes por uma regra fixa (o mesmo título de eleitor, CPF ou CNPJ). Quando há dúvida, não juntamos.",
+  },
+  ia: {
+    rotulo: "Feito por IA",
+    explicacao: "Texto escrito por inteligência artificial a partir do texto oficial e conferido por regras automáticas. Na dúvida, vale o texto oficial.",
+  },
+};

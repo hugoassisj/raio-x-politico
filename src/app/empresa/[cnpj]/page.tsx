@@ -87,6 +87,7 @@ export default async function Empresa({ params }: PageProps<"/empresa/[cnpj]">) 
         {e.cota && (
           <Secao
             id="cota"
+            natureza="ligacao"
             titulo="Pagamentos com a cota parlamentar"
             subtitulo={`${moeda(e.cota.total)} em ${numero(e.cota.n)} ${e.cota.n === 1 ? "pagamento" : "pagamentos"} de ${e.cota.porPessoa.length} ${e.cota.porPessoa.length === 1 ? "parlamentar" : "parlamentares"}, de ${data(e.cota.periodo.inicio)} a ${data(e.cota.periodo.fim)}.`}
           >
@@ -113,7 +114,7 @@ export default async function Empresa({ params }: PageProps<"/empresa/[cnpj]">) 
         )}
 
         {(doacoes.length > 0 || servicos.length > 0) && (
-          <Secao id="campanhas" titulo="Ligações com campanhas" subtitulo="Segundo a prestação de contas entregue ao TSE pela campanha de cada pessoa.">
+          <Secao id="campanhas" natureza="ligacao" titulo="Ligações com campanhas" subtitulo="Segundo a prestação de contas entregue ao TSE pela campanha de cada pessoa.">
             <div className="grid gap-4 lg:grid-cols-2">
               {[
                 { titulo: "Doou para a campanha", lista: doacoes },

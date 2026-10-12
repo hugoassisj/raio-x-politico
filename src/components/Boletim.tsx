@@ -1,3 +1,4 @@
+import { SeloNatureza } from "./Natureza";
 import type { Casa } from "@/lib/types";
 import { METRICAS, NOME_PARES, parcela, percentil, type ChaveMetrica, type DefMetrica } from "@/lib/metricas";
 import { IconeTema } from "./Icone";
@@ -63,6 +64,7 @@ export function TileMetrica({
           <h3 className="font-semibold leading-tight">{def.titulo}</h3>
           <p className="text-sm text-ink-3">{def.pergunta}</p>
         </div>
+        <SeloNatureza tipo="calculo" className="ml-auto self-start" />
       </div>
       {valor == null ? (
         <p className="mt-3 text-ink-3">{def.cobertura?.[casa]?.motivo ?? "Sem dados para esta pessoa nas fontes consultadas."}</p>

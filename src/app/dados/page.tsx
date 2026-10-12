@@ -3,7 +3,9 @@ import { CircleAlert, CircleCheck } from "lucide-react";
 import { Container, Fonte, Secao } from "@/components/ui";
 import { getMeta } from "@/lib/data";
 import { dataHora, moeda, numero } from "@/lib/format";
+import { NATUREZAS, type Natureza } from "@/lib/linguagem";
 import { METRICAS } from "@/lib/metricas";
+import { SeloNatureza } from "@/components/Natureza";
 import { REPO_URL, urlCorrecao } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -48,6 +50,22 @@ export default async function Dados() {
             </li>
           ))}
         </ul>
+      </Secao>
+
+      <Secao
+        titulo="Que tipo de informação é"
+        subtitulo="Cada seção do site traz uma destas marcas, para nunca confundir um registro oficial com uma conta nossa ou um texto de IA."
+      >
+        <dl className="grid gap-3 sm:grid-cols-2">
+          {(Object.keys(NATUREZAS) as Natureza[]).map((n) => (
+            <div key={n} className="cartao p-4">
+              <dt>
+                <SeloNatureza tipo={n} />
+              </dt>
+              <dd className="mt-2 text-ink-2">{NATUREZAS[n].explicacao}</dd>
+            </div>
+          ))}
+        </dl>
       </Secao>
 
       <Secao titulo="Como cada número é calculado" subtitulo="A mesma explicação que aparece em cada cartão dos perfis.">

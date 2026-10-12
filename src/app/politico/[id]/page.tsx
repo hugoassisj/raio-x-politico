@@ -264,6 +264,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
         {p.votos.length > 0 && (
           <Secao
             id="votos"
+            natureza="oficial"
             titulo="Como votou"
             subtitulo={
               <>
@@ -295,6 +296,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
         {p.gastos && (
           <Secao
             id="gastos"
+            natureza="calculo"
             titulo="Quanto gastou da cota parlamentar"
             subtitulo={
               <>
@@ -397,6 +399,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
         {(p.proposicoesLista.length > 0 || Object.keys(p.proposicoesPorTipo).length > 0) && (
           <Secao
             id="projetos"
+            natureza="oficial"
             titulo="O que propôs"
             subtitulo={
               <>
@@ -429,6 +432,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
         {(falas.length > 0 || ia.length > 0) && (
           <Secao
             id="falas"
+            natureza="oficial"
             titulo="O que tem dito"
             subtitulo={`${plural(falas.length, "discurso ou publicação coletado", "discursos e publicações coletados")} de fontes públicas.`}
             acao={
@@ -476,6 +480,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
         {p.emendas && (
           <Secao
             id="emendas"
+            natureza="calculo"
             titulo="Dinheiro enviado para estados e cidades"
             subtitulo={
               <>
@@ -519,6 +524,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
 
         <Secao
           id="vida"
+          natureza="ligacao"
           titulo="Vida pública"
           subtitulo="Todas as candidaturas encontradas no TSE desde 1994, de vereador a presidente, com o resultado, o partido e os bens declarados."
           origem={
@@ -588,6 +594,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
         {campanhas.length > 0 && (
           <Secao
             id="campanhas"
+            natureza="calculo"
             titulo="Dinheiro das campanhas"
             subtitulo="De onde veio o dinheiro de cada campanha e com quem foi gasto, segundo a prestação de contas entregue ao TSE."
             origem={

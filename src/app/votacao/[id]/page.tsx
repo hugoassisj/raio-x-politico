@@ -210,6 +210,7 @@ export default async function Votacao({ params }: PageProps<"/votacao/[id]">) {
 
         <Secao
           id="quem-votou"
+          natureza="oficial"
           titulo="Quem votou como"
           subtitulo={
             v.secreta

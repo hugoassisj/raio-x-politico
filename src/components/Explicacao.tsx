@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, Sparkles } from "lucide-react";
 import type { EtapaSimples } from "@/lib/linguagem";
 import type { ExplicacaoIA, MateriaVotada } from "@/lib/types";
 import { data } from "@/lib/format";
+import { SeloNatureza } from "./Natureza";
 import { TextoComTermos } from "./Termos";
 import { Fonte } from "./ui";
 
@@ -15,6 +16,7 @@ export function ExplicacaoProjeto({ explicacao, materia, ementa }: { explicacao?
   if (explicacao)
     return (
       <div>
+        <SeloNatureza tipo="ia" className="mb-2" />
         <p className="text-xl leading-relaxed sm:text-2xl sm:leading-snug">{explicacao.resumo}</p>
         {explicacao.mudancas.length > 0 && (
           <ul className="mt-4 space-y-2">
@@ -57,6 +59,7 @@ export function ExplicacaoProjeto({ explicacao, materia, ementa }: { explicacao?
   const oficial = materia?.explicacao || materia?.ementaDetalhada;
   return (
     <div>
+      <SeloNatureza tipo="oficial" className="mb-2" />
       <p className="text-xl leading-relaxed sm:text-2xl sm:leading-snug">
         <TextoComTermos texto={oficial ?? ementa} />
       </p>

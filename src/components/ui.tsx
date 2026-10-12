@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { rotuloVoto } from "@/lib/linguagem";
+import { rotuloVoto, type Natureza } from "@/lib/linguagem";
+import { SeloNatureza } from "./Natureza";
 import { COR_CATEGORIA } from "@/lib/votos";
 
 /** Canonical vote label + color. Color is never the only signal: the word is always shown. */
@@ -39,8 +40,11 @@ export function Secao({
   origem,
   children,
   acao,
+  natureza,
 }: {
   id?: string;
+  /** What kind of information the section holds (official record, calculation, link, AI) */
+  natureza?: Natureza;
   titulo: string;
   subtitulo?: ReactNode;
   origem?: ReactNode;
@@ -52,6 +56,7 @@ export function Secao({
       <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
         <div className="max-w-2xl">
           <h2 className="display text-2xl font-bold sm:text-[1.7rem]">{titulo}</h2>
+          {natureza && <SeloNatureza tipo={natureza} className="mt-1.5" />}
           {subtitulo && <p className="mt-1.5 text-ink-2">{subtitulo}</p>}
         </div>
         {acao}

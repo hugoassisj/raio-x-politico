@@ -122,7 +122,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | ID | Situação | P | O que é | Critérios de aceite | Depende de |
 |---|---|---|---|---|---|
 | PROV-01 | IMPLEMENTED | P0 | “Como sabemos disso?” | Cartão de evidência por métrica. Falta estender a todas as seções. | |
-| PROV-02 | NOT_STARTED | P1 | Fato, cálculo, inferência e IA | Marcas visuais e texto diferentes para cada tipo. | |
+| PROV-02 | VERIFIED | P1 | Fato, cálculo, inferência e IA | Marcas visuais e texto diferentes para cada tipo. | |
 | PROV-03 | IMPLEMENTED | P1 | Pedido de correção | Modelo de issue “erro nos dados” já existe; falta registro público das correções feitas. | |
 | BAND-01 | NOT_STARTED | P3 | Bandeiras dos estados | Arquivos locais das fontes oficiais de cada estado, com fonte e licença. | |
 | A11Y-01 | IN_PROGRESS | P1 | Conferência de acessibilidade | Teclado, leitor de tela, zoom 200%, contraste, nas páginas principais. | |
@@ -171,6 +171,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | DS-01 | Contraste medido no navegador para cada par de tokens nos dois temas (2026-10-12). Ajustes: `--ink-3` do tema claro mais escuro (`--neutro-550`), Sim e Não do tema claro mais escuros (#10704b e #b13a0a, 5,3:1 e 5,2:1 sobre o fundo suave), texto sobre as cores de voto passa a ser um token (`--on-voto`: branco no claro, quase preto no escuro, mínimo 6,1:1 e 6,0:1). |
 | A11Y-01 | Automático: `npm run a11y` (`scripts/acessibilidade.mjs`, axe-core 4.10.2, regras WCAG 2.2 A e AA) em 12 páginas nos dois temas: 0 violações depois das correções (antes: contraste, `nested-interactive` no plenário, `aria-label` proibido na paginação, área de toque pequena nos links de redes). Falta: teste manual com leitor de tela (NVDA/VoiceOver) e zoom de 200%; o ambiente não tem leitor de tela. |
 | DOC-01 | `docs/telas/{inicio,votacao,plenario,perfil,celular}.png` capturadas do site rodando com os dados reais publicados (2026-10-12), sem o indicador de desenvolvimento, e otimizadas. |
+| PROV-02 | Quatro marcas (`NATUREZAS` em `src/lib/linguagem.ts`, `SeloNatureza`): Dado oficial, Cálculo do site, Ligação feita pelo site, Feito por IA. Em cada seção do perfil, na lista de votos, nos cartões de métrica, na explicação de cada projeto e nas ligações de empresas; explicadas em `/dados`. Varredura de acessibilidade continua sem violações. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças
