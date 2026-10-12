@@ -84,7 +84,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | PAG-01 | VERIFIED | P0 | Paginação comum | Uma função pura (`src/lib/paginacao.ts`) e um componente (`Paginacao`); página na URL; volta à página 1 quando um filtro muda; ordem estável. | |
 | PAG-02 | IN_PROGRESS | P1 | Paginação nas listas | Políticos, votações, falas e lista de votos usam PAG-01. | PAG-01 |
 | TAB-01 | NOT_STARTED | P2 | Primitivos de tabela | Avaliar TanStack Table para `/politicos` e gastos: ordenar, esconder colunas, redimensionar, exportar CSV, preferências salvas. Decidir com base em peso e acessibilidade. | PAG-01 |
-| NAV-01 | NOT_STARTED | P2 | Navegação | Presidente e empresas na navegação quando existirem; revisar menu do celular. | PRES-01 |
+| NAV-01 | IN_PROGRESS | P2 | Navegação | Presidente e empresas na navegação quando existirem; revisar menu do celular. | PRES-01 |
 | DS-01 | IMPLEMENTED | P1 | Tokens e movimento | Tokens em três camadas e animações contidas já existem. Falta conferir contraste AA de todos os pares no tema escuro. | |
 
 ### 4.3 Partidos
@@ -102,9 +102,9 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 |---|---|---|---|---|---|
 | PERF-01 | IN_PROGRESS | P1 | Cobertura por seção | Cada seção do perfil diz se o dado está completo, parcial, indisponível ou não se aplica. Já existe nas métricas (`ComoSabemos`); falta nas seções. | |
 | PERF-02 | IMPLEMENTED | P1 | Vida pública desde 1994 | Linha do tempo, partidos, bens e contas. Falta conferir com dados reais. | DADOS-01 |
-| PRES-01 | NOT_STARTED | P0 | Presidente da República | Página do Presidente atual, encontrável na navegação; eleições, bens e contas de campanha pelo TSE; atos oficiais com fonte. Testes. | DADOS-01 |
+| PRES-01 | IMPLEMENTED | P0 | Presidente da República | Página do Presidente atual, encontrável na navegação; eleições, bens e contas de campanha pelo TSE; atos oficiais com fonte. Testes. | DADOS-01 |
 | CONT-01 | VERIFIED | P1 | “Contato, redes e fontes” | Dividir em Contato, Redes sociais, Sites oficiais, Fontes e transparência, Sobre os dados; ícones iguais para cada rede. | |
-| PL-01 | NOT_STARTED | P1 | Projetos de lei | Autoria e coautoria separadas, situação, histórico, link oficial, filtros. | |
+| PL-01 | IMPLEMENTED | P1 | Projetos de lei | Autoria e coautoria separadas, situação, histórico, link oficial, filtros. | |
 
 ### 4.5 Dinheiro público, empresas e relações
 
@@ -158,6 +158,8 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | VOT-12 | `src/components/ListaVotos.tsx` com `filtrarVotosDoPerfil` (testes “votos no perfil”). Navegador em `/politico/dep-104552`: “Não” leva a `?voto=nao` (67 de 262), “Diferente do partido” a `?voto=contra-partido` (16), assunto “Impostos” a `?assunto=impostos` (58); “Mostrar todos de novo” limpa. O link “Votou diferente do partido 16 vezes” abre a lista filtrada. |
 | VOT-09 | `explicarSituacao` em `src/lib/linguagem.ts` (teste “says a bill became law only when the house says so”). Página `/votacao/cam-106701-223` conferida: “E o projeto, como está? Foi para o Senado”, com o texto original da Câmara, a data da conferência e o aviso “Ser aprovado nesta votação não quer dizer que já virou lei”. Autores do projeto levam ao perfil quando a pessoa é conhecida. |
 | CONT-01 | Perfil dividido em Contato, Redes sociais, Sites oficiais e institucionais, Fontes e transparência, Sobre os dados. Ícones das redes do Simple Icons (licença CC0, versão fixa 16.32.0), em uma cor só; LinkedIn e Kwai usam ícone genérico porque o Simple Icons não publica a marca. Teste `src/lib/redes.test.ts` (ordem fixa e sem repetição; formulário de correção com a página preenchida). Conferido nos dois temas (`dep-104552` claro, `sen-5672` escuro). |
+| PRES-01 | Implementado, falta dado real. Coleta: `coletarCandidaturasPresidente` lê só o arquivo nacional (`_BR`) de cada eleição geral; `agruparPresidenciaveis` junta a mesma pessoa entre anos por título, CPF ou nascimento e nome, mantém o perfil de quem já é acompanhado e cria um id `pres-` que não revela documento; a vida inteira dessas pessoas entra na mesma varredura do TSE, com bens e contas. Atos: medidas provisórias e projetos do Executivo dos arquivos anuais da Câmara. Página `/presidencia` e `/presidencia/[id]`, “Presidência” na navegação e nas perguntas. Testes: “TSE Presidency” em `pipeline/tests/fontes.test.ts` (arquivo nacional, 2º turno, união de chaves, id sem documento, ordem sem ranking) e “Presidência” em `src/lib/votos.test.ts` (quem está no cargo antes e depois da posse). Conferido no navegador com dados fictícios (`npm run demo`), claro e escuro, 1280 px e 390 px sem rolagem lateral; com os dados reais atuais a página mostra o aviso de dados ainda não coletados. Falta: execução completa do TSE publicar `presidencia.json`. |
+| PL-01 | Primeiro autor e coautor pela ordem de assinatura dos arquivos da Câmara (teste de contrato atualizado), contagem por papel no perfil, lista com filtros (papel, tipo, texto), situação em palavras simples e paginação comum. Conferido em `/politico/dep-104552` (“Viraram lei” mostra 3 de 95). Falta: os dados reais ganharem o campo `papel` na próxima coleta; histórico de tramitação passo a passo (hoje há o link para a tramitação completa). |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças
@@ -190,6 +192,7 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 
 ## 8. Registro de progresso
 
+- **2026-10-12 (5):** Presidência (PRES-01) e autoria (PL-01). Pergunta nova em `perguntas.ts`, README e PRODUCT.md. Próximo: PART-01/02, PERF-01, conferir a execução de dados.
 - **2026-10-12 (4):** seção de contato refeita (CONT-01); situação do projeto depois da votação (VOT-09); endereços do projeto definidos uma vez (`src/lib/site.ts`).
 - **2026-10-12 (3):** botão de tema; votos do perfil com filtros na URL e paginação; catálogo com período e paginação comum; critérios de assunto e tipos de voto publicados em “Como funciona”. O pipeline deixou de gravar “Ausente” para quem não tem registro (agora grava vazio, lido como “sem voto registrado”; arquivos antigos com “Ausente” são lidos do mesmo jeito). Próximo: CONT-01, PART-01/02, PRES-01, PERF-01.
 - **2026-10-12 (2):** lista “Quem votou como” na página da votação (`src/components/PainelVotos.tsx`): totais que filtram, esconder e mostrar grupos, plenário aceso pelo filtro, busca, partido, estado, ordem, três visões, paginação e tudo na URL. Plenário corrigido (o filtro de destaque não apagava as cadeiras por causa da animação; agora usa `fill-opacity`). Código antigo `VotosNominais.tsx` removido. Próximo: TEMA-01, VOT-10/11 (catálogo), VOT-12 (votos no perfil).
