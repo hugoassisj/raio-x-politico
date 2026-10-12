@@ -22,6 +22,7 @@ import { coletarDiscursos, coletarYouTube } from "./sources/falas";
 import { coletarSenado } from "./sources/senado";
 import { coletarConectoresSociais } from "./sources/social-connectors";
 import { coletarTSE } from "./sources/tse";
+import { baixarFotos } from "./fotos";
 
 const args = Object.fromEntries(
   process.argv.slice(2).map((a) => {
@@ -171,6 +172,22 @@ async function main() {
 
   for (const s of assembleias.status)
     fontes.push({ id: `assembleia-${s.uf.toLowerCase()}`, nome: s.fonte, url: s.url, status: s.ok ? "ok" : "falhou", registros: s.registros, duracaoMs: 0, erro: s.erro });
+
+  // Official photos, resized and served from the site itself; the original URL stays as the source
+  const fotos = await etapa(
+    "fotos",
+    "Fotos oficiais (Câmara, Senado, assembleias e TSE)",
+    "https://www.camara.leg.br",
+    () => baixarFotos(r.detalhes.map((d) => ({ id: d.id, url: d.foto })), path.resolve("public")),
+    (f) => f.locais.size,
+    { locais: new Map<string, string>(), falhas: 0 },
+  );
+  for (const d of r.detalhes) {
+    const local = fotos.locais.get(d.id);
+    if (!local) continue;
+    d.perfil.fotoOficial = d.foto;
+    d.foto = local;
+  }
 
   // ---------- write ----------
   log.step(`Gravando dados em ${OUT}`);

@@ -154,6 +154,8 @@ export interface PoliticoDetalhe extends PoliticoResumo {
     site?: string;
     redes?: string[];
     paginaOficial?: string;
+    /** Original official photo URL; `foto` points to the optimized copy served by the site */
+    fotoOficial?: string;
   };
   carreira: Mandato[];
   presenca?: { sessoes: number; presente: number; justificadas?: number; periodo: string };
