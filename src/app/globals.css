@@ -1,0 +1,183 @@
+@import "tailwindcss";
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource-variable/atkinson-hyperlegible-next/index.css";
+
+/*
+ * Design tokens. Light is the default; dark follows the OS unless the visitor picks a theme
+ * (data-theme on <html>). Vote colors were validated for color-vision deficiencies and are
+ * always paired with a text label.
+ */
+:root {
+  color-scheme: light;
+  --paper: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #e9edf2;
+  --ink: #0f2238;
+  --ink-2: #3f4f63;
+  --ink-3: #66768b;
+  --line: #d9e0e8;
+  --mark: #ffd84d;
+  --mark-ink: #0f2238;
+  --grifo: #ffd84d;
+  --focus: #1f5fd1;
+  --link: #1d52b8;
+  --sim: #16855a;
+  --nao: #d9480f;
+  --abst: #6250d6;
+  --ausente: #8a94a6;
+  --alerta: #b45309;
+  --alerta-bg: #fff4e5;
+  --ok-bg: #e7f5ee;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --paper: #0e131a;
+    --surface: #151b24;
+    --surface-2: #1d2531;
+    --ink: #e8edf3;
+    --ink-2: #b6c1cf;
+    --ink-3: #8e9bad;
+    --line: #2a3442;
+    --mark: #e3b81f;
+    --mark-ink: #0e131a;
+    --grifo: rgba(227, 184, 31, 0.42);
+    --focus: #7aa7ff;
+    --link: #8db4ff;
+    --sim: #2fa772;
+    --nao: #e2622c;
+    --abst: #9085e9;
+    --ausente: #7d8899;
+    --alerta: #f0a54a;
+    --alerta-bg: #2b2114;
+    --ok-bg: #12261d;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0e131a;
+  --surface: #151b24;
+  --surface-2: #1d2531;
+  --ink: #e8edf3;
+  --ink-2: #b6c1cf;
+  --ink-3: #8e9bad;
+  --line: #2a3442;
+  --mark: #e3b81f;
+  --mark-ink: #0e131a;
+  --grifo: rgba(227, 184, 31, 0.42);
+  --focus: #7aa7ff;
+  --link: #8db4ff;
+  --sim: #2fa772;
+  --nao: #e2622c;
+  --abst: #9085e9;
+  --ausente: #7d8899;
+  --alerta: #f0a54a;
+  --alerta-bg: #2b2114;
+  --ok-bg: #12261d;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-mark: var(--mark);
+  --color-mark-ink: var(--mark-ink);
+  --color-link: var(--link);
+  --color-sim: var(--sim);
+  --color-nao: var(--nao);
+  --color-abst: var(--abst);
+  --color-ausente: var(--ausente);
+  --color-alerta: var(--alerta);
+  --color-alerta-bg: var(--alerta-bg);
+  --color-ok-bg: var(--ok-bg);
+  --font-sans: "Atkinson Hyperlegible Next Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--paper);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    font-feature-settings: "tnum" 0;
+  }
+
+  a {
+    color: inherit;
+  }
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  details > summary {
+    cursor: pointer;
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@layer components {
+  /* Display type: Archivo stretched wide, used for headlines and key figures */
+  .display {
+    font-family: var(--font-display);
+    font-stretch: 118%;
+    letter-spacing: -0.015em;
+    line-height: 1.05;
+  }
+  .figure {
+    font-family: var(--font-display);
+    font-stretch: 112%;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The one bold element: a highlighter stroke behind the key fact of a screen */
+  .grifo {
+    background-image: linear-gradient(transparent 58%, var(--grifo) 58%, var(--grifo) 94%, transparent 94%);
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    padding: 0 0.12em;
+    margin: 0 -0.06em;
+  }
+
+  .link {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  .link:hover {
+    text-decoration-thickness: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

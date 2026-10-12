@@ -1,0 +1,128 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import type { VotoItem } from "@/lib/types";
+import { data } from "@/lib/format";
+import { VotoChip } from "./ui";
+
+const canon = (s?: string) =>
+  (s ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+const posicional = (s?: string) => /^(sim|nao|abstencao|obstrucao)$/.test(canon(s));
+
+type Filtro = "todos" | "contra" | "governo" | "ausente";
+
+export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostrarGoverno: boolean }) {
+  const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [q, setQ] = useState("");
+  const [limite, setLimite] = useState(25);
+
+  const contagem = useMemo(() => {
+    const contra = votos.filter((v) => posicional(v.voto) && posicional(v.orientacaoPartido) && canon(v.voto) !== canon(v.orientacaoPartido)).length;
+    const governo = votos.filter((v) => posicional(v.voto) && posicional(v.orientacaoGoverno) && canon(v.voto) !== canon(v.orientacaoGoverno)).length;
+    const ausente = votos.filter((v) => canon(v.voto) === "ausente").length;
+    return { todos: votos.length, contra, governo, ausente };
+  }, [votos]);
+
+  const lista = useMemo(() => {
+    const t = canon(q.trim());
+    return votos.filter((v) => {
+      if (filtro === "contra" && !(posicional(v.voto) && posicional(v.orientacaoPartido) && canon(v.voto) !== canon(v.orientacaoPartido))) return false;
+      if (filtro === "governo" && !(posicional(v.voto) && posicional(v.orientacaoGoverno) && canon(v.voto) !== canon(v.orientacaoGoverno))) return false;
+      if (filtro === "ausente" && canon(v.voto) !== "ausente") return false;
+      return !t || canon(`${v.titulo} ${v.descricao}`).includes(t);
+    });
+  }, [votos, filtro, q]);
+
+  const abas: [Filtro, string][] = [
+    ["todos", "Todos"],
+    ["contra", "Contra o partido"],
+    ...(mostrarGoverno ? ([["governo", "Contra o governo"]] as [Filtro, string][]) : []),
+    ["ausente", "Ausências"],
+  ];
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="tablist" aria-label="Filtrar votos" className="flex flex-wrap gap-1.5">
+          {abas.map(([k, rotulo]) => (
+            <button
+              key={k}
+              role="tab"
+              aria-selected={filtro === k}
+              onClick={() => {
+                setFiltro(k);
+                setLimite(25);
+              }}
+              className={`rounded-full border px-3 py-1 text-sm ${filtro === k ? "border-ink bg-ink text-paper" : "border-line bg-surface text-ink-2 hover:border-ink-3"}`}
+            >
+              {rotulo} <span className="tnum opacity-70">{contagem[k]}</span>
+            </button>
+          ))}
+        </div>
+        <label className="ml-auto w-full sm:w-64">
+          <span className="sr-only">Buscar votação por assunto</span>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por assunto"
+            className="w-full rounded-lg border border-line bg-surface px-3 py-1.5 text-sm outline-none focus:border-ink"
+          />
+        </label>
+      </div>
+
+      {lista.length === 0 ? (
+        <p className="mt-4 rounded-lg bg-surface-2 px-4 py-5 text-ink-2">Nenhuma votação com esse filtro.</p>
+      ) : (
+        <ul className="mt-4 divide-y divide-line rounded-xl border border-line bg-surface">
+          {lista.slice(0, limite).map((v) => {
+            const contraPartido = posicional(v.voto) && posicional(v.orientacaoPartido) && canon(v.voto) !== canon(v.orientacaoPartido);
+            return (
+              <li key={v.votacaoId} className="grid gap-2 p-4 sm:grid-cols-[1fr_auto] sm:items-start sm:gap-6">
+                <div className="min-w-0">
+                  <p className="text-sm text-ink-3">
+                    {data(v.data)}
+                    {v.resultado ? ` · ${v.resultado}` : ""}
+                  </p>
+                  <Link href={`/votacao/${v.votacaoId}`} className="font-semibold hover:underline">
+                    {v.titulo}
+                  </Link>
+                  {v.descricao && <p className="mt-0.5 line-clamp-2 text-sm text-ink-2">{v.descricao}</p>}
+                </div>
+                <dl className="grid grid-cols-[auto_auto] items-center gap-x-3 gap-y-1 text-sm sm:justify-end">
+                  <dt className="text-ink-3">Votou</dt>
+                  <dd>
+                    <VotoChip voto={v.voto} />
+                  </dd>
+                  {v.orientacaoPartido && (
+                    <>
+                      <dt className="text-ink-3">Partido</dt>
+                      <dd className={contraPartido ? "font-semibold" : "text-ink-2"}>
+                        {v.orientacaoPartido}
+                        {contraPartido && <span className="ml-1 text-xs text-nao">(votou diferente)</span>}
+                      </dd>
+                    </>
+                  )}
+                  {mostrarGoverno && v.orientacaoGoverno && (
+                    <>
+                      <dt className="text-ink-3">Governo</dt>
+                      <dd className="text-ink-2">{v.orientacaoGoverno}</dd>
+                    </>
+                  )}
+                </dl>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {lista.length > limite && (
+        <button onClick={() => setLimite((l) => l + 50)} className="mt-3 w-full rounded-lg border border-line bg-surface py-2.5 text-sm font-semibold hover:border-ink-3">
+          Mostrar mais ({lista.length - limite} restantes)
+        </button>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,92 @@
+import type { Casa } from "@/lib/types";
+import { METRICAS, NOME_PARES, percentil, type ChaveMetrica, type DefMetrica } from "@/lib/metricas";
+import { Fonte } from "./ui";
+
+type Dist = { min: number; max: number; mediana: number; p10: number; p90: number; n: number; valores: number[] };
+
+const LOG: ChaveMetrica[] = ["patrimonio", "emendas", "votosRecebidos"];
+
+/** Position of one value inside its peers: range, middle 80% band, median tick and the person's dot. */
+function Faixa({ valor, dist, chave, rotulo }: { valor: number; dist: Dist; chave: ChaveMetrica; rotulo: string }) {
+  const log = LOG.includes(chave) && dist.min > 0;
+  const f = (x: number) => (log ? Math.log10(Math.max(x, 1)) : x);
+  const lo = f(dist.min);
+  const hi = f(dist.max);
+  const x = (v: number) => (hi === lo ? 50 : ((f(v) - lo) / (hi - lo)) * 100);
+  return (
+    <div role="img" aria-label={rotulo} className="relative mx-1.5 mt-4 h-5">
+      <div className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-line" />
+      <div
+        className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full border border-line bg-surface-2"
+        style={{ left: `${x(dist.p10)}%`, width: `${Math.max(1, x(dist.p90) - x(dist.p10))}%` }}
+      />
+      <div className="absolute top-0 h-5 w-0.5 -translate-x-1/2 rounded-full bg-ink-3" style={{ left: `${x(dist.mediana)}%` }} />
+      <div className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-surface bg-ink" style={{ left: `${x(valor)}%` }} />
+    </div>
+  );
+}
+
+export function TileMetrica({
+  def,
+  valor,
+  casa,
+  dist,
+  nota,
+  destaque,
+}: {
+  def: DefMetrica;
+  valor: number | undefined;
+  casa: Casa;
+  dist?: Dist;
+  nota?: string;
+  destaque?: boolean;
+}) {
+  const p = percentil(valor, dist?.valores ?? []);
+  const pares = NOME_PARES[casa];
+  return (
+    <article className="flex flex-col rounded-xl border border-line bg-surface p-4 sm:p-5">
+      <h3 className="text-sm font-semibold text-ink-2">{def.pergunta}</h3>
+      <p className="mt-0.5 text-xs text-ink-3">{def.titulo}</p>
+      {valor == null ? (
+        <p className="mt-3 text-ink-3">Sem dados para esta pessoa nas fontes consultadas.</p>
+      ) : (
+        <>
+          <p className="figure mt-3 text-[2.4rem] font-bold">
+            <span className={destaque ? "grifo" : undefined}>{def.formato(valor)}</span>
+          </p>
+          {nota && <p className="mt-1 text-sm text-ink-3">{nota}</p>}
+          {dist && dist.n >= 5 && (
+            <>
+              <Faixa valor={valor} dist={dist} chave={def.chave} rotulo={`${def.formato(valor)}; mediana ${def.formato(dist.mediana)}; de ${def.formato(dist.min)} a ${def.formato(dist.max)}`} />
+              <div className="flex justify-between text-[11px] text-ink-3 tnum">
+                <span>{def.formato(dist.min)}</span>
+                <span>mediana {def.formato(dist.mediana)}</span>
+                <span>{def.formato(dist.max)}</span>
+              </div>
+            </>
+          )}
+          {p != null && <p className="mt-2 text-sm text-ink-2">{def.comparacao(p, pares)}.</p>}
+        </>
+      )}
+      <details className="group mt-auto pt-3 text-sm">
+        <summary className="text-ink-3 underline decoration-dotted underline-offset-4 hover:text-ink">Como calculamos</summary>
+        <div className="mt-2 space-y-2 text-ink-2">
+          <p>{def.calculo}</p>
+          <p className="text-ink-3">{def.limites}</p>
+          <p className="flex flex-wrap gap-x-3">
+            {def.fontes.map((f) => (
+              <Fonte key={f.url} href={f.url}>
+                {f.nome}
+              </Fonte>
+            ))}
+          </p>
+        </div>
+      </details>
+    </article>
+  );
+}
+
+/** Tiles shown on a profile. "Became law" is folded into the bills tile as a note. */
+export function metricasDaCasa(casa: Casa) {
+  return METRICAS.filter((d) => d.casas.includes(casa) && d.chave !== "proposicoesLei");
+}
