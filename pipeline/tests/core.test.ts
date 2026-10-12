@@ -13,7 +13,7 @@ import {
   VOTO_SECRETO,
 } from "../metrics";
 import { periodosExercicio } from "../sources/camara";
-import { vincularTSE } from "../build";
+import { chavesDaPessoa, juntarCandidaturas, vincularTSE } from "../build";
 import { SEN_PRESENTE } from "../sources/senado";
 import { normalizaUrl, plataforma, handleDe } from "../sources/falas";
 import { somarVotos, somarVotosZip } from "../sources/tse";
@@ -332,5 +332,32 @@ describe("TSE bulk results", () => {
     expect(documentoVerificavel("00000000000001")).toBe(false);
     expect(documentoVerificavel("11222333000181")).toBe(true);
     expect(documentoVerificavel("123")).toBe(false);
+  });
+});
+
+describe("lifelong candidacies", () => {
+  const c = (o: Partial<CandidatoTSE>): CandidatoTSE => ({
+    ano: 2022,
+    sq: "1",
+    nome: "FULANO",
+    nomeUrna: "FULANO",
+    uf: "MG",
+    cargo: "DEPUTADO FEDERAL",
+    codCargo: 6,
+    partido: "PL",
+    numero: "2222",
+    situacao: "ELEITO",
+    ...o,
+  });
+  it("keeps one record per election, preferring the richer one", () => {
+    const l = juntarCandidaturas([c({ votos: 1000, patrimonio: 5 })], [c({}), c({ ano: 2016, sq: "9", codCargo: 13, cargo: "VEREADOR" })]);
+    expect(l.map((x) => [x.ano, x.votos, x.patrimonio])).toEqual([
+      [2016, undefined, undefined],
+      [2022, 1000, 5],
+    ]);
+  });
+  it("only follows identity keys when the recent candidacies agree on the birth date", () => {
+    expect(chavesDaPessoa("p", [c({ titulo: "0123", nascimento: "1970-01-01" })]).titulos).toEqual(["123"]);
+    expect(chavesDaPessoa("p", [c({ titulo: "1", nascimento: "1970-01-01" }), c({ titulo: "2", nascimento: "1980-01-01" })]).titulos).toEqual([]);
   });
 });

@@ -1,19 +1,24 @@
 import Link from "next/link";
-import { VAZIO } from "@/lib/format";
 import type { ReactNode } from "react";
+import { rotuloVoto } from "@/lib/linguagem";
 
 /** Canonical vote label + color. Color is never the only signal: the word is always shown. */
 export function VotoChip({ voto, compacto = false }: { voto?: string; compacto?: boolean }) {
-  const v = (voto ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  const tipo = v === "sim" ? "sim" : v === "nao" ? "nao" : /absten|obstru|p-nrv|presente/.test(v) ? "abst" : v === "ausente" || !v ? "ausente" : "abst";
+  const r = rotuloVoto(voto);
   const cls = {
     sim: "bg-sim text-white",
     nao: "bg-nao text-white",
-    abst: "bg-abst text-white",
+    outro: "bg-abst text-white",
     ausente: "bg-surface-2 text-ink-2 ring-1 ring-inset ring-line",
-  }[tipo];
-  const texto = tipo === "ausente" ? "Ausente" : (voto ?? VAZIO);
-  return <span className={`inline-flex items-center rounded-md font-semibold ${compacto ? "px-1.5 py-0.5 text-xs" : "px-2 py-0.5 text-sm"} ${cls}`}>{texto}</span>;
+  }[r.tipo];
+  return (
+    <span
+      title={r.explicacao}
+      className={`inline-flex items-center whitespace-nowrap rounded-md font-semibold ${compacto ? "px-1.5 py-0.5 text-xs" : "px-2 py-0.5 text-sm"} ${cls}`}
+    >
+      {r.rotulo}
+    </span>
+  );
 }
 
 export function Fonte({ href, children }: { href: string; children: ReactNode }) {

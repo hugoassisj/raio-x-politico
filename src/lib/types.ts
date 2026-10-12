@@ -118,18 +118,44 @@ export interface Gastos {
   recentes: { data?: string; categoria: string; fornecedor: string; valor: number; url?: string }[];
 }
 
+/** One candidacy in the person's life, as filed with the TSE. */
 export interface EleicaoTSE {
   ano: number;
   cargo: string;
   uf: string;
+  /** For municipal offices (vereador, prefeito) */
+  municipio?: string;
   partido?: string;
   numero?: string;
+  /** Final result as published (e.g. "ELEITO POR QP", "SUPLENTE", "NÃO ELEITO") */
   situacao?: string;
+  /** Plain reading of the result */
+  resultado?: "eleito" | "segundo-turno" | "suplente" | "nao-eleito" | "registro-negado" | "sem-resultado";
+  /** Registration status (e.g. "APTO", "DEFERIDO") */
+  situacaoRegistro?: string;
   votos?: number;
   patrimonio?: number;
   bens?: { tipo: string; descricao: string; valor: number }[];
   ocupacao?: string;
   instrucao?: string;
+  /** Campaign finance filed with the TSE */
+  campanha?: CampanhaFinancas;
+  /** The candidacy's page on the TSE (DivulgaCandContas), when the election id is known */
+  url?: string;
+}
+
+/** Where a campaign's money came from and who was paid, from the TSE filings. */
+export interface CampanhaFinancas {
+  ano: number;
+  receitas: number;
+  /** Fundo eleitoral + fundo partidário */
+  dinheiroPublico: number;
+  porOrigem: { origem: string; valor: number }[];
+  /** Largest donors; people are named only, companies and parties keep their CNPJ */
+  doadores: { nome: string; cnpj?: string; origem: string; valor: number }[];
+  despesas: number;
+  fornecedores: { nome: string; cnpj?: string; valor: number }[];
+  fonte: string;
 }
 
 export interface Emendas {
@@ -267,6 +293,20 @@ export interface Meta {
   fontes: FonteStatus[];
   totais: Record<string, number>;
   subsidios: { cargo: string; valor: number; fonte: string }[];
+  /** Official bulk files processed in this run, with SHA-256 so anyone can check them */
+  arquivos?: { url: string; sha256: string; bytes: number; baixadoEm: string }[];
+  /** Integrity checks run before publishing; a failed blocking check stops the publication */
+  qualidade?: VerificacaoQualidade[];
+}
+
+export interface VerificacaoQualidade {
+  id: string;
+  /** What was checked, in plain words */
+  descricao: string;
+  ok: boolean;
+  detalhe?: string;
+  /** When true and not ok, nothing is published and the previous snapshot stays online */
+  bloqueia: boolean;
 }
 
 // ---------------- Speech, social media and AI ----------------

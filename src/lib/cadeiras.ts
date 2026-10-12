@@ -1,4 +1,5 @@
 import type { Cadeira, ItemLegenda } from "./plenario";
+import { rotuloVoto } from "./linguagem";
 import type { PoliticoResumo, VotacaoDetalhe } from "./types";
 import { COR_SEM_DADO, FAIXAS_GOVERNO, faixaGoverno, nomePartido, ordenarParaPlenario, type ResumoPartido } from "./partidos";
 
@@ -79,10 +80,16 @@ export function cadeirasPorVoto(v: VotacaoDetalhe, membrosDaCasa: PoliticoResumo
       uf: l.uf,
       foto: conhecidos.get(l.id)?.foto,
       cor: g.cor,
-      detalhe: !l.voto ? "não registrou voto" : v.secreta ? "participou; o voto é secreto" : `votou ${l.voto}`,
+      detalhe: !l.voto ? "não registrou voto" : v.secreta ? "participou; o voto é secreto" : votoLegivel(l.voto),
       href: conhecidos.has(l.id) ? `/politico/${l.id}` : undefined,
     };
   });
   const legenda = grupos.map((g) => ({ cor: g.cor, rotulo: g.rotulo, n: linhas.filter((l) => grupoDoVoto(l.voto, v.secreta) === g.id).length })).filter((l) => l.n > 0);
   return { cadeiras, legenda };
+}
+
+/** "votou Sim", or the plain meaning of a house code such as "Artigo 17" */
+function votoLegivel(voto: string) {
+  const r = rotuloVoto(voto);
+  return r.tipo === "sim" || r.tipo === "nao" ? `votou ${r.rotulo}` : r.rotulo.toLowerCase();
 }

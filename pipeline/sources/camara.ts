@@ -1,4 +1,4 @@
-import { fetchRaw, getJson, getJsonWithHeaders, mapLimit } from "../lib/http";
+import { fetchRaw, getJson, mapLimit } from "../lib/http";
 import { log } from "../lib/log";
 import { addDays, decode, get, isoDate, nomeProprio, num, parseCsv, unzipFirst, windows, ymd } from "../lib/util";
 import type { Mandato, Proposicao, VotacaoDetalhe } from "../../src/lib/types";
@@ -284,51 +284,22 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
   }
 
   // ---------- 5. Bills (authorship) ----------
+  // The yearly bulk files list every bill since 1988 with its current status and its authors, so
+  // totals and "became law" cover the whole career, not only recent activity.
   try {
-    const status = await statusProposicoes(opts.hoje.getUTCFullYear());
-    const props = await mapLimit(
-      out.politicos,
-      4,
-      async (p) => {
-        const id = p.id.slice(4);
-        const { data, headers } = await getJsonWithHeaders(`${API}/proposicoes?idDeputadoAutor=${id}&siglaTipo=PL,PLP,PEC,PDL&itens=100&ordem=DESC&ordenarPor=id`, {
-          ttlHours: 48,
-        });
-        const total = Number(headers["x-total-count"]) || (data?.dados ?? []).length;
-        const lista: Proposicao[] = (data?.dados ?? []).map((x: any) => {
-          const st = status.get(String(x.id));
-          return {
-            id: String(x.id),
-            tipo: x.siglaTipo,
-            numero: x.numero,
-            ano: x.ano,
-            ementa: x.ementa ?? "",
-            data: isoDate(x.dataApresentacao),
-            situacao: st,
-            virouLei: st ? /transformad[oa] (em|na) (norma|lei)|norma jur[ií]dica/i.test(st) : undefined,
-            url: `https://www.camara.leg.br/propostas-legislativas/${x.id}`,
-          };
-        });
-        // full count by type requires one cheap request per type (X-Total-Count only)
-        const porTipo: Record<string, number> = {};
-        for (const t of ["PL", "PLP", "PEC", "PDL"]) {
-          // A failed count only leaves that type out; it never discards the rest of the bills.
-          try {
-            const r = await getJsonWithHeaders(`${API}/proposicoes?idDeputadoAutor=${id}&siglaTipo=${t}&itens=1`, { ttlHours: 48, retries: 2 });
-            porTipo[t] = Number(r.headers["x-total-count"]) || 0;
-          } catch {
-            /* type omitted */
-          }
-        }
-        p.proposicoesLista = lista;
-        p.proposicoesPorTipo = porTipo;
-        p.proposicoesTotal = total;
-        p.proposicoesLei = lista.filter((x) => x.virouLei).length;
-        return true;
-      },
-      "Câmara proposições",
-    );
-    log.info(`Câmara proposições: ${props.filter(Boolean).length} deputados`);
+    const autoria = await autoriaProposicoes(opts.hoje.getUTCFullYear());
+    for (const p of out.politicos) {
+      const todas = autoria.get(p.id.slice(4)) ?? [];
+      if (!todas.length) continue;
+      todas.sort((x, y) => (y.data ?? "").localeCompare(x.data ?? "") || Number(y.id) - Number(x.id));
+      const porTipo: Record<string, number> = {};
+      for (const x of todas) porTipo[x.tipo] = (porTipo[x.tipo] ?? 0) + 1;
+      p.proposicoesLista = todas.slice(0, 100);
+      p.proposicoesPorTipo = porTipo;
+      p.proposicoesTotal = todas.length;
+      p.proposicoesLei = todas.filter((x) => x.virouLei).length;
+    }
+    log.info(`Câmara proposições: ${[...autoria.keys()].length} autores com projetos`);
   } catch (e) {
     out.avisos.push(`Proposições Câmara: ${(e as Error).message}`);
   }
@@ -355,23 +326,54 @@ export function periodosExercicio(hist: any[], legislatura: number): { ini: stri
   return out;
 }
 
-/** Bulk bill files give the current status of every bill (to tell which became law). */
-async function statusProposicoes(anoAtual: number): Promise<Map<string, string>> {
-  const m = new Map<string, string>();
-  for (let ano = 2019; ano <= anoAtual; ano++) {
+/** First year of the bulk bill files used (the current Constitution) */
+export const PRIMEIRO_ANO_PROPOSICOES = 1988;
+const TIPOS_PROJETO = new Set(["PL", "PLP", "PEC", "PDL"]);
+const VIROU_LEI = /transformad[oa] (em|na) (norma|lei)|norma jur[ií]dica/i;
+
+/**
+ * Every bill of the four main kinds presented since 1988, grouped by deputy author (authors and
+ * co-authors who signed it as proponents). Bills come from proposicoes-{ano}.json and authorship
+ * from proposicoesAutores-{ano}.json, both official yearly files.
+ */
+export async function autoriaProposicoes(anoAtual: number): Promise<Map<string, Proposicao[]>> {
+  const porDeputado = new Map<string, Proposicao[]>();
+  for (let ano = PRIMEIRO_ANO_PROPOSICOES; ano <= anoAtual; ano++) {
+    const ttlHours = ano >= anoAtual - 1 ? 24 : 24 * 30;
     try {
-      const j: any = await getJson(`${ARQ}/proposicoes/json/proposicoes-${ano}.json`, { ttlHours: 48, timeoutMs: 300_000 });
-      for (const p of j?.dados ?? []) {
-        if (!["PL", "PLP", "PEC", "PDL"].includes(p.siglaTipo)) continue;
-        const s = get(p, "ultimoStatus.descricaoSituacao") ?? p.ultimoStatus_descricaoSituacao;
-        if (s) m.set(String(p.id), String(s));
+      const [props, autores]: any[] = await Promise.all([
+        getJson(`${ARQ}/proposicoes/json/proposicoes-${ano}.json`, { ttlHours, timeoutMs: 300_000 }),
+        getJson(`${ARQ}/proposicoesAutores/json/proposicoesAutores-${ano}.json`, { ttlHours, timeoutMs: 300_000 }),
+      ]);
+      const doAno = new Map<string, Proposicao>();
+      for (const x of props?.dados ?? []) {
+        if (!TIPOS_PROJETO.has(x.siglaTipo)) continue;
+        const situacao = get(x, "ultimoStatus.descricaoSituacao") ?? x.ultimoStatus_descricaoSituacao;
+        doAno.set(String(x.id), {
+          id: String(x.id),
+          tipo: x.siglaTipo,
+          numero: Number(x.numero) || undefined,
+          ano: Number(x.ano) || ano,
+          ementa: String(x.ementa ?? "").trim(),
+          data: isoDate(x.dataApresentacao),
+          situacao: situacao ? String(situacao) : undefined,
+          virouLei: situacao ? VIROU_LEI.test(String(situacao)) : undefined,
+          url: `https://www.camara.leg.br/propostas-legislativas/${x.id}`,
+        });
+      }
+      for (const a of autores?.dados ?? []) {
+        const prop = doAno.get(String(a.idProposicao));
+        const dep = String(a.idDeputadoAutor ?? a.uriAutor?.match(/deputados\/(\d+)/)?.[1] ?? "");
+        if (!prop || !dep || dep === "undefined" || Number(a.proponente) === 0) continue;
+        const l = porDeputado.get(dep) ?? [];
+        if (!l.some((x) => x.id === prop.id)) l.push(prop);
+        porDeputado.set(dep, l);
       }
     } catch (e) {
-      log.warn(`status proposições ${ano}: ${(e as Error).message}`);
+      log.warn(`proposições ${ano}: ${(e as Error).message}`);
     }
   }
-  log.info(`Câmara: status de ${m.size} proposições`);
-  return m;
+  return porDeputado;
 }
 
 function titleCase(s?: string) {

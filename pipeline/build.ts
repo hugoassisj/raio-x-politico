@@ -6,6 +6,7 @@ import {
   type EleicaoTSE,
   type Emendas,
   type Fala,
+  type CampanhaFinancas,
   type Mandato,
   type MateriaVotada,
   type Metricas,
@@ -20,9 +21,11 @@ import {
 } from "../src/lib/types";
 import { calcularGastos, calcularPresenca, calcularVotos, enriquecerVotacoes, janela12, ultimoMesCompleto } from "./metrics";
 import type { CandidatoTSE, Despesa, EmendaAgg, PoliticoParcial, Sessao } from "./model";
-import { capitalizar, groupBy, median, mean, nameSimilarity, norm, round } from "./lib/util";
+import { capitalizar, groupBy, median, mean, nameSimilarity, nomeProprio, norm, round } from "./lib/util";
 import { SEN_PRESENTE } from "./sources/senado";
-import { eleito } from "./sources/tse";
+import { eleito, ELEICAO_DIVULGA } from "./sources/tse";
+import { cpfNorm, tituloNorm, type ChavesPessoa } from "./sources/tse-historico";
+import { resultadoDe } from "../src/lib/carreira";
 import { handleDe, normalizaUrl, plataforma } from "./sources/falas";
 
 export interface BuildInput {
@@ -35,6 +38,10 @@ export interface BuildInput {
   tseRedes: Map<string, string[]>;
   emendas: Map<string, EmendaAgg>;
   falas: Fala[];
+  /** Every candidacy found for each person, all years and offices (see tse-historico.ts) */
+  historico?: Map<string, CandidatoTSE[]>;
+  /** Campaign finance keyed by `${ano}:${sq}` */
+  contas?: Map<string, CampanhaFinancas>;
 }
 
 export interface BuildResult {
@@ -86,6 +93,33 @@ export function vincularTSE(p: PoliticoParcial, porNascimento: Map<string, Candi
   return [...porAno.values()].map((cs) => cs.sort((a, b) => sim(b) - sim(a))[0]).sort((a, b) => a.ano - b.ano);
 }
 
+/** Recent candidacies of each person (2018 to 2026), the starting point to follow their whole life. */
+export function ancorasTSE(politicos: PoliticoParcial[], tse: CandidatoTSE[]): Map<string, CandidatoTSE[]> {
+  const porNasc = groupBy(
+    tse.filter((c) => c.nascimento),
+    (c) => c.nascimento!,
+  );
+  const porUf = groupBy(tse, (c) => c.uf);
+  return new Map(politicos.map((p) => [p.id, vincularTSE(p, porNasc, porUf)]));
+}
+
+/** Identity keys of a person taken from their recent candidacies. */
+export function chavesDaPessoa(pid: string, ancoras: CandidatoTSE[], p?: PoliticoParcial): ChavesPessoa {
+  const uniq = (xs: (string | undefined)[]) => [...new Set(xs.filter((x): x is string => !!x))];
+  // Two different birth dates among the anchors mean a doubtful link: follow nobody
+  const nascimentos = uniq(ancoras.map((c) => c.nascimento));
+  if (nascimentos.length > 1) return { pid, titulos: [], cpfs: [], nomes: [] };
+  return {
+    pid,
+    titulos: uniq(ancoras.map((c) => tituloNorm(c.titulo))),
+    cpfs: uniq(ancoras.map((c) => cpfNorm(c.cpf))),
+    nascimento: nascimentos[0] ?? p?.perfil?.nascimento,
+    nomes: uniq([...ancoras.map((c) => c.nome), p?.nomeCivil]),
+  };
+}
+
+const DIVULGA = "https://divulgacandcontas.tse.jus.br/divulga/#/candidato";
+
 function resultado2026(cs: CandidatoTSE[], cargoAtual: string): string | undefined {
   const c = cs.find((x) => x.ano === 2026);
   if (!c) return undefined;
@@ -99,12 +133,21 @@ function resultado2026(cs: CandidatoTSE[], cargoAtual: string): string | undefin
   return `Candidato(a) a ${c.cargo.toLowerCase()}`;
 }
 
-const DURACAO: Record<number, number> = { 1: 4, 3: 4, 5: 8, 6: 4, 7: 4, 8: 4 };
+/** Years in office per elected position; senators serve 8, everyone else 4. Substitutes only serve if called, which the TSE files do not say. */
+const DURACAO: Record<number, number> = { 1: 4, 2: 4, 3: 4, 4: 4, 5: 8, 6: 4, 7: 4, 8: 4, 11: 4, 12: 4, 13: 4 };
 
 function mandatosTSE(cs: CandidatoTSE[]): Mandato[] {
   return cs
-    .filter((c) => eleito(c.situacao) && c.ano < new Date().getUTCFullYear())
-    .map((c) => ({ cargo: capitalizar(c.cargo), inicio: c.ano + 1, fim: c.ano + 1 + (DURACAO[c.codCargo] ?? 4), uf: c.uf, partido: c.partido, fonte: `TSE - Eleições ${c.ano}` }));
+    .filter((c) => eleito(c.situacao) && c.ano < new Date().getUTCFullYear() && DURACAO[c.codCargo])
+    .map((c) => ({
+      cargo: capitalizar(c.cargo),
+      inicio: c.ano + 1,
+      fim: c.ano + DURACAO[c.codCargo],
+      uf: c.uf,
+      municipio: c.municipio,
+      partido: c.partido,
+      fonte: `TSE - Eleições ${c.ano}`,
+    }));
 }
 
 function mesclarCarreira(a: Mandato[], b: Mandato[]) {
@@ -115,6 +158,23 @@ function mesclarCarreira(a: Mandato[], b: Mandato[]) {
   }
   return all.sort((x, y) => x.inicio - y.inicio);
 }
+
+/**
+ * Anchors (recent candidacies) and the history found by título/CPF describe the same candidacies
+ * for recent years; keep one per election (year + candidacy id), preferring the richer record.
+ */
+export function juntarCandidaturas(ancoras: CandidatoTSE[], historico: CandidatoTSE[]): CandidatoTSE[] {
+  const m = new Map<string, CandidatoTSE>();
+  for (const c of [...historico, ...ancoras]) {
+    const k = `${c.ano}:${c.sq}`;
+    const prev = m.get(k);
+    m.set(k, prev ? { ...c, ...prev, votos: prev.votos ?? c.votos, bens: prev.bens ?? c.bens, patrimonio: prev.patrimonio ?? c.patrimonio } : c);
+  }
+  return [...m.values()].sort((a, b) => a.ano - b.ano || a.codCargo - b.codCargo);
+}
+
+/** "BELO HORIZONTE" -> "Belo Horizonte" */
+const nomeProprioMunicipio = (s: string) => (s === s.toUpperCase() ? nomeProprio(s) : s);
 
 // ------------------------------------------------------------ emendas
 
@@ -162,19 +222,24 @@ export function montar(inp: BuildInput): BuildResult {
   const redesTodas: RedeSocial[] = [];
 
   const detalhes: PoliticoDetalhe[] = inp.politicos.map((p) => {
-    const cands = vincularTSE(p, porNasc, porUf);
+    const cands = juntarCandidaturas(vincularTSE(p, porNasc, porUf), inp.historico?.get(p.id) ?? []);
     const eleicoes: EleicaoTSE[] = cands.map((c) => ({
       ano: c.ano,
       cargo: capitalizar(c.cargo),
       uf: c.uf,
+      municipio: c.municipio ? nomeProprioMunicipio(c.municipio) : undefined,
       partido: c.partido,
       numero: c.numero,
       situacao: c.situacao,
+      resultado: resultadoDe(c.situacao),
+      situacaoRegistro: c.situacaoRegistro,
       votos: c.votos,
       patrimonio: c.patrimonio != null ? round(c.patrimonio, 2) : undefined,
       bens: c.bens?.slice(0, 12),
       ocupacao: c.ocupacao ? capitalizar(c.ocupacao) : undefined,
       instrucao: c.instrucao ? capitalizar(c.instrucao) : undefined,
+      campanha: inp.contas?.get(`${c.ano}:${c.sq}`),
+      url: ELEICAO_DIVULGA[c.ano] && c.uf.length === 2 ? `${DIVULGA}/${c.ano}/${ELEICAO_DIVULGA[c.ano]}/${c.uf}/${c.sq}` : undefined,
     }));
     const carreira = mesclarCarreira(p.carreira ?? [], mandatosTSE(cands));
     const comPatrimonio = eleicoes.filter((e) => e.patrimonio != null);
@@ -418,6 +483,8 @@ export interface PublicarOpts {
   demo: boolean;
   /** Official details of the bills voted */
   materias?: MateriaVotada[];
+  arquivos?: Meta["arquivos"];
+  qualidade?: Meta["qualidade"];
   fontes: FonteStatus[];
   totais: Record<string, number>;
   hoje: Date;
@@ -465,6 +532,8 @@ export async function publicar(out: string, r: BuildResult, falas: Fala[], o: Pu
       { cargo: "Senador(a)", valor: 46366.19, fonte: "https://www12.senado.leg.br/transparencia" },
       { cargo: "Deputado(a) Estadual", valor: 34774.64, fonte: "Constituição Federal, art. 27, § 2º (até 75% do subsídio federal)" },
     ],
+    arquivos: o.arquivos,
+    qualidade: o.qualidade,
   };
   files["meta.json"] = meta;
   // Only bills referenced by a published vote

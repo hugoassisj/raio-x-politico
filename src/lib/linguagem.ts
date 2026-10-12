@@ -354,3 +354,35 @@ export function encurtar(texto: string, max: number): string {
   const corte = texto.slice(0, max);
   return `${corte.slice(0, Math.max(corte.lastIndexOf(" "), max * 0.6)).replace(/[\s,;:.]+$/, "")}…`;
 }
+
+/**
+ * Vote records as people understand them. The houses use codes ("Artigo 17", "P-NRV", "LS") that
+ * mean very different things: presiding the session is not an absence, a health leave is not a
+ * choice not to vote.
+ */
+const VOTOS: [RegExp, { rotulo: string; explicacao: string; tipo: "sim" | "nao" | "outro" | "ausente" }][] = [
+  [/^sim$/i, { rotulo: "Sim", explicacao: "Votou a favor.", tipo: "sim" }],
+  [/^n[aã]o$/i, { rotulo: "Não", explicacao: "Votou contra.", tipo: "nao" }],
+  [/^absten/i, { rotulo: "Abstenção", explicacao: "Estava presente e registrou que não votaria nem a favor nem contra.", tipo: "outro" }],
+  [/^obstru/i, { rotulo: "Obstrução", explicacao: "Estava presente, mas não votou como forma de protesto, para tentar impedir a votação.", tipo: "outro" }],
+  [
+    /^art(igo|\.)? ?17/i,
+    { rotulo: "Presidindo", explicacao: "Presidia a sessão. Pelo regimento da Câmara (art. 17), o presidente só vota em caso de empate ou votação secreta.", tipo: "outro" },
+  ],
+  [/^presidente/i, { rotulo: "Presidindo", explicacao: "Presidia a sessão do Senado, e por isso não votou.", tipo: "outro" }],
+  [/^p-nrv/i, { rotulo: "Presente, não votou", explicacao: "Registrou presença, mas não registrou voto.", tipo: "outro" }],
+  [/^p-od/i, { rotulo: "Presente, não votou", explicacao: "Registrou presença, mas não votou por obstrução declarada.", tipo: "outro" }],
+  [/^ap$/i, { rotulo: "Em atividade oficial", explicacao: "Ausência justificada: estava em outra atividade do mandato autorizada pelo Senado.", tipo: "ausente" }],
+  [/^mis/i, { rotulo: "Em missão oficial", explicacao: "Ausência justificada: estava em missão oficial autorizada.", tipo: "ausente" }],
+  [/^ls$/i, { rotulo: "Licença de saúde", explicacao: "Ausência justificada por licença médica.", tipo: "ausente" }],
+  [/^lp$/i, { rotulo: "Licença particular", explicacao: "Estava de licença para tratar de assuntos particulares.", tipo: "ausente" }],
+  [/^l[a-z]{1,2}$/i, { rotulo: "De licença", explicacao: "Estava de licença autorizada pelo Senado.", tipo: "ausente" }],
+  [/^ncom/i, { rotulo: "Não compareceu", explicacao: "Não compareceu à sessão.", tipo: "ausente" }],
+  [/^participou/i, { rotulo: "Participou", explicacao: "Votação secreta: a casa publica quem participou, mas não o voto.", tipo: "outro" }],
+  [/^(ausente|)$/i, { rotulo: "Ausente", explicacao: "Não registrou voto nesta votação.", tipo: "ausente" }],
+];
+
+export function rotuloVoto(voto: string | undefined) {
+  const v = (voto ?? "").trim();
+  return VOTOS.find(([re]) => re.test(v))?.[1] ?? { rotulo: v, explicacao: "Registro da casa legislativa, como publicado.", tipo: "outro" as const };
+}

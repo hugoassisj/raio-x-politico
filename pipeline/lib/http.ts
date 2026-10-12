@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile, stat } from "node:fs/promises";
+import { createWriteStream } from "node:fs";
+import { mkdir, readFile, rename, rm, writeFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { log } from "./log";
 
@@ -11,6 +12,8 @@ import { log } from "./log";
  */
 
 const CACHE_DIR = process.env.PIPELINE_CACHE_DIR ?? path.join(process.cwd(), ".cache", "http");
+/** Multi-gigabyte archives live apart, so the CI cache of small responses stays small */
+const GRANDES_DIR = process.env.PIPELINE_CACHE_DIR ? path.join(process.env.PIPELINE_CACHE_DIR, "grandes") : path.join(process.cwd(), ".cache", "grandes");
 const UA = "raio-x-politico/1.0 (+https://github.com/hugoassisj/raio-x-politico; dados abertos)";
 
 interface HostState {
@@ -28,6 +31,23 @@ const HOST_LIMITS: Record<string, { concurrency: number; spacingMs: number }> = 
 };
 
 export const stats = { requests: 0, cacheHits: 0, failures: 0, bytes: 0 };
+
+/**
+ * Official bulk files used in this run, with their SHA-256: anyone can download the same URL and
+ * check that the file we processed is the one the agency published.
+ */
+export interface ArquivoBaixado {
+  url: string;
+  sha256: string;
+  bytes: number;
+  baixadoEm: string;
+}
+export const manifesto = new Map<string, ArquivoBaixado>();
+const GRANDE = 1_000_000;
+
+function registrar(url: string, sha256: string, bytes: number, baixadoEm: string) {
+  if (bytes >= GRANDE) manifesto.set(redact(url), { url: redact(url), sha256, bytes, baixadoEm });
+}
 
 async function acquire(host: string) {
   const lim = HOST_LIMITS[host] ?? HOST_LIMITS.default;
@@ -115,6 +135,8 @@ export async function fetchRaw(url: string, opts: FetchOpts = {}): Promise<RawRe
         const meta = JSON.parse(await readFile(metaPath, "utf8"));
         const body = await readFile(bodyPath);
         stats.cacheHits++;
+        if (body.length >= GRANDE)
+          registrar(url, meta.sha256 ?? createHash("sha256").update(body).digest("hex"), body.length, meta.baixadoEm ?? new Date(st.mtimeMs).toISOString());
         return { status: meta.status, headers: meta.headers, body, fromCache: true };
       }
     } catch {
@@ -144,7 +166,10 @@ export async function fetchRaw(url: string, opts: FetchOpts = {}): Promise<RawRe
         stats.bytes += buf.length;
         await mkdir(path.dirname(bodyPath), { recursive: true });
         await writeFile(bodyPath, buf);
-        await writeFile(metaPath, JSON.stringify({ url: redact(url), status: res.status, headers: hdrs }));
+        const sha256 = buf.length >= GRANDE ? createHash("sha256").update(buf).digest("hex") : undefined;
+        const baixadoEm = new Date().toISOString();
+        await writeFile(metaPath, JSON.stringify({ url: redact(url), status: res.status, headers: hdrs, sha256, baixadoEm }));
+        if (sha256) registrar(url, sha256, buf.length, baixadoEm);
         return { status: res.status, headers: hdrs, body: buf, fromCache: false };
       }
       lastErr = new Error(`HTTP ${res.status} ${redact(url)}`);
@@ -212,4 +237,76 @@ export async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T, i:
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
   if (label && failed) log.warn(`${label}: ${failed}/${items.length} falharam`);
   return out;
+}
+
+/**
+ * Downloads a (possibly huge) official file straight to disk, never holding it in memory, and
+ * returns its path in the cache. Used for TSE archives of several gigabytes.
+ */
+export async function baixarArquivo(
+  url: string,
+  opts: { ttlHours?: number; retries?: number; timeoutMs?: number } = {},
+): Promise<{ caminho: string; sha256: string; bytes: number }> {
+  const { ttlHours = 24 * 7, retries = 2, timeoutMs = 1_800_000 } = opts;
+  const key = cacheKey(url);
+  const caminho = path.join(GRANDES_DIR, key.slice(0, 2), key + ".bin");
+  const metaPath = caminho.replace(/\.bin$/, ".json");
+  try {
+    const st = await stat(metaPath);
+    if (Date.now() - st.mtimeMs < ttlHours * 3600_000) {
+      const meta = JSON.parse(await readFile(metaPath, "utf8"));
+      if (meta.sha256 && meta.bytes && (await stat(caminho).catch(() => undefined))) {
+        stats.cacheHits++;
+        registrar(url, meta.sha256, meta.bytes, meta.baixadoEm);
+        return { caminho, sha256: meta.sha256, bytes: meta.bytes };
+      }
+    }
+  } catch {
+    /* cache miss */
+  }
+  await mkdir(path.dirname(caminho), { recursive: true });
+  const host = new URL(url).host;
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    await acquire(host);
+    const tmp = `${caminho}.parcial`;
+    try {
+      stats.requests++;
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), timeoutMs);
+      const res = await fetch(url, { headers: { "User-Agent": UA }, signal: ctrl.signal, redirect: "follow" });
+      if (!res.ok || !res.body) {
+        clearTimeout(t);
+        lastErr = new Error(`HTTP ${res.status} ${redact(url)}`);
+        if (res.status < 500 && res.status !== 429) break;
+        await sleep(backoff(attempt));
+        continue;
+      }
+      const hash = createHash("sha256");
+      const out = createWriteStream(tmp);
+      let bytes = 0;
+      for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
+        hash.update(chunk);
+        bytes += chunk.length;
+        if (!out.write(chunk)) await new Promise<void>((r) => out.once("drain", () => r()));
+      }
+      await new Promise<void>((r, j) => out.end((e?: Error | null) => (e ? j(e) : r())));
+      clearTimeout(t);
+      await rename(tmp, caminho);
+      const sha256 = hash.digest("hex");
+      const baixadoEm = new Date().toISOString();
+      await writeFile(metaPath, JSON.stringify({ url: redact(url), status: res.status, sha256, bytes, baixadoEm }));
+      stats.bytes += bytes;
+      registrar(url, sha256, bytes, baixadoEm);
+      return { caminho, sha256, bytes };
+    } catch (e) {
+      lastErr = e;
+      await rm(tmp, { force: true });
+      await sleep(backoff(attempt));
+    } finally {
+      release(host);
+    }
+  }
+  stats.failures++;
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }

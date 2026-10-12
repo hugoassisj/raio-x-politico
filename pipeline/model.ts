@@ -57,11 +57,17 @@ export interface CandidatoTSE {
   nomeUrna: string;
   nascimento?: string;
   uf: string;
+  /** Municipality, for municipal offices */
+  municipio?: string;
   cargo: string;
   codCargo: number;
   partido: string;
   numero: string;
+  /** Final result (e.g. "ELEITO", "SUPLENTE") or, when there is none, the registration status */
   situacao: string;
+  /** Registration status (e.g. "APTO", "DEFERIDO") */
+  situacaoRegistro?: string;
+  turno?: number;
   ocupacao?: string;
   instrucao?: string;
   genero?: string;

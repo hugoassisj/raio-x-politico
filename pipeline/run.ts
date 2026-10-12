@@ -4,16 +4,18 @@
  *   npm run pipeline                  # collect everything, write ./data
  *   npm run pipeline -- --only=senado # recollect one source, reuse the others from .cache/stage
  *   npm run pipeline -- --dias=180    # shorter window for votes/presence/speeches
+ *   npm run pipeline -- --pular=historico,contas  # reuse heavy stages from the last run, if any
  *
  * Every source runs in isolation: a failing source is recorded in data/meta.json and the
  * remaining sources still publish. Optional credentials (see .env.example) enable extra sources.
  */
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { classificarAssuntos } from "../src/lib/assuntos";
-import type { Fala, FonteStatus, MateriaVotada, RedeSocial } from "../src/lib/types";
-import { montar, publicar } from "./build";
-import { stats } from "./lib/http";
+import type { CampanhaFinancas, Fala, FonteStatus, MateriaVotada, Meta, RedeSocial } from "../src/lib/types";
+import { ancorasTSE, chavesDaPessoa, juntarCandidaturas, montar, publicar } from "./build";
+import { manifesto, stats } from "./lib/http";
+import { exigirQualidade, verificarQualidade } from "./qualidade";
 import { log } from "./lib/log";
 import type { CandidatoTSE, EmendaAgg, SourceOutput } from "./model";
 import { coletarAssembleias } from "./sources/assembleias";
@@ -24,6 +26,8 @@ import { coletarDiscursos, coletarYouTube } from "./sources/falas";
 import { coletarSenado } from "./sources/senado";
 import { coletarConectoresSociais } from "./sources/social-connectors";
 import { coletarTSE } from "./sources/tse";
+import { coletarHistoricoTSE } from "./sources/tse-historico";
+import { ANOS_CONTAS, coletarContasCampanha } from "./sources/tse-contas";
 import { baixarFotos, baixarFotosTSE } from "./fotos";
 
 const args = Object.fromEntries(
@@ -33,6 +37,8 @@ const args = Object.fromEntries(
   }),
 );
 const ONLY = args.only ? new Set(String(args.only).split(",")) : undefined;
+/** Heavy stages to reuse from the last run when available (e.g. the multi-gigabyte TSE history on weekdays) */
+const PULAR = args.pular ? new Set(String(args.pular).split(",")) : undefined;
 const DIAS = Number(args.dias ?? 365);
 const OUT = path.resolve(args.out ?? "data");
 const STAGE = path.resolve(".cache", "stage");
@@ -44,7 +50,8 @@ const fontes: FonteStatus[] = [];
 /** Run a collection step, or reuse its last staged result when excluded by --only. */
 async function etapa<T>(id: string, nome: string, url: string, fn: () => Promise<T>, contar: (t: T) => number, vazio: T): Promise<T> {
   const stageFile = path.join(STAGE, `${id}.json`);
-  if (ONLY && !ONLY.has(id)) {
+  const reaproveitar = (ONLY && !ONLY.has(id)) || (PULAR?.has(id) && (await stat(stageFile).catch(() => undefined)));
+  if (reaproveitar) {
     try {
       const t = deserialize(JSON.parse(await readFile(stageFile, "utf8"))) as T;
       fontes.push({ id, nome, url, status: "ok", registros: contar(t), duracaoMs: 0, erro: "reaproveitado da última coleta" });
@@ -168,6 +175,32 @@ async function main() {
   const politicos = [...camara.politicos, ...senado.politicos, ...assembleias.politicos];
   if (!politicos.length) throw new Error("Nenhuma fonte de parlamentares respondeu; nada será publicado.");
 
+  // The whole public life of each person: every candidacy since 1994, followed by título/CPF
+  const ancoras = ancorasTSE(politicos, tse.candidatos);
+  const porPid = new Map(politicos.map((p) => [p.id, p]));
+  const historico = await etapa(
+    "historico",
+    "TSE - Todas as candidaturas desde 1994 (pessoas acompanhadas)",
+    "https://dadosabertos.tse.jus.br/dataset/?groups=candidatos",
+    () => coletarHistoricoTSE([...ancoras].map(([pid, cs]) => chavesDaPessoa(pid, cs, porPid.get(pid)))),
+    (h) => [...h.porPessoa.values()].reduce((n, l) => n + l.length, 0),
+    { porPessoa: new Map<string, CandidatoTSE[]>(), arquivos: [] as string[], avisos: [] as string[] },
+  );
+
+  // Campaign finance of every candidacy of those people in years with filings in the current layout
+  const alvosContas = new Map<number, Set<string>>();
+  for (const [pid, cs] of ancoras)
+    for (const c of juntarCandidaturas(cs, historico.porPessoa.get(pid) ?? []))
+      if (ANOS_CONTAS.includes(c.ano)) alvosContas.set(c.ano, (alvosContas.get(c.ano) ?? new Set()).add(c.sq));
+  const contas = await etapa(
+    "contas",
+    "TSE - Prestação de contas das campanhas",
+    "https://dadosabertos.tse.jus.br/dataset/?groups=prestacao-de-contas",
+    () => coletarContasCampanha(alvosContas),
+    (c) => c.contas.size,
+    { contas: new Map<string, CampanhaFinancas>(), arquivos: [] as string[], avisos: [] as string[] },
+  );
+
   const discursos = await etapa(
     "discursos",
     "Discursos e pronunciamentos (Câmara e Senado)",
@@ -188,6 +221,8 @@ async function main() {
     tseRedes: tse.redes,
     emendas,
     falas: discursos.falas,
+    historico: historico.porPessoa,
+    contas: contas.contas,
   });
 
   // Social media content (official APIs only)
@@ -255,12 +290,21 @@ async function main() {
     d.foto = local;
   }
 
-  // ---------- write ----------
+  // ---------- check, then write ----------
+  const anterior = await readFile(path.join(OUT, "meta.json"), "utf8")
+    .then((t) => JSON.parse(t) as Meta)
+    .catch(() => undefined);
+  const qualidade = verificarQualidade({ hoje: HOJE, detalhes: r.detalhes, votacoes: r.votacoes, fontes, anterior: anterior?.demo ? undefined : anterior });
+  for (const q of qualidade) (q.ok ? log.info : log.warn)(`Qualidade: ${q.ok ? "ok" : "FALHOU"} - ${q.descricao}${q.detalhe ? ` (${q.detalhe})` : ""}`);
+  exigirQualidade(qualidade);
+
   log.step(`Gravando dados em ${OUT}`);
   const todasFalas = [...discursos.falas, ...falasSociais];
   await publicar(OUT, r, todasFalas, {
     demo: false,
     materias: materias.materias,
+    arquivos: [...manifesto.values()].sort((a, b) => a.url.localeCompare(b.url)),
+    qualidade,
     fontes,
     totais: {
       deputadosFederais: camara.politicos.length,

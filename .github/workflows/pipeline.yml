@@ -9,6 +9,10 @@ on:
       only:
         description: "Coletar só estas fontes (ex.: senado,camara). Vazio = todas"
         required: false
+      completa:
+        description: "Refazer também o histórico completo do TSE e as contas de campanha (várias horas)"
+        type: boolean
+        default: false
       dias:
         description: "Janela em dias para votos, presença e discursos"
         required: false
@@ -48,12 +52,21 @@ jobs:
       - name: Restaurar cache de coleta
         uses: actions/cache@v4
         with:
-          path: .cache
+          # Small API responses and stage results only; multi-gigabyte TSE archives (.cache/grandes)
+          # are downloaded again on the weekly full run
+          path: |
+            .cache/http
+            .cache/stage
           key: coleta-${{ github.run_id }}
           restore-keys: coleta-
 
       - name: Coletar dados públicos
-        run: npm run pipeline -- ${{ inputs.only && format('--only={0}', inputs.only) || '' }} --dias=${{ inputs.dias || '365' }}
+        # The full TSE history and campaign accounts (gigabytes) are rebuilt on Sundays or on request;
+        # other days reuse the last result
+        run: |
+          PULAR="--pular=historico,contas"
+          if [ "$(date -u +%u)" = "7" ] || [ "${{ inputs.completa }}" = "true" ]; then PULAR=""; fi
+          npm run pipeline -- ${{ inputs.only && format('--only={0}', inputs.only) || '' }} --dias=${{ inputs.dias || '365' }} $PULAR
 
       - name: Explicações em linguagem simples (IA)
         if: ${{ env.ANTHROPIC_API_KEY != '' }}
@@ -94,6 +107,10 @@ jobs:
               const linhas = ["| Fonte | Situação | Registros | Observação |", "|---|---|---:|---|"];
               for (const f of m.fontes) linhas.push(`| ${f.nome} | ${f.status} | ${f.registros} | ${(f.erro ?? "").replace(/\|/g, "/").slice(0, 160)} |`);
               linhas.push("", "Totais: " + JSON.stringify(m.totais));
+              if (m.qualidade) {
+                linhas.push("", "| Verificação | Resultado | Detalhe |", "|---|---|---|");
+                for (const q of m.qualidade) linhas.push(`| ${q.descricao} | ${q.ok ? "ok" : q.bloqueia ? "BLOQUEOU" : "atenção"} | ${(q.detalhe ?? "").replace(/\|/g, "/")} |`);
+              }
               console.log(linhas.join("\n"));
             ' >> "$GITHUB_STEP_SUMMARY"
           fi

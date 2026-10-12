@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { classificarAssuntos } from "./assuntos";
+import { listaNatural, resultadoDe, resumoEleicoes, trocasDePartido } from "./carreira";
 import { explicarEtapa } from "./linguagem";
 import { cadeirasPorVoto } from "./cadeiras";
 import { partesDescricao } from "./format";
@@ -199,5 +200,26 @@ describe("projetos", () => {
       ["cam-2", 1, "d"],
     ]);
     expect(g[0].ementa).toBe("Ementa do projeto");
+  });
+});
+
+describe("carreira", () => {
+  it("reads TSE results in plain words", () => {
+    expect(resultadoDe("ELEITO POR QP")).toBe("eleito");
+    expect(resultadoDe("2º TURNO")).toBe("segundo-turno");
+    expect(resultadoDe("SUPLENTE")).toBe("suplente");
+    expect(resultadoDe("NÃO ELEITO")).toBe("nao-eleito");
+    expect(resultadoDe("INDEFERIDO COM RECURSO")).toBe("registro-negado");
+    expect(resultadoDe(undefined)).toBe("sem-resultado");
+  });
+  it("lists party changes in order and summarizes the career", () => {
+    const e = [
+      { ano: 2018, cargo: "Deputado federal", uf: "AL", partido: "PP", resultado: "eleito" as const },
+      { ano: 2010, cargo: "Deputado estadual", uf: "AL", partido: "PMDB", resultado: "eleito" as const },
+      { ano: 2022, cargo: "Deputado federal", uf: "AL", partido: "PP", resultado: "nao-eleito" as const },
+    ];
+    expect(trocasDePartido(e)).toEqual([{ ano: 2018, de: "PMDB", para: "PP" }]);
+    expect(resumoEleicoes(e)).toEqual({ disputadas: 3, vitorias: 2, primeiroAno: 2010, partidos: ["PMDB", "PP"] });
+    expect(listaNatural(["A", "B", "C"])).toBe("A, B e C");
   });
 });

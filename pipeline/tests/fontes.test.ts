@@ -7,6 +7,7 @@ import { mkdtemp } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { zipSync } from "fflate";
 import { sanitizar, validarCitacoes } from "../ai";
 import { validarExplicacao } from "../explicar";
 
@@ -21,7 +22,7 @@ function mockFetch(rotas: Rota[]) {
   vi.stubGlobal("fetch", async (url: string) => {
     chamadas.push(url);
     const r = rotas.find(([re]) => re.test(url));
-    const body = r ? JSON.stringify(r[1]) : "";
+    const body: BodyInit = r ? (r[1] instanceof Uint8Array ? new Blob([r[1] as Uint8Array<ArrayBuffer>]) : JSON.stringify(r[1])) : "";
     return new Response(r ? body : "not found", { status: r ? 200 : 404, headers: { "content-type": "application/json", ...(r?.[2] ?? {}) } });
   });
   return chamadas;
@@ -209,14 +210,37 @@ describe("Câmara collector", () => {
           ],
         },
       ],
-      [/proposicoes-20\d\d\.json/, { dados: [{ id: 900, siglaTipo: "PL", ultimoStatus: { descricaoSituacao: "Transformado em Norma Jurídica" } }] }],
       [
-        /\/proposicoes\?idDeputadoAutor=204379&siglaTipo=PL,PLP,PEC,PDL/,
-        { dados: [{ id: 900, siglaTipo: "PL", numero: 1, ano: 2025, ementa: "Institui", dataApresentacao: "2025-03-01" }] },
-        { "x-total-count": "42" },
+        /proposicoes-2025\.json/,
+        {
+          dados: [
+            {
+              id: 900,
+              siglaTipo: "PL",
+              numero: 1,
+              ano: 2025,
+              ementa: "Institui",
+              dataApresentacao: "2025-03-01",
+              ultimoStatus: { descricaoSituacao: "Transformado em Norma Jurídica" },
+            },
+            { id: 901, siglaTipo: "PEC", numero: 2, ano: 2025, ementa: "Altera", dataApresentacao: "2025-06-01", ultimoStatus: { descricaoSituacao: "Aguardando Parecer" } },
+            { id: 902, siglaTipo: "REQ", numero: 3, ano: 2025, ementa: "Requer", dataApresentacao: "2025-07-01" },
+            { id: 903, siglaTipo: "PL", numero: 4, ano: 2025, ementa: "Outro", dataApresentacao: "2025-08-01" },
+          ],
+        },
       ],
-      [/\/proposicoes\?idDeputadoAutor=204379&siglaTipo=PL&itens=1/, { dados: [] }, { "x-total-count": "40" }],
-      [/\/proposicoes\?idDeputadoAutor=204379&siglaTipo=PEC&itens=1/, { dados: [] }, { "x-total-count": "2" }],
+      [
+        /proposicoesAutores-2025\.json/,
+        {
+          dados: [
+            { idProposicao: 900, idDeputadoAutor: 204379, proponente: 1, ordemAssinatura: 1 },
+            { idProposicao: 901, uriAutor: "https://dadosabertos.camara.leg.br/api/v2/deputados/204379", proponente: 1, ordemAssinatura: 2 },
+            { idProposicao: 902, idDeputadoAutor: 204379, proponente: 1, ordemAssinatura: 1 },
+            { idProposicao: 903, idDeputadoAutor: 204379, proponente: 0, ordemAssinatura: 3 },
+          ],
+        },
+      ],
+      [/proposicoes(Autores)?-\d{4}\.json/, { dados: [] }],
     ]);
     const { coletarCamara } = await import("../sources/camara");
     const r = await coletarCamara({ hoje: new Date("2026-10-11"), diasVotos: 365, anosGastos: [] });
@@ -241,9 +265,12 @@ describe("Câmara collector", () => {
       objeto: "Votação do Requerimento de retirada de pauta",
     });
 
-    expect(p.proposicoesTotal).toBe(42);
-    expect(p.proposicoesPorTipo).toMatchObject({ PL: 40, PEC: 2 });
-    expect(p.proposicoesLista?.[0]).toMatchObject({ virouLei: true, url: "https://www.camara.leg.br/propostas-legislativas/900" });
+    // Whole career from the yearly files: requests and supporters who did not propose are left out
+    expect(p.proposicoesTotal).toBe(2);
+    expect(p.proposicoesPorTipo).toEqual({ PL: 1, PEC: 1 });
+    expect(p.proposicoesLei).toBe(1);
+    expect(p.proposicoesLista?.map((x) => x.id)).toEqual(["901", "900"]);
+    expect(p.proposicoesLista?.[1]).toMatchObject({ virouLei: true, url: "https://www.camara.leg.br/propostas-legislativas/900" });
   });
 });
 
@@ -414,5 +441,143 @@ describe("Plain-language explanation guardrails", () => {
   it("rejects value judgements and removes em dashes", () => {
     expect(validarExplicacao({ ...ok, resumo: "Uma mudança absurda na lei." }, m, "x")).toEqual({ erro: "palavra de juízo de valor" });
     expect(validarExplicacao({ ...ok, resumo: "Aumenta a pena — para quem maltrata." }, m, "x")).toMatchObject({ resumo: "Aumenta a pena, para quem maltrata." });
+  });
+});
+
+/** A TSE-style archive: Latin-1, ";"-separated, every field quoted. */
+function zipTse(arquivos: Record<string, Record<string, string>[]>) {
+  const conteudo: Record<string, Uint8Array> = {};
+  for (const [nome, linhas] of Object.entries(arquivos)) {
+    const cols = Object.keys(linhas[0]);
+    const texto = [cols, ...linhas.map((l) => cols.map((c) => l[c]))].map((r) => r.map((x) => `"${x}"`).join(";")).join("\r\n");
+    conteudo[nome] = Uint8Array.from([...texto].map((ch) => ch.charCodeAt(0)));
+  }
+  return zipSync(conteudo);
+}
+
+describe("TSE lifelong history", () => {
+  const cand = (o: Record<string, string>) => ({
+    ANO_ELEICAO: "",
+    SQ_CANDIDATO: "",
+    NR_TITULO_ELEITORAL_CANDIDATO: "",
+    NR_CPF_CANDIDATO: "",
+    NM_CANDIDATO: "FULANA DE TAL",
+    NM_URNA_CANDIDATO: "FULANA",
+    DT_NASCIMENTO: "02/05/1970",
+    SG_UF: "MG",
+    NM_UE: "BELO HORIZONTE",
+    CD_CARGO: "13",
+    DS_CARGO: "VEREADOR",
+    SG_PARTIDO: "PSDB",
+    NR_CANDIDATO: "45123",
+    NR_TURNO: "1",
+    DS_SIT_TOT_TURNO: "ELEITO POR QP",
+    DS_SITUACAO_CANDIDATURA: "APTO",
+    ...o,
+  });
+
+  it("follows the voter registration number across years and offices, and adds assets", async () => {
+    const z2016 = zipTse({
+      "consulta_cand_2016_MG.csv": [
+        cand({ SQ_CANDIDATO: "130001", NR_TITULO_ELEITORAL_CANDIDATO: "012345678901" }),
+        // Same name and birth date, different título: another person, ignored
+        cand({ SQ_CANDIDATO: "130002", NR_TITULO_ELEITORAL_CANDIDATO: "999999999999" }),
+      ],
+      "consulta_cand_2016_BRASIL.csv": [cand({ SQ_CANDIDATO: "130001", NR_TITULO_ELEITORAL_CANDIDATO: "012345678901" })],
+    });
+    const bens2016 = zipTse({
+      "bem_candidato_2016_MG.csv": [{ SQ_CANDIDATO: "130001", DS_TIPO_BEM_CANDIDATO: "Casa", DS_BEM_CANDIDATO: "Casa em BH", VR_BEM_CANDIDATO: "250000,00" }],
+    });
+    const z2020 = zipTse({
+      "consulta_cand_2020_MG.csv": [
+        cand({
+          SQ_CANDIDATO: "200001",
+          NR_TITULO_ELEITORAL_CANDIDATO: "12345678901",
+          CD_CARGO: "11",
+          DS_CARGO: "PREFEITO",
+          SG_PARTIDO: "PL",
+          NR_TURNO: "1",
+          DS_SIT_TOT_TURNO: "2º TURNO",
+        }),
+        cand({
+          SQ_CANDIDATO: "200001",
+          NR_TITULO_ELEITORAL_CANDIDATO: "12345678901",
+          CD_CARGO: "11",
+          DS_CARGO: "PREFEITO",
+          SG_PARTIDO: "PL",
+          NR_TURNO: "2",
+          DS_SIT_TOT_TURNO: "NÃO ELEITO",
+        }),
+      ],
+    });
+    mockFetch([
+      [/consulta_cand_2016\.zip/, z2016],
+      [/bem_candidato_2016\.zip/, bens2016],
+      [/consulta_cand_2020\.zip/, z2020],
+    ]);
+    const { coletarHistoricoTSE } = await import("../sources/tse-historico");
+    const r = await coletarHistoricoTSE([{ pid: "dep-1", titulos: ["12345678901"], cpfs: [], nascimento: "1970-05-02", nomes: ["Fulana de Tal"] }], [2016, 2020]);
+    const l = r.porPessoa.get("dep-1")!;
+    expect(l.map((c) => [c.ano, c.cargo, c.municipio, c.partido, c.situacao])).toEqual([
+      [2016, "VEREADOR", "BELO HORIZONTE", "PSDB", "ELEITO POR QP"],
+      // The run-off row wins over the first round
+      [2020, "PREFEITO", "BELO HORIZONTE", "PL", "NÃO ELEITO"],
+    ]);
+    expect(l[0]).toMatchObject({ patrimonio: 250000, bens: [{ tipo: "Casa", valor: 250000 }] });
+    expect(r.arquivos).toHaveLength(3);
+  });
+
+  it("drops identity keys shared by two people", async () => {
+    const { indicesIdentidade } = await import("../sources/tse-historico");
+    const idx = indicesIdentidade([
+      { pid: "a", titulos: ["1"], cpfs: ["11144477735"], nomes: [] },
+      { pid: "b", titulos: ["2"], cpfs: ["11144477735"], nomes: [] },
+    ]);
+    expect(idx.porCpf.has("11144477735")).toBe(false);
+    expect(idx.porTitulo.get("1")).toBe("a");
+  });
+});
+
+describe("TSE campaign finance", () => {
+  it("adds up money by origin, names people without CPF and keeps companies' CNPJ", async () => {
+    const z = zipTse({
+      "receitas_candidatos_2022_MG.csv": [
+        {
+          SQ_CANDIDATO: "1",
+          NR_CPF_CNPJ_DOADOR: "12345678901",
+          NM_DOADOR: "JOAO DA SILVA",
+          DS_FONTE_RECEITA: "OUTROS RECURSOS",
+          DS_ORIGEM_RECEITA: "Recursos de pessoas físicas",
+          VR_RECEITA: "1000,00",
+        },
+        {
+          SQ_CANDIDATO: "1",
+          NR_CPF_CNPJ_DOADOR: "11222333000181",
+          NM_DOADOR: "DIRECAO NACIONAL",
+          DS_FONTE_RECEITA: "FUNDO ESPECIAL",
+          DS_ORIGEM_RECEITA: "Recursos de partido político",
+          VR_RECEITA: "9000,00",
+        },
+        { SQ_CANDIDATO: "2", NR_CPF_CNPJ_DOADOR: "1", NM_DOADOR: "OUTRA", DS_FONTE_RECEITA: "", DS_ORIGEM_RECEITA: "", VR_RECEITA: "5,00" },
+      ],
+      "receitas_candidatos_2022_BRASIL.csv": [
+        { SQ_CANDIDATO: "1", NR_CPF_CNPJ_DOADOR: "1", NM_DOADOR: "DUPLICADO", DS_FONTE_RECEITA: "", DS_ORIGEM_RECEITA: "", VR_RECEITA: "999,00" },
+      ],
+      "despesas_contratadas_candidatos_2022_MG.csv": [
+        { SQ_CANDIDATO: "1", NR_CPF_CNPJ_FORNECEDOR: "99888777000166", NM_FORNECEDOR: "GRAFICA X", VR_DESPESA_CONTRATADA: "4000,00" },
+      ],
+    });
+    mockFetch([[/prestacao_de_contas_eleitorais_candidatos_2022\.zip/, z]]);
+    const { coletarContasCampanha } = await import("../sources/tse-contas");
+    const r = await coletarContasCampanha(new Map([[2022, new Set(["1"])]]));
+    const c = r.contas.get("2022:1")!;
+    expect(c).toMatchObject({ receitas: 10000, dinheiroPublico: 9000, despesas: 4000 });
+    expect(c.porOrigem[0]).toEqual({ origem: "Fundo eleitoral (dinheiro público)", valor: 9000 });
+    expect(c.doadores).toEqual([
+      { nome: "DIRECAO NACIONAL", cnpj: "11222333000181", origem: "Fundo eleitoral (dinheiro público)", valor: 9000 },
+      { nome: "JOAO DA SILVA", cnpj: undefined, origem: "Doações de pessoas", valor: 1000 },
+    ]);
+    expect(c.fornecedores).toEqual([{ nome: "GRAFICA X", cnpj: "99888777000166", valor: 4000 }]);
+    expect(r.contas.has("2022:2")).toBe(false);
   });
 });
