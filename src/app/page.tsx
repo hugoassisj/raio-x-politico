@@ -4,7 +4,7 @@ import { CartaoVotacao, LinhaPolitico } from "@/components/Listas";
 import { Avatar } from "@/components/Avatar";
 import { Container, Fonte } from "@/components/ui";
 import { getFalasRecentes, getMeta, getPoliticos, getVotacoes } from "@/lib/data";
-import { data, moedaCurta, numero, pct } from "@/lib/format";
+import { data, moedaCurta, numero, pct, plural } from "@/lib/format";
 import { ESTADOS } from "@/lib/ufs";
 import type { PoliticoResumo } from "@/lib/types";
 
@@ -191,7 +191,7 @@ export default async function Home() {
             <Link href="/dados" className="rounded-lg bg-mark px-4 py-2.5 font-semibold text-mark-ink hover:opacity-90">
               Ver fontes e metodologia
             </Link>
-            {meta && <p className="w-full text-sm text-paper/60 md:text-right">{meta.fontes.filter((f) => f.status !== "ignorado").length} fontes consultadas na última atualização</p>}
+            {meta && <p className="w-full text-sm text-paper/60 md:text-right">{plural(meta.fontes.filter((f) => f.status !== "ignorado").length, "fonte consultada", "fontes consultadas")} na última atualização</p>}
           </div>
         </section>
       </Container>

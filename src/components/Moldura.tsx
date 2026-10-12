@@ -29,7 +29,7 @@ export function Marca() {
 
 export function Cabecalho() {
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80">
+    <header className="z-30 border-b border-line bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80 lg:sticky lg:top-0">
       <a href="#conteudo" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-50 focus:rounded focus:bg-mark focus:px-3 focus:py-2 focus:text-mark-ink">
         Pular para o conteúdo
       </a>

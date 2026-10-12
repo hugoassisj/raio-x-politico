@@ -92,25 +92,27 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
                   </Link>
                   {v.descricao && <p className="mt-0.5 line-clamp-2 text-sm text-ink-2">{v.descricao}</p>}
                 </div>
-                <dl className="grid grid-cols-[auto_auto] items-center gap-x-3 gap-y-1 text-sm sm:justify-end">
-                  <dt className="text-ink-3">Votou</dt>
-                  <dd>
-                    <VotoChip voto={v.voto} />
-                  </dd>
+                <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm sm:grid sm:grid-cols-[auto_auto] sm:justify-end sm:gap-x-3">
+                  <div className="flex items-center gap-1.5 sm:contents">
+                    <dt className="text-ink-3">Votou</dt>
+                    <dd>
+                      <VotoChip voto={v.voto} />
+                    </dd>
+                  </div>
                   {v.orientacaoPartido && (
-                    <>
+                    <div className="flex items-center gap-1.5 sm:contents">
                       <dt className="text-ink-3">Partido</dt>
                       <dd className={contraPartido ? "font-semibold" : "text-ink-2"}>
                         {v.orientacaoPartido}
                         {contraPartido && <span className="ml-1 text-xs text-nao">(votou diferente)</span>}
                       </dd>
-                    </>
+                    </div>
                   )}
                   {mostrarGoverno && v.orientacaoGoverno && (
-                    <>
+                    <div className="flex items-center gap-1.5 sm:contents">
                       <dt className="text-ink-3">Governo</dt>
                       <dd className="text-ink-2">{v.orientacaoGoverno}</dd>
-                    </>
+                    </div>
                   )}
                 </dl>
               </li>

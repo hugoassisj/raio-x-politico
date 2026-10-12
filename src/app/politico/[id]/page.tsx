@@ -92,8 +92,13 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             / <span className="text-ink-2">{p.nome}</span>
           </nav>
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-            <Avatar src={p.foto} nome={p.nome} size={120} className="ring-1 ring-line" />
+            <div className="hidden sm:block">
+              <Avatar src={p.foto} nome={p.nome} size={120} className="ring-1 ring-line" />
+            </div>
             <div className="min-w-0 flex-1">
+              <div className="float-right ml-4 sm:hidden">
+                <Avatar src={p.foto} nome={p.nome} size={72} className="ring-1 ring-line" />
+              </div>
               <p className="text-ink-2">
                 {cargoDe(p)} · {NOME_CASA[p.casa]}
               </p>
@@ -151,7 +156,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
         </Container>
       </header>
 
-      <nav aria-label="Seções do perfil" className="sticky top-16 z-20 border-b border-line bg-paper/95 backdrop-blur max-lg:top-[6.6rem]">
+      <nav aria-label="Seções do perfil" className="sticky top-0 z-20 border-b border-line bg-paper/95 backdrop-blur lg:top-16">
         <Container className="flex gap-1 overflow-x-auto py-2">
           {secoes.map(([a, r]) => (
             <a key={a} href={`#${a}`} className="shrink-0 rounded-md px-3 py-1.5 text-sm text-ink-2 hover:bg-surface-2 hover:text-ink">
