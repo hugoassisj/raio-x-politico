@@ -420,3 +420,31 @@ export function rotuloVoto(voto: string | undefined): { rotulo: string; explicac
   const r = VOTOS.find(([re]) => re.test(v))?.[1] ?? { rotulo: v, explicacao: "Registro da casa legislativa, como publicado.", categoria: "outro" as const };
   return { ...r, tipo: TIPO[r.categoria] };
 }
+
+/**
+ * Where a bill stands today, from the status text the house publishes. A vote that passed is one
+ * step; only the house's own status says whether the bill became law.
+ */
+const SITUACOES: [RegExp, { titulo: string; texto: string; final: boolean }][] = [
+  [/transformad[oa] em (norma|lei)|norma juridica/, { titulo: "Virou lei", texto: "A Casa registra que o projeto foi transformado em lei ou norma.", final: true }],
+  [/promulgad/, { titulo: "Promulgado", texto: "O texto foi publicado e passou a valer. Mudanças na Constituição são promulgadas pelo Congresso.", final: true }],
+  [/aguardando sanc/, { titulo: "Esperando o Presidente", texto: "Foi aprovado no Congresso. Agora o Presidente decide se sanciona (aprova) ou veta (barra).", final: false }],
+  [/vetad|veto/, { titulo: "Vetado", texto: "O Presidente barrou o projeto, todo ou em parte. O Congresso ainda pode derrubar o veto.", final: false }],
+  [/(apreciacao|analise) pelo senado|remetid[oa] ao senado/, { titulo: "Foi para o Senado", texto: "Saiu da Câmara. Agora o Senado precisa votar.", final: false }],
+  [/(apreciacao|analise) pela camara|remetid[oa] a camara/, { titulo: "Foi para a Câmara", texto: "Saiu do Senado. Agora a Câmara precisa votar.", final: false }],
+  [
+    /envio ao senado|envio a camara|autografo|encaminhamento/,
+    { titulo: "Seguindo para a próxima etapa", texto: "Foi aprovado e os papéis estão sendo preparados para seguir.", final: false },
+  ],
+  [/arquivad/, { titulo: "Arquivado", texto: "O projeto parou de andar.", final: true }],
+  [/pronta para pauta/, { titulo: "Pronto para ser votado", texto: "Espera entrar na lista de votações do plenário.", final: false }],
+  [/parecer|relator/, { titulo: "Em análise numa comissão", texto: "Um grupo menor de parlamentares estuda o projeto antes do plenário.", final: false }],
+  [/tramitando em conjunto|apensad/, { titulo: "Andando junto com outro projeto", texto: "Foi juntado a um projeto parecido e segue com ele.", final: false }],
+];
+
+export function explicarSituacao(situacao: string | undefined): { titulo: string; texto: string; final: boolean; original: string } | undefined {
+  if (!situacao?.trim()) return undefined;
+  const t = semAcento(situacao);
+  const r = SITUACOES.find(([re]) => re.test(t))?.[1] ?? { titulo: situacao.trim(), texto: "Situação como a Casa publica.", final: false };
+  return { ...r, original: situacao.trim() };
+}

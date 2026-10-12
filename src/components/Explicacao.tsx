@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowRight, BookOpen, Sparkles } from "lucide-react";
 import type { EtapaSimples } from "@/lib/linguagem";
 import type { ExplicacaoIA, MateriaVotada } from "@/lib/types";
@@ -105,10 +106,18 @@ function TextoOficial({ materia, ementa }: { materia?: MateriaVotada; ementa: st
           <div>
             <dt className="text-ink-3">Quem apresentou</dt>
             <dd>
-              {materia.autores
-                .slice(0, 3)
-                .map((a) => a.nome)
-                .join(", ")}
+              {materia.autores.slice(0, 3).map((a, i) => (
+                <span key={`${a.nome}-${i}`}>
+                  {i > 0 ? ", " : ""}
+                  {a.pid ? (
+                    <Link href={`/politico/${a.pid}`} className="link">
+                      {a.nome}
+                    </Link>
+                  ) : (
+                    a.nome
+                  )}
+                </span>
+              ))}
               {(materia.autoresTotal ?? 0) > 3 ? ` e mais ${materia.autoresTotal! - 3}` : ""}
               {materia.apresentacao ? `, em ${data(materia.apresentacao)}` : ""}
             </dd>
@@ -116,7 +125,7 @@ function TextoOficial({ materia, ementa }: { materia?: MateriaVotada; ementa: st
         ) : null}
         {materia?.situacao && (
           <div>
-            <dt className="text-ink-3">Situação hoje</dt>
+            <dt className="text-ink-3">Situação hoje, como a Casa publica</dt>
             <dd>{materia.situacao}</dd>
           </div>
         )}

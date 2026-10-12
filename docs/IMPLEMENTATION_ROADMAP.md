@@ -68,7 +68,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | VOT-06 | VERIFIED | P1 | Filtros combinados com estado na URL | Busca, partido, estado, categoria, ordem, visão e página vão para a URL; atualizar, compartilhar, voltar e avançar funcionam. Ordem determinística (critério + nome + id). | PAG-01 |
 | VOT-07 | VERIFIED | P1 | Partidos sem ranking | Por partido, a distribuição de todos os tipos de voto, a orientação do partido separada do voto de cada membro, ordem alfabética declarada, tocar no partido filtra a lista; visão “por partido” com os membros. | VOT-05 |
 | VOT-08 | IMPLEMENTED | P1 | Partido da época | Votos usam o partido gravado pela Casa no voto. Para quem não tem voto registrado, a interface diz que o partido mostrado é o atual. | VOT-05 |
-| VOT-09 | NOT_STARTED | P1 | Contexto da votação | Pergunta votada, etapa, resultado desta votação separado do destino final do projeto; não dizer “virou lei” sem prova. | |
+| VOT-09 | VERIFIED | P1 | Contexto da votação | Pergunta votada, etapa, resultado desta votação separado do destino final do projeto; não dizer “virou lei” sem prova. | |
 | VOT-10 | VERIFIED | P1 | Procedimento ou mérito | Cada votação marcada como “sobre o andamento” (pedido, requerimento) ou “sobre o conteúdo”, com regra pública e testada. Filtro no catálogo. | VOT-01 |
 | VOT-11 | VERIFIED | P1 | Catálogo de votações | Busca por texto, filtros por casa, assunto, resultado, tipo (andamento ou conteúdo), período; estado na URL; paginação comum. | PAG-01, VOT-10 |
 | VOT-12 | VERIFIED | P1 | Votos no perfil | No perfil, filtrar votos por voto, assunto, ano e casa, com link para cada votação. | VOT-01 |
@@ -103,7 +103,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | PERF-01 | IN_PROGRESS | P1 | Cobertura por seção | Cada seção do perfil diz se o dado está completo, parcial, indisponível ou não se aplica. Já existe nas métricas (`ComoSabemos`); falta nas seções. | |
 | PERF-02 | IMPLEMENTED | P1 | Vida pública desde 1994 | Linha do tempo, partidos, bens e contas. Falta conferir com dados reais. | DADOS-01 |
 | PRES-01 | NOT_STARTED | P0 | Presidente da República | Página do Presidente atual, encontrável na navegação; eleições, bens e contas de campanha pelo TSE; atos oficiais com fonte. Testes. | DADOS-01 |
-| CONT-01 | NOT_STARTED | P1 | “Contato, redes e fontes” | Dividir em Contato, Redes sociais, Sites oficiais, Fontes e transparência, Sobre os dados; ícones iguais para cada rede. | |
+| CONT-01 | VERIFIED | P1 | “Contato, redes e fontes” | Dividir em Contato, Redes sociais, Sites oficiais, Fontes e transparência, Sobre os dados; ícones iguais para cada rede. | |
 | PL-01 | NOT_STARTED | P1 | Projetos de lei | Autoria e coautoria separadas, situação, histórico, link oficial, filtros. | |
 
 ### 4.5 Dinheiro público, empresas e relações
@@ -156,6 +156,8 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | VOT-10 | Regra pública `explicarEtapa` (testes “linguagem” em `src/lib/congresso.test.ts`); no catálogo, “Esconder pedidos sobre o andamento”; no perfil e na votação, a marca “sobre o andamento, não sobre o conteúdo”. |
 | VOT-11 | Catálogo `/votacoes`: busca, casa, resultado, novo filtro “Quando” (30 dias, 3 meses, 12 meses, contados a partir da votação mais recente dos dados: 10, 27 e 213 projetos em 2026-10-12), assuntos, paginação comum com links. Critérios dos assuntos publicados em `/como-funciona#assuntos`, lidos da mesma lista que classifica (`termos` em `src/lib/assuntos.ts`). A troca para listas de palavras corrigiu 16 de 212 projetos que caíam em assuntos errados (“agricultura” contava como “cultura”; “partidos” como “direitos”). |
 | VOT-12 | `src/components/ListaVotos.tsx` com `filtrarVotosDoPerfil` (testes “votos no perfil”). Navegador em `/politico/dep-104552`: “Não” leva a `?voto=nao` (67 de 262), “Diferente do partido” a `?voto=contra-partido` (16), assunto “Impostos” a `?assunto=impostos` (58); “Mostrar todos de novo” limpa. O link “Votou diferente do partido 16 vezes” abre a lista filtrada. |
+| VOT-09 | `explicarSituacao` em `src/lib/linguagem.ts` (teste “says a bill became law only when the house says so”). Página `/votacao/cam-106701-223` conferida: “E o projeto, como está? Foi para o Senado”, com o texto original da Câmara, a data da conferência e o aviso “Ser aprovado nesta votação não quer dizer que já virou lei”. Autores do projeto levam ao perfil quando a pessoa é conhecida. |
+| CONT-01 | Perfil dividido em Contato, Redes sociais, Sites oficiais e institucionais, Fontes e transparência, Sobre os dados. Ícones das redes do Simple Icons (licença CC0, versão fixa 16.32.0), em uma cor só; LinkedIn e Kwai usam ícone genérico porque o Simple Icons não publica a marca. Teste `src/lib/redes.test.ts` (ordem fixa e sem repetição; formulário de correção com a página preenchida). Conferido nos dois temas (`dep-104552` claro, `sen-5672` escuro). |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças
@@ -188,6 +190,7 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 
 ## 8. Registro de progresso
 
+- **2026-10-12 (4):** seção de contato refeita (CONT-01); situação do projeto depois da votação (VOT-09); endereços do projeto definidos uma vez (`src/lib/site.ts`).
 - **2026-10-12 (3):** botão de tema; votos do perfil com filtros na URL e paginação; catálogo com período e paginação comum; critérios de assunto e tipos de voto publicados em “Como funciona”. O pipeline deixou de gravar “Ausente” para quem não tem registro (agora grava vazio, lido como “sem voto registrado”; arquivos antigos com “Ausente” são lidos do mesmo jeito). Próximo: CONT-01, PART-01/02, PRES-01, PERF-01.
 - **2026-10-12 (2):** lista “Quem votou como” na página da votação (`src/components/PainelVotos.tsx`): totais que filtram, esconder e mostrar grupos, plenário aceso pelo filtro, busca, partido, estado, ordem, três visões, paginação e tudo na URL. Plenário corrigido (o filtro de destaque não apagava as cadeiras por causa da animação; agora usa `fill-opacity`). Código antigo `VotosNominais.tsx` removido. Próximo: TEMA-01, VOT-10/11 (catálogo), VOT-12 (votos no perfil).
 - **2026-10-12:** rastreador criado a partir da auditoria do código e dos dados reais. Trabalho anterior enviado (vida pública, contas de campanha, “Como sabemos disso?”, “Quem resolve”). Erros do pipeline agora aparecem como anotações. Nova execução completa do TSE disparada. Próximo passo: VOT-01 a VOT-08.

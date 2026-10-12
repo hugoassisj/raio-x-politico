@@ -11,9 +11,9 @@ import { PainelVotos } from "@/components/PainelVotos";
 import { QuorumExplicado } from "@/components/Quorum";
 import { Container, Fonte, Origem, Secao } from "@/components/ui";
 import { assunto } from "@/lib/assuntos";
-import { getExplicacoes, getMaterias, getPoliticos, getVotacao, getVotacoes, urlDadoBruto } from "@/lib/data";
+import { getExplicacoes, getMaterias, getMeta, getPoliticos, getVotacao, getVotacoes, urlDadoBruto } from "@/lib/data";
 import { data, partesDescricao } from "@/lib/format";
-import { explicarEtapa } from "@/lib/linguagem";
+import { explicarEtapa, explicarSituacao } from "@/lib/linguagem";
 import { regraDaVotacao } from "@/lib/quorum";
 import { linhasDaVotacao } from "@/lib/votos";
 
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: PageProps<"/votacao/[id]">): 
 
 export default async function Votacao({ params }: PageProps<"/votacao/[id]">) {
   const { id } = await params;
-  const [v, pols, todas, materias, explicacoes] = await Promise.all([getVotacao(id), getPoliticos(), getVotacoes(), getMaterias(), getExplicacoes()]);
+  const [v, pols, todas, materias, explicacoes, meta] = await Promise.all([getVotacao(id), getPoliticos(), getVotacoes(), getMaterias(), getExplicacoes(), getMeta()]);
   if (!v) notFound();
   const casa = v.casa === "camara" ? "Câmara dos Deputados" : "Senado Federal";
   const casaCurta = v.casa === "senado" ? "senado" : "camara";
@@ -44,6 +44,7 @@ export default async function Votacao({ params }: PageProps<"/votacao/[id]">) {
   const etapa = explicarEtapa(procedimento, v.objeto);
   const materia = v.materia ? materias.get(v.materia) : undefined;
   const explicacao = v.materia ? explicacoes.get(v.materia) : undefined;
+  const situacao = explicarSituacao(materia?.situacao);
   const membros = pols.filter((p) => p.casa === v.casa);
   const linhas = linhasDaVotacao(v, membros);
   const irmas = v.materia ? todas.filter((x) => x.materia === v.materia).sort((a, b) => a.data.localeCompare(b.data) || a.id.localeCompare(b.id)) : [];
@@ -117,6 +118,22 @@ export default async function Votacao({ params }: PageProps<"/votacao/[id]">) {
                   </Link>
                 </p>
               )}
+              <div className="mt-4 rounded-lg bg-surface-2 p-3 text-sm">
+                <p className="font-semibold">E o projeto, como está?</p>
+                {situacao ? (
+                  <>
+                    <p className="mt-1">
+                      <b>{situacao.titulo}.</b> {situacao.texto}
+                    </p>
+                    <p className="mt-1 text-xs text-ink-3">
+                      Segundo {materia?.casa === "senado" ? "o Senado" : "a Câmara"}: “{situacao.original}”{meta ? `, conferido em ${data(meta.geradoEm.slice(0, 10))}` : ""}.
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-1 text-ink-2">A Casa não informou a situação atual. Veja a página oficial do projeto.</p>
+                )}
+                {v.resultado === "Aprovada" && !situacao?.final && <p className="mt-1 text-ink-2">Ser aprovado nesta votação não quer dizer que já virou lei.</p>}
+              </div>
               {v.orientacaoGoverno && (
                 <p className="mt-4 text-ink-2">
                   O governo pediu voto <b className="text-ink">{v.orientacaoGoverno}</b>.

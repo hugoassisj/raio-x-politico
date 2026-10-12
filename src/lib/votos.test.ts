@@ -249,3 +249,15 @@ describe("votos no perfil", () => {
     expect(lerFiltroPerfil(new URLSearchParams("voto=talvez&ano=26"))).toEqual(FILTRO_PERFIL_INICIAL);
   });
 });
+
+describe("situação do projeto", () => {
+  it("says a bill became law only when the house says so", async () => {
+    const { explicarSituacao } = await import("./linguagem");
+    expect(explicarSituacao("Transformado em Norma Jurídica")).toMatchObject({ titulo: "Virou lei", final: true });
+    expect(explicarSituacao("Aguardando Apreciação pelo Senado Federal")).toMatchObject({ titulo: "Foi para o Senado", final: false });
+    expect(explicarSituacao("Aguardando Sanção")).toMatchObject({ titulo: "Esperando o Presidente", final: false });
+    expect(explicarSituacao("Aguardando Designação de Relator(a)")?.titulo).toBe("Em análise numa comissão");
+    expect(explicarSituacao("Algo novo")).toMatchObject({ titulo: "Algo novo", final: false, original: "Algo novo" });
+    expect(explicarSituacao(undefined)).toBeUndefined();
+  });
+});
