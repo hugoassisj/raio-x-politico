@@ -112,7 +112,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 |---|---|---|---|---|---|
 | EMD-01 | NOT_STARTED | P1 | Ciclo da emenda | Indicação, empenho, liquidação e pagamento separados, com fonte de cada etapa. | |
 | EMD-02 | NOT_STARTED | P2 | Caminho pelo município | Ver todas as emendas que chegaram a uma cidade. | EMD-01 |
-| CNPJ-01 | NOT_STARTED | P1 | CNPJ normalizado | Função pura com dígitos verificadores e testes. | |
+| CNPJ-01 | VERIFIED | P1 | CNPJ normalizado | Função pura com dígitos verificadores e testes. | |
 | CNPJ-02 | NOT_STARTED | P2 | Página da empresa | Gastos, doações e emendas ligados a um CNPJ, sem contar duas vezes. | CNPJ-01 |
 | CNPJ-03 | NOT_STARTED | P2 | Ligação certa ou possível | Ligações confirmadas (mesmo CNPJ) separadas das possíveis (mesmo nome). | CNPJ-01 |
 | GRAFO-01 | NOT_STARTED | P2 | Grafo de relações | Grafo interativo real com tipos de ligação e prova de cada uma, busca, expandir um nó, filtros, painel lateral, visão em lista e uso pelo teclado. Teste: ligação sem prova não sai como confirmada. | CNPJ-03 |
@@ -161,6 +161,8 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | PRES-01 | Implementado, falta dado real. Coleta: `coletarCandidaturasPresidente` lê só o arquivo nacional (`_BR`) de cada eleição geral; `agruparPresidenciaveis` junta a mesma pessoa entre anos por título, CPF ou nascimento e nome, mantém o perfil de quem já é acompanhado e cria um id `pres-` que não revela documento; a vida inteira dessas pessoas entra na mesma varredura do TSE, com bens e contas. Atos: medidas provisórias e projetos do Executivo dos arquivos anuais da Câmara. Página `/presidencia` e `/presidencia/[id]`, “Presidência” na navegação e nas perguntas. Testes: “TSE Presidency” em `pipeline/tests/fontes.test.ts` (arquivo nacional, 2º turno, união de chaves, id sem documento, ordem sem ranking) e “Presidência” em `src/lib/votos.test.ts` (quem está no cargo antes e depois da posse). Conferido no navegador com dados fictícios (`npm run demo`), claro e escuro, 1280 px e 390 px sem rolagem lateral; com os dados reais atuais a página mostra o aviso de dados ainda não coletados. Falta: execução completa do TSE publicar `presidencia.json`. |
 | PL-01 | Primeiro autor e coautor pela ordem de assinatura dos arquivos da Câmara (teste de contrato atualizado), contagem por papel no perfil, lista com filtros (papel, tipo, texto), situação em palavras simples e paginação comum. Conferido em `/politico/dep-104552` (“Viraram lei” mostra 3 de 95). Falta: os dados reais ganharem o campo `papel` na próxima coleta; histórico de tramitação passo a passo (hoje há o link para a tramitação completa). |
 | PERF-01 | `coberturaDoPerfil` (`src/lib/cobertura.ts`, testes em `src/lib/cobertura.test.ts`) e o cartão “O que encontramos sobre…” no resumo de cada perfil, com quatro estados (completo, parcial, sem dados, não se aplica) e o motivo de cada lacuna, reaproveitando os motivos de `metricas.ts`. Conferido em `dep-104552` e `est-ac-10001601427`. |
+| CNPJ-01 | `src/lib/cnpj.ts` (normaliza, confere os dígitos, formata, aceita o CNPJ alfanumérico da IN RFB 2.229/2024 em vigor desde julho de 2026) com testes em `src/lib/cnpj.test.ts`, inclusive o exemplo oficial `12.ABC.345/01DE-35`. Usado pelo pipeline em gastos e contas de campanha. |
+| PRIV-01 | Achado na auditoria: CPFs de fornecedores pessoas físicas da cota parlamentar eram publicados (167 em 4.976 fornecedores de 600 perfis). Corrigido: `documentoPublicavel` só deixa passar CNPJ válido, no pipeline (`metrics.ts`, `build.ts`, `tse-contas.ts`) e na tela (perfil e `/gastos`); o alerta de dígito inválido não mostra mais o CPF. Os arquivos atuais saem limpos na próxima coleta. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças
@@ -193,6 +195,7 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 
 ## 8. Registro de progresso
 
+- **2026-10-12 (8):** CNPJ-01 e correção de privacidade (PRIV-01).
 - **2026-10-12 (7):** cobertura por seção no perfil (PERF-01). Achado: nomes de deputados estaduais vindos do TSE aparecem em maiúsculas (ex.: “PABLO BREGENSE”); registrar e corrigir na coleta das assembleias.
 - **2026-10-12 (6):** identidade de partido sem cor (PART-02); cores ficam bloqueadas (PART-01).
 - **2026-10-12 (5):** Presidência (PRES-01) e autoria (PL-01). Pergunta nova em `perguntas.ts`, README e PRODUCT.md. Próximo: PART-01/02, PERF-01, conferir a execução de dados.

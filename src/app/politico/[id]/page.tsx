@@ -25,6 +25,7 @@ import { urlCorrecao } from "@/lib/site";
 import { IconeRede } from "@/components/IconeRede";
 import { CoberturaPerfil } from "@/components/ComoSabemos";
 import { coberturaDoPerfil } from "@/lib/cobertura";
+import { documentoPublicavel, formatarCnpj } from "@/lib/cnpj";
 import { ListaProjetos, type ProjetoLinha } from "@/components/ListaProjetos";
 import { BensDeclarados, Campanhas, LinhaDaVida, MandatosRegistrados, ResumoVida } from "@/components/VidaPublica";
 
@@ -358,7 +359,11 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                 <Barras
                   itens={p.gastos.topFornecedores
                     .slice(0, 6)
-                    .map((f) => ({ rotulo: f.nome || "Sem nome", valor: f.valor, detalhe: `${f.n} ${f.n === 1 ? "pagamento" : "pagamentos"}${f.doc ? ` · ${f.doc}` : ""}` }))}
+                    .map((f) => ({
+                      rotulo: f.nome || "Sem nome",
+                      valor: f.valor,
+                      detalhe: `${f.n} ${f.n === 1 ? "pagamento" : "pagamentos"}${documentoPublicavel(f.doc) ? ` · CNPJ ${formatarCnpj(f.doc!)}` : ""}`,
+                    }))}
                   formato={moedaCurta}
                 />
               </div>

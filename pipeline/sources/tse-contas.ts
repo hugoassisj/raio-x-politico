@@ -6,6 +6,7 @@
  * File: prestacao_de_contas_eleitorais_candidatos_{ano}.zip, with one receitas_ and one
  * despesas_contratadas_ CSV per state. Available in this layout from 2018.
  */
+import { documentoPublicavel } from "../../src/lib/cnpj";
 import type { CampanhaFinancas } from "../../src/lib/types";
 import { rm } from "node:fs/promises";
 import { baixarArquivo } from "../lib/http";
@@ -34,7 +35,7 @@ const PUBLICO = new Set(["Fundo eleitoral (dinheiro público)", "Fundo partidár
 /** People are named but never identified by CPF; companies and parties keep their CNPJ. */
 function quem(doc: string, nome: string) {
   const d = doc.replace(/\D/g, "");
-  return d.length === 14 ? { chave: d, nome, cnpj: d } : { chave: `pf:${nome}`, nome };
+  return d.length === 14 ? { chave: d, nome, cnpj: documentoPublicavel(d) } : { chave: `pf:${nome}`, nome };
 }
 
 interface Acumulador {

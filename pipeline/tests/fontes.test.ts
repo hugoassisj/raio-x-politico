@@ -684,7 +684,7 @@ describe("TSE campaign finance", () => {
         { SQ_CANDIDATO: "1", NR_CPF_CNPJ_DOADOR: "1", NM_DOADOR: "DUPLICADO", DS_FONTE_RECEITA: "", DS_ORIGEM_RECEITA: "", VR_RECEITA: "999,00" },
       ],
       "despesas_contratadas_candidatos_2022_MG.csv": [
-        { SQ_CANDIDATO: "1", NR_CPF_CNPJ_FORNECEDOR: "99888777000166", NM_FORNECEDOR: "GRAFICA X", VR_DESPESA_CONTRATADA: "4000,00" },
+        { SQ_CANDIDATO: "1", NR_CPF_CNPJ_FORNECEDOR: "99888777000100", NM_FORNECEDOR: "GRAFICA X", VR_DESPESA_CONTRATADA: "4000,00" },
       ],
     });
     mockFetch([[/prestacao_de_contas_eleitorais_candidatos_2022\.zip/, z]]);
@@ -697,7 +697,7 @@ describe("TSE campaign finance", () => {
       { nome: "DIRECAO NACIONAL", cnpj: "11222333000181", origem: "Fundo eleitoral (dinheiro público)", valor: 9000 },
       { nome: "JOAO DA SILVA", cnpj: undefined, origem: "Doações de pessoas", valor: 1000 },
     ]);
-    expect(c.fornecedores).toEqual([{ nome: "GRAFICA X", cnpj: "99888777000166", valor: 4000 }]);
+    expect(c.fornecedores).toEqual([{ nome: "GRAFICA X", cnpj: "99888777000100", valor: 4000 }]);
     expect(r.contas.has("2022:2")).toBe(false);
   });
 });

@@ -7,6 +7,7 @@ import { getGastosGerais, getPoliticos } from "@/lib/data";
 import { mesAno, moeda, moedaCurta, numero } from "@/lib/format";
 import { metrica, NOME_CASA } from "@/lib/metricas";
 import { explicarCategoria } from "@/lib/linguagem";
+import { documentoPublicavel, formatarCnpj } from "@/lib/cnpj";
 
 export const metadata: Metadata = {
   title: "Gastos com a cota parlamentar",
@@ -113,7 +114,7 @@ export default async function Gastos() {
                 <tr key={(f.doc ?? "") + f.nome}>
                   <td className="px-4 py-2.5">
                     <span className="block font-semibold">{f.nome || "Sem nome"}</span>
-                    {f.doc && <span className="tnum block text-ink-3">{f.doc}</span>}
+                    {documentoPublicavel(f.doc) && <span className="tnum block text-ink-3">CNPJ {formatarCnpj(f.doc!)}</span>}
                   </td>
                   <td className="tnum px-4 py-2.5 text-right">{numero(f.parlamentares)}</td>
                   <td className="tnum px-4 py-2.5 text-right">{numero(f.n)}</td>

@@ -1,3 +1,4 @@
+import { documentoPublicavel } from "../src/lib/cnpj";
 import type { Alerta, Gastos, Metricas, VotacaoDetalhe, VotoItem } from "../src/lib/types";
 import type { Despesa, PoliticoParcial, Sessao } from "./model";
 import { groupBy, mean, median, quantile, round, validDoc } from "./lib/util";
@@ -253,7 +254,8 @@ export function calcularGastos(desp: Despesa[], hoje: Date): Map<string, Gastos 
     const forn = new Map<string, { nome: string; doc?: string; valor: number; n: number }>();
     for (const d of j) {
       const k = d.doc || d.fornecedor;
-      const f = forn.get(k) ?? { nome: d.fornecedor, doc: d.doc, valor: 0, n: 0 };
+      // Only a valid CNPJ is published; a person's CPF never is
+      const f = forn.get(k) ?? { nome: d.fornecedor, doc: documentoPublicavel(d.doc), valor: 0, n: 0 };
       f.valor += d.valor;
       f.n++;
       forn.set(k, f);
@@ -265,7 +267,8 @@ export function calcularGastos(desp: Despesa[], hoje: Date): Map<string, Gastos 
       if (documentoVerificavel(d.doc) && validDoc(d.doc) === false)
         alertas.push({
           regra: "documento_invalido",
-          descricao: `CNPJ/CPF do fornecedor com dígito verificador inválido (${d.doc})`,
+          descricao:
+            (d.doc ?? "").replace(/\D/g, "").length === 14 ? `CNPJ do fornecedor com dígito verificador inválido (${d.doc})` : "CPF do fornecedor com dígito verificador inválido",
           valor: d.valor,
           data: d.data,
           fornecedor: d.fornecedor,

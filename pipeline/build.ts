@@ -1,4 +1,5 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
+import { documentoPublicavel } from "../src/lib/cnpj";
 import path from "node:path";
 import {
   DATA_VERSION,
@@ -393,7 +394,7 @@ export function gastosGerais(desp: Despesa[], detalhes: PoliticoDetalhe[], hoje:
   for (const d of j) {
     const k = d.doc || norm(d.fornecedor);
     if (!k) continue;
-    const f = forn.get(k) ?? { nome: d.fornecedor, doc: d.doc, valor: 0, pids: new Set<string>(), n: 0 };
+    const f = forn.get(k) ?? { nome: d.fornecedor, doc: documentoPublicavel(d.doc), valor: 0, pids: new Set<string>(), n: 0 };
     f.valor += d.valor;
     f.pids.add(d.pid);
     f.n++;
