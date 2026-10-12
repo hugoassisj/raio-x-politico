@@ -279,6 +279,15 @@ describe("TSE bulk results", () => {
     expect([...t.values()].reduce((a, b) => a + b, 0)).toBe(10000);
     expect(t.get("0")).toBe(3334);
   });
+  it("does not double count the national file that repeats the state files", () => {
+    const cab = '"NR_TURNO";"CD_CARGO";"SQ_CANDIDATO";"QT_VOTOS_NOMINAIS"';
+    const al = `${cab}\n"1";"6";"160541";"219452"`;
+    const zip = zipSync({
+      "votacao_candidato_munzona_2022_AL.csv": strToU8(al),
+      "votacao_candidato_munzona_2022_BRASIL.csv": strToU8(al),
+    });
+    expect(somarVotosZip(zip).get("160541")).toBe(219452);
+  });
   it("only checks real-looking documents", () => {
     expect(documentoVerificavel("00000000000001")).toBe(false);
     expect(documentoVerificavel("11222333000181")).toBe(true);

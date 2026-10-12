@@ -180,7 +180,9 @@ export function somarVotosZip(zip: Uint8Array): Map<string, number> {
   const uz = new Unzip();
   uz.register(UnzipInflate);
   uz.onfile = (f) => {
-    if (!/\.csv$/i.test(f.name)) return;
+    // The archive has one file per state plus a national "_BRASIL" file repeating all of them:
+    // reading both would count every vote twice.
+    if (!/\.csv$/i.test(f.name) || /_BRASIL\.csv$/i.test(f.name)) return;
     const dec = new TextDecoder("latin1");
     let resto = "";
     s.novoArquivo();
