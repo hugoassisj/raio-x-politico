@@ -218,7 +218,14 @@ export default async function Votacao({ params }: PageProps<"/votacao/[id]">) {
           }
         >
           {linhas.length > 0 ? (
-            <PainelVotos linhas={linhas} secreta={v.secreta} titulo={v.titulo} orientacoes={v.orientacoes} url={v.url} />
+            <PainelVotos
+              linhas={linhas}
+              secreta={v.secreta}
+              titulo={v.titulo}
+              orientacoes={v.orientacoes}
+              url={v.url}
+              partidosComPagina={[...new Set(pols.map((p) => p.partido))]}
+            />
           ) : (
             <p className="text-ink-2">
               {v.secreta

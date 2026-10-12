@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Landmark } from "lucide-react";
 import { Barras, Container, Fonte, Origem, Secao, Vazio } from "@/components/ui";
+import { SiglaPartido } from "@/components/Partido";
 import { TextoComTermos } from "@/components/Termos";
 import { CARGOS } from "@/lib/cargos";
 import { rotuloResultado } from "@/lib/carreira";
@@ -131,7 +132,7 @@ export default async function Presidencia() {
                           <span className="min-w-0">
                             <Candidato c={c} />
                             <span className="block text-sm text-ink-3">
-                              {c.partido}
+                              <SiglaPartido sigla={c.partido} />
                               {c.numero ? ` · número ${c.numero}` : ""}
                             </span>
                           </span>

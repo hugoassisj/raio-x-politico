@@ -91,8 +91,8 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 
 | ID | Situação | P | O que é | Critérios de aceite | Depende de |
 |---|---|---|---|---|---|
-| PART-01 | NOT_STARTED | P1 | Cor de cada partido com fonte | Cores tiradas do material oficial de cada partido, guardadas com a URL e a data da consulta; contraste conferido nos dois temas. | |
-| PART-02 | NOT_STARTED | P1 | Componentes de partido | `PartyBadge` (sigla com cor e nome completo), legenda, opção de filtro; mesma aparência em todas as páginas. | PART-01 |
+| PART-01 | BLOCKED | P1 | Cor de cada partido com fonte | Cores tiradas do material oficial de cada partido, guardadas com a URL e a data da consulta; contraste conferido nos dois temas. Bloqueio: nenhuma fonte pública oficial e única publica as cores (o TSE não publica; cada partido tem seu manual, quando tem), e a decisão de produto (DEC-05) precisa ser fechada antes de pesquisar 30 partidos. | |
+| PART-02 | IMPLEMENTED | P1 | Componentes de partido | `SiglaPartido` (`src/components/Partido.tsx`): sigla com o nome completo para leitor de tela e ao passar o mouse, link só para partidos com página. Nomes de partidos extintos ou renomeados (PMDB, PFL, DEM, PSL e outros) para a vida pública desde 1994. Em uso na lista de votos, na visão por partido e na Presidência. Falta: usar em todas as páginas. | |
 | PART-03 | BLOCKED | P2 | Logos dos partidos | Logos são marcas registradas. Só guardar com licença ou permissão clara; até lá, sigla tipográfica. Motivo do bloqueio: falta revisão de licença. | PART-01 |
 | PART-04 | NOT_STARTED | P1 | Filiação ao longo do tempo | Partido por data a partir das candidaturas do TSE e dos votos; nunca supor o partido de uma data pelo partido atual. | DADOS-01 |
 
@@ -192,6 +192,7 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 
 ## 8. Registro de progresso
 
+- **2026-10-12 (6):** identidade de partido sem cor (PART-02); cores ficam bloqueadas (PART-01).
 - **2026-10-12 (5):** Presidência (PRES-01) e autoria (PL-01). Pergunta nova em `perguntas.ts`, README e PRODUCT.md. Próximo: PART-01/02, PERF-01, conferir a execução de dados.
 - **2026-10-12 (4):** seção de contato refeita (CONT-01); situação do projeto depois da votação (VOT-09); endereços do projeto definidos uma vez (`src/lib/site.ts`).
 - **2026-10-12 (3):** botão de tema; votos do perfil com filtros na URL e paginação; catálogo com período e paginação comum; critérios de assunto e tipos de voto publicados em “Como funciona”. O pipeline deixou de gravar “Ausente” para quem não tem registro (agora grava vazio, lido como “sem voto registrado”; arquivos antigos com “Ausente” são lidos do mesmo jeito). Próximo: CONT-01, PART-01/02, PRES-01, PERF-01.

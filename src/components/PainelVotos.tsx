@@ -33,6 +33,7 @@ import {
   type Visao,
 } from "@/lib/votos";
 import { Avatar } from "./Avatar";
+import { SiglaPartido } from "./Partido";
 import { Paginacao } from "./Paginacao";
 import { Plenario } from "./Plenario";
 import { VotoChip } from "./ui";
@@ -49,6 +50,8 @@ export interface PainelVotosProps {
   orientacoes: { sigla: string; orientacao: string }[];
   /** Official record of this roll call */
   url?: string;
+  /** Parties with a page on the site (members in office today) */
+  partidosComPagina: string[];
 }
 
 /**
@@ -82,6 +85,7 @@ function Painel({
   titulo,
   orientacoes,
   url,
+  partidosComPagina,
   filtro: f,
   ir,
 }: PainelVotosProps & { filtro: FiltroVotos; ir?: (f: FiltroVotos, modo?: "push" | "replace") => void }) {
@@ -276,7 +280,14 @@ function Painel({
               </button>
             </div>
           ) : f.visao === "partido" ? (
-            <PorPartido linhas={visiveis} base={semVoto} orientacoes={orientacoes} filtro={f} aoFiltrar={(p) => mudar(alternarPartido(f, p))} />
+            <PorPartido
+              linhas={visiveis}
+              base={semVoto}
+              orientacoes={orientacoes}
+              filtro={f}
+              comPagina={new Set(partidosComPagina)}
+              aoFiltrar={(p) => mudar(alternarPartido(f, p))}
+            />
           ) : f.visao === "detalhe" ? (
             <Detalhes linhas={pagina.itens} />
           ) : (
@@ -396,7 +407,7 @@ function Nome({ l }: { l: LinhaVoto }) {
 function Partido({ l }: { l: LinhaVoto }) {
   return (
     <>
-      {l.partido}
+      <SiglaPartido sigla={l.partido} />
       {l.partidoAtual && (
         <span className="text-ink-3" title="Sem registro nesta votação, então mostramos o partido de hoje.">
           {" "}
@@ -506,12 +517,14 @@ function PorPartido({
   base,
   orientacoes,
   filtro,
+  comPagina,
   aoFiltrar,
 }: {
   linhas: LinhaVoto[];
   base: LinhaVoto[];
   orientacoes: { sigla: string; orientacao: string }[];
   filtro: FiltroVotos;
+  comPagina: Set<string>;
   aoFiltrar: (partido: string) => void;
 }) {
   const grupos = porPartido(base);
@@ -531,7 +544,9 @@ function PorPartido({
               <li key={g.partido} className="cartao p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-lg font-bold">{g.partido}</p>
+                    <p className="text-lg font-bold">
+                      <SiglaPartido sigla={g.partido} link={comPagina.has(g.partido)} />
+                    </p>
                     <p className="text-sm text-ink-3">{nomePartido(g.partido)}</p>
                   </div>
                   <div className="text-right text-sm">
