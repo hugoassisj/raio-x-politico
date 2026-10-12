@@ -84,6 +84,8 @@ export interface Cadeira {
 }
 
 export interface ItemLegenda {
+  /** Group id, when the legend can filter */
+  id?: string;
   cor: string;
   rotulo: string;
   n: number;

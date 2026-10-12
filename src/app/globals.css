@@ -86,6 +86,10 @@
   --abst: #6250d6;
   --abst-soft: #ecebfb;
   --ausente: #8a94a6;
+  --obst: #a8336f;
+  --obst-soft: #f8e8f1;
+  --outro: #4f6075;
+  --sem-registro: #c3cad6;
   --alerta: #b45309;
   --alerta-bg: #fff4e5;
   --ok-bg: #e2f3ea;
@@ -134,6 +138,10 @@
     --abst: #9085e9;
     --abst-soft: #1f1c3a;
     --ausente: #7d8899;
+    --obst: #b9518a;
+    --obst-soft: #2d1824;
+    --outro: #5d6b80;
+    --sem-registro: #3b4454;
     --alerta: #f0a54a;
     --alerta-bg: #2b2114;
     --ok-bg: #12261d;
@@ -174,6 +182,10 @@
   --abst: #9085e9;
   --abst-soft: #1f1c3a;
   --ausente: #7d8899;
+  --obst: #b9518a;
+  --obst-soft: #2d1824;
+  --outro: #5d6b80;
+  --sem-registro: #3b4454;
   --alerta: #f0a54a;
   --alerta-bg: #2b2114;
   --ok-bg: #12261d;
@@ -210,6 +222,10 @@
   --color-abst: var(--abst);
   --color-abst-soft: var(--abst-soft);
   --color-ausente: var(--ausente);
+  --color-obst: var(--obst);
+  --color-obst-soft: var(--obst-soft);
+  --color-outro: var(--outro);
+  --color-sem-registro: var(--sem-registro);
   --color-alerta: var(--alerta);
   --color-alerta-bg: var(--alerta-bg);
   --color-ok-bg: var(--ok-bg);
@@ -412,6 +428,7 @@
     transform-origin: center;
     animation: assento 520ms var(--ease-saida) both;
     animation-delay: calc(var(--d, 0) * 1ms);
+    transition: fill-opacity var(--dur-2) var(--ease-saida);
   }
 
   /* Live indicator next to the update time */

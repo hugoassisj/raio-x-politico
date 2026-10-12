@@ -94,7 +94,7 @@ describe("plenário", () => {
     }
   });
 
-  it("colors seats by vote and fills the room with members who did not vote", () => {
+  it("colors seats by vote and fills the room with members in office who have no record", () => {
     const membros = [pol("a"), pol("b"), pol("c", { partido: "PT" })];
     const v: VotacaoDetalhe = {
       ...votacao([]),
@@ -102,6 +102,7 @@ describe("plenário", () => {
         { pid: "a", nome: "a", partido: "PL", uf: "MG", voto: "Sim" },
         { pid: "c", nome: "c", partido: "PT", uf: "MG", voto: "Não" },
       ],
+      semRegistro: [{ pid: "b", nome: "b", partido: "PL", uf: "MG" }],
       orientacoes: [],
     };
     const { cadeiras, legenda } = cadeirasPorVoto(v, membros);
@@ -109,16 +110,26 @@ describe("plenário", () => {
     expect(legenda.map((l) => [l.rotulo, l.n])).toEqual([
       ["Sim", 1],
       ["Não", 1],
-      ["Não votou", 1],
+      ["Sem voto registrado", 1],
     ]);
   });
 
+  it("never guesses who is missing when the house does not say who was in office", () => {
+    const v: VotacaoDetalhe = { ...votacao([]), votos: [{ pid: "a", nome: "a", partido: "PL", uf: "MG", voto: "Sim" }], orientacoes: [] };
+    expect(cadeirasPorVoto(v, [pol("a"), pol("b")]).cadeiras.map((c) => c.id)).toEqual(["a"]);
+  });
+
   it("shows only participation in secret ballots", () => {
-    const v: VotacaoDetalhe = { ...votacao([], { secreta: true }), votos: [{ pid: "a", nome: "a", partido: "PL", uf: "MG", voto: "Participou (voto secreto)" }], orientacoes: [] };
+    const v: VotacaoDetalhe = {
+      ...votacao([], { secreta: true }),
+      votos: [{ pid: "a", nome: "a", partido: "PL", uf: "MG", voto: "Participou (voto secreto)" }],
+      semRegistro: [{ pid: "b", nome: "b", partido: "PL", uf: "MG" }],
+      orientacoes: [],
+    };
     const { legenda } = cadeirasPorVoto(v, [pol("a"), pol("b")]);
     expect(legenda.map((l) => [l.rotulo, l.n])).toEqual([
       ["Participou (voto secreto)", 1],
-      ["Não votou", 1],
+      ["Sem voto registrado", 1],
     ]);
   });
 });
@@ -245,7 +256,8 @@ describe("rótulos de voto", () => {
     expect(rotuloVoto("Artigo 17")).toMatchObject({ rotulo: "Presidindo", tipo: "outro" });
     expect(rotuloVoto("P-NRV").rotulo).toBe("Presente, não votou");
     expect(rotuloVoto("LS")).toMatchObject({ rotulo: "Licença de saúde", tipo: "ausente" });
-    expect(rotuloVoto("")).toMatchObject({ rotulo: "Ausente" });
+    expect(rotuloVoto("")).toMatchObject({ rotulo: "Sem voto registrado", categoria: "sem-registro" });
+    expect(rotuloVoto("Ausente")).toMatchObject({ categoria: "ausencia" });
     expect(rotuloVoto("Sim").tipo).toBe("sim");
   });
 });

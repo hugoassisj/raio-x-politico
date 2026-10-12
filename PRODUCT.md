@@ -292,3 +292,7 @@ O roadmap segue uma regra simples: **confiança antes de volume**. Uma informaç
 | 2026-10-12 | Códigos de voto das casas traduzidos (Artigo 17, P-NRV, licenças) | Quem preside a sessão ou está de licença não pode parecer ausente sem motivo |
 | 2026-10-12 | Guia “Quem resolve isso?” e “O que faz cada cargo” | Muita gente cobra a pessoa errada; saber o nível de governo é o primeiro passo para entender política |
 | 2026-10-12 | Arquivos gigantes do TSE lidos em fluxo, apagados depois do uso e refeitos aos domingos | Cabe no runner gratuito do GitHub e mantém a atualização diária rápida |
+| 2026-10-12 | Na votação, tocar em Sim ou Não filtra a lista e acende só essas cadeiras no plenário; grupos podem ser escondidos; tudo fica no endereço da página | Ver quem votou como é a pergunta mais comum; um link deve abrir exatamente a mesma visão para quem recebe |
+| 2026-10-12 | “Sem voto registrado” separado de ausência, e só para quem a Câmara diz que estava no cargo naquele dia | A fonte não diz o motivo; chamar de falta seria acusar, e contar quem assumiu depois seria errar a pessoa |
+| 2026-10-12 | Um único agrupamento de votos para totais, lista, plenário e partidos | O mesmo filtro precisa significar a mesma coisa em todo lugar |
+| 2026-10-12 | Plano de implementação em `docs/IMPLEMENTATION_ROADMAP.md` | Um registro único do que falta, do que foi feito e de como foi conferido |

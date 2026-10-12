@@ -7,18 +7,15 @@ import { EtapaExplicada, ExplicacaoProjeto } from "@/components/Explicacao";
 import { IconeAssunto } from "@/components/Icone";
 import { BarraVotos } from "@/components/Listas";
 import { VotosDoMeuEstado, type VotoPessoa } from "@/components/MeuEstado";
-import { Plenario } from "@/components/Plenario";
+import { PainelVotos } from "@/components/PainelVotos";
 import { QuorumExplicado } from "@/components/Quorum";
-import { VotosNominais } from "@/components/VotosNominais";
 import { Container, Fonte, Origem, Secao } from "@/components/ui";
 import { assunto } from "@/lib/assuntos";
-import { cadeirasPorVoto } from "@/lib/cadeiras";
 import { getExplicacoes, getMaterias, getPoliticos, getVotacao, getVotacoes, urlDadoBruto } from "@/lib/data";
-import { data, partesDescricao, VAZIO } from "@/lib/format";
+import { data, partesDescricao } from "@/lib/format";
 import { explicarEtapa } from "@/lib/linguagem";
-import { orientacaoDoPartido } from "@/lib/orientacao";
-import { nomePartido } from "@/lib/partidos";
 import { regraDaVotacao } from "@/lib/quorum";
+import { linhasDaVotacao } from "@/lib/votos";
 
 export const dynamicParams = false;
 
@@ -48,25 +45,13 @@ export default async function Votacao({ params }: PageProps<"/votacao/[id]">) {
   const materia = v.materia ? materias.get(v.materia) : undefined;
   const explicacao = v.materia ? explicacoes.get(v.materia) : undefined;
   const membros = pols.filter((p) => p.casa === v.casa);
-  const porId = new Map(pols.map((p) => [p.id, p]));
-  const plenario = v.votos.length ? cadeirasPorVoto(v, membros) : undefined;
+  const linhas = linhasDaVotacao(v, membros);
   const irmas = v.materia ? todas.filter((x) => x.materia === v.materia).sort((a, b) => a.data.localeCompare(b.data) || a.id.localeCompare(b.id)) : [];
 
-  const votaram = new Set(v.votos.map((x) => x.pid));
-  const votosPessoas: VotoPessoa[] = v.secreta
-    ? []
-    : v.votos.map((x) => ({
-        pid: x.pid,
-        nome: porId.get(x.pid)?.nome ?? x.nome,
-        partido: x.partido,
-        uf: x.uf,
-        voto: x.voto,
-        foto: porId.get(x.pid)?.foto,
-        conhecido: porId.has(x.pid),
-      }));
-  const ausentes: VotoPessoa[] = v.secreta
-    ? []
-    : membros.filter((m) => m.emExercicio && !votaram.has(m.id)).map((m) => ({ pid: m.id, nome: m.nome, partido: m.partido, uf: m.uf, voto: "", foto: m.foto, conhecido: true }));
+  // "Seus representantes" uses the same list as the panel: recorded votes first, then people without a record
+  const pessoa = (l: (typeof linhas)[number]): VotoPessoa => ({ pid: l.pid, nome: l.nome, partido: l.partido, uf: l.uf, voto: l.original, foto: l.foto, conhecido: l.perfil });
+  const votosPessoas = v.secreta ? [] : linhas.filter((l) => l.categoria !== "sem-registro").map(pessoa);
+  const ausentes = v.secreta ? [] : linhas.filter((l) => l.categoria === "sem-registro").map(pessoa);
 
   return (
     <>
@@ -120,6 +105,18 @@ export default async function Votacao({ params }: PageProps<"/votacao/[id]">) {
               <div className="mt-4">
                 <BarraVotos sim={v.sim} nao={v.nao} outros={v.outros} alto />
               </div>
+              {!v.secreta && v.votos.length > 0 && (
+                <p className="mt-3 flex flex-wrap gap-2">
+                  <Link href="?voto=sim#quem-votou" scroll={false} className="chip">
+                    <span className="h-2.5 w-2.5 rounded-full bg-sim" aria-hidden />
+                    Quem votou Sim
+                  </Link>
+                  <Link href="?voto=nao#quem-votou" scroll={false} className="chip">
+                    <span className="h-2.5 w-2.5 rounded-full bg-nao" aria-hidden />
+                    Quem votou Não
+                  </Link>
+                </p>
+              )}
               {v.orientacaoGoverno && (
                 <p className="mt-4 text-ink-2">
                   O governo pediu voto <b className="text-ink">{v.orientacaoGoverno}</b>.
@@ -194,69 +191,25 @@ export default async function Votacao({ params }: PageProps<"/votacao/[id]">) {
           </Secao>
         )}
 
-        {plenario && (
-          <Secao
-            titulo={v.secreta ? "Quem participou" : "Como o plenário votou"}
-            subtitulo={
-              v.secreta
-                ? "Esta votação foi secreta: a casa publica quem participou e o total de votos, mas não o voto de cada pessoa."
-                : "Cada bolinha é uma cadeira. Passe o dedo ou o mouse para ver quem é e como votou; toque para abrir o perfil."
-            }
-          >
-            <div className="cartao p-4 sm:p-6">
-              <Plenario cadeiras={plenario.cadeiras} legenda={plenario.legenda} titulo={`Votos no plenário: ${v.titulo}`} />
-            </div>
-          </Secao>
-        )}
-
-        {v.porPartido.length > 0 && (
-          <Secao
-            titulo="Como cada partido votou"
-            subtitulo={
-              v.orientacoes.length
-                ? "A orientação é o voto que a liderança do partido pediu. Ao lado, como os membros votaram de fato."
-                : "Como os membros de cada partido votaram."
-            }
-          >
-            <div className="cartao overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-line text-left text-ink-3">
-                    <th className="px-4 py-3 font-normal">Partido</th>
-                    {v.orientacoes.length > 0 && <th className="px-4 py-3 font-normal">Pediu</th>}
-                    <th className="w-[45%] px-4 py-3 font-normal">Votos dos membros</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {v.porPartido.map((g) => (
-                    <tr key={g.partido}>
-                      <td className="px-4 py-3">
-                        <Link href={`/partido/${encodeURIComponent(g.partido)}`} className="font-semibold hover:underline">
-                          {g.partido}
-                        </Link>
-                        <span className="block text-xs text-ink-3">{nomePartido(g.partido)}</span>
-                      </td>
-                      {v.orientacoes.length > 0 && <td className="px-4 py-3">{orientacaoDoPartido(v.orientacoes, g.partido) || VAZIO}</td>}
-                      <td className="px-4 py-3">
-                        <BarraVotos sim={g.sim} nao={g.nao} outros={g.outros} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Secao>
-        )}
-
-        {v.votos.length > 0 && !v.secreta ? (
-          <Secao titulo="Procure alguém" subtitulo="Lista com o voto de cada parlamentar que votou.">
-            <VotosNominais votos={v.votos} conhecidos={pols.map((p) => p.id)} />
-          </Secao>
-        ) : (
-          <Secao titulo="Votos individuais">
-            <p className="text-ink-2">Esta foi uma votação secreta: a {casa} divulga apenas o total de votos, não o voto de cada pessoa.</p>
-          </Secao>
-        )}
+        <Secao
+          id="quem-votou"
+          titulo="Quem votou como"
+          subtitulo={
+            v.secreta
+              ? "Esta votação foi secreta: a Casa publica quem participou e o total de votos, mas não o voto de cada pessoa."
+              : "Toque em Sim, Não ou outro grupo para ver só essas pessoas. Filtre por partido ou estado, ou veja tudo agrupado por partido."
+          }
+        >
+          {linhas.length > 0 ? (
+            <PainelVotos linhas={linhas} secreta={v.secreta} titulo={v.titulo} orientacoes={v.orientacoes} url={v.url} />
+          ) : (
+            <p className="text-ink-2">
+              {v.secreta
+                ? `A ${casa} divulgou só o total de votos desta votação secreta, sem a lista de quem participou.`
+                : `A ${casa} não publicou a lista de votos desta votação.`}
+            </p>
+          )}
+        </Secao>
 
         <Origem>
           <p>Votos e orientações publicados pela {casa} para esta votação nominal. Os detalhes do projeto vêm da página oficial dele.</p>

@@ -8,7 +8,20 @@ import { Avatar } from "./Avatar";
  * Hemicycle of the plenary: one circle per seat, ordered so groups form wedges, with the central
  * aisle and the presiding board (Mesa). Hover or tap a seat to see who sits there.
  */
-export function Plenario({ cadeiras, legenda, titulo, linhaMeta }: { cadeiras: Cadeira[]; legenda: ItemLegenda[]; titulo: string; linhaMeta?: { n: number; rotulo: string } }) {
+export function Plenario({
+  cadeiras,
+  legenda,
+  titulo,
+  linhaMeta,
+  filtro,
+}: {
+  cadeiras: Cadeira[];
+  legenda: ItemLegenda[];
+  titulo: string;
+  linhaMeta?: { n: number; rotulo: string };
+  /** When given, legend items become buttons that filter by group */
+  filtro?: { ativo: (id: string) => boolean; aoTocar: (id: string) => void };
+}) {
   const assentos = useMemo(() => layoutPlenario(cadeiras.length), [cadeiras.length]);
   const [ativo, setAtivo] = useState<number | null>(null);
   const pad = (assentos[0]?.r ?? 10) + 6;
@@ -34,7 +47,7 @@ export function Plenario({ cadeiras, legenda, titulo, linhaMeta }: { cadeiras: C
                 cy={a.y}
                 r={a.r}
                 fill={c.cor}
-                opacity={c.esmaecido ? 0.22 : 1}
+                fillOpacity={c.esmaecido ? 0.18 : 1}
                 stroke={ativo === i ? "var(--ink)" : "var(--surface)"}
                 strokeWidth={ativo === i ? 3 : 1.5}
                 onMouseEnter={() => setAtivo(i)}
@@ -88,14 +101,32 @@ export function Plenario({ cadeiras, legenda, titulo, linhaMeta }: { cadeiras: C
       </div>
       <figcaption className="mt-2">
         <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm">
-          {legenda.map((l) => (
-            <li key={l.rotulo} className="flex items-center gap-2">
-              <span className="inline-block h-3.5 w-3.5 rounded-full" style={{ background: l.cor }} aria-hidden />
-              <span>
-                {l.rotulo} <b className="tnum">{l.n}</b>
-              </span>
-            </li>
-          ))}
+          {legenda.map((l) => {
+            const conteudo = (
+              <>
+                <span className="inline-block h-3.5 w-3.5 rounded-full" style={{ background: l.cor }} aria-hidden />
+                <span>
+                  {l.rotulo} <b className="tnum">{l.n}</b>
+                </span>
+              </>
+            );
+            return (
+              <li key={l.rotulo}>
+                {filtro && l.id ? (
+                  <button
+                    type="button"
+                    aria-pressed={filtro.ativo(l.id)}
+                    onClick={() => filtro.aoTocar(l.id!)}
+                    className={`flex min-h-9 items-center gap-2 rounded-full px-3 transition-opacity hover:bg-surface-2 ${filtro.ativo(l.id) ? "" : "opacity-45"}`}
+                  >
+                    {conteudo}
+                  </button>
+                ) : (
+                  <span className="flex items-center gap-2">{conteudo}</span>
+                )}
+              </li>
+            );
+          })}
         </ul>
         {linhaMeta && <p className="mt-2 text-center text-sm text-ink-2">{linhaMeta.rotulo}</p>}
       </figcaption>

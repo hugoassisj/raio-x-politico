@@ -13,7 +13,7 @@ import {
   VOTO_SECRETO,
 } from "../metrics";
 import { periodosExercicio } from "../sources/camara";
-import { chavesDaPessoa, juntarCandidaturas, vincularTSE } from "../build";
+import { chavesDaPessoa, juntarCandidaturas, marcarSemRegistro, vincularTSE } from "../build";
 import { SEN_PRESENTE } from "../sources/senado";
 import { normalizaUrl, plataforma, handleDe } from "../sources/falas";
 import { somarVotos, somarVotosZip } from "../sources/tse";
@@ -167,6 +167,32 @@ describe("periods in office", () => {
     expect(emExercicioEm(p, "2025-05-01")).toBe(false);
     expect(emExercicioEm(p, "2025-09-01")).toBe(true);
     expect(emExercicioEm(p, "2024-01-01")).toBe(true);
+  });
+});
+
+describe("members without a vote record", () => {
+  const base = { titulo: "PL 1/2026", descricao: "", sim: 1, nao: 0, outros: 0, porPartido: [], orientacoes: [] };
+
+  it("lists only deputies in office on the vote date who are missing from the list", () => {
+    const pols = [
+      dep("dep-1", "PL"),
+      dep("dep-2", "PT"),
+      // On leave that day
+      dep("dep-3", "PT", { exercicio: [{ ini: "2023-02-01", fim: "2026-01-10" }, { ini: "2026-04-01" }] }),
+      // Took office later
+      dep("dep-4", "PSD", { exercicio: [{ ini: "2026-05-01" }] }),
+    ];
+    const v: VotacaoDetalhe = { ...base, id: "cam-1", casa: "camara", data: "2026-03-01", votos: [{ pid: "dep-1", nome: "a", partido: "PL", uf: "SP", voto: "Sim" }] };
+    marcarSemRegistro([v], pols);
+    expect(v.semRegistro?.map((x) => x.pid)).toEqual(["dep-2"]);
+  });
+
+  it("leaves the Senado and votes without a list untouched", () => {
+    const sen: VotacaoDetalhe = { ...base, id: "sen-1", casa: "senado", data: "2026-03-01", votos: [{ pid: "sen-1", nome: "a", partido: "PL", uf: "SP", voto: "Sim" }] };
+    const vazia: VotacaoDetalhe = { ...base, id: "cam-2", casa: "camara", data: "2026-03-01", votos: [] };
+    marcarSemRegistro([sen, vazia], [dep("dep-1", "PL")]);
+    expect(sen.semRegistro).toBeUndefined();
+    expect(vazia.semRegistro).toBeUndefined();
   });
 });
 

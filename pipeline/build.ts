@@ -19,7 +19,7 @@ import {
   type GastosGerais,
   type Meta,
 } from "../src/lib/types";
-import { calcularGastos, calcularPresenca, calcularVotos, enriquecerVotacoes, janela12, ultimoMesCompleto } from "./metrics";
+import { calcularGastos, calcularPresenca, calcularVotos, emExercicioEm, enriquecerVotacoes, janela12, ultimoMesCompleto } from "./metrics";
 import type { CandidatoTSE, Despesa, EmendaAgg, PoliticoParcial, Sessao } from "./model";
 import { capitalizar, groupBy, median, mean, nameSimilarity, nomeProprio, norm, round } from "./lib/util";
 import { SEN_PRESENTE } from "./sources/senado";
@@ -202,11 +202,29 @@ function vincularEmendas(p: PoliticoParcial, agg: Map<string, EmendaAgg>): Emend
   };
 }
 
+/**
+ * Lists, for each Câmara roll call, the deputies in office that day (from the house's status
+ * history) who are missing from the official list. The Senado list already names every senator
+ * with a code (leave, mission, absence), and its exercise history is not collected, so it gets none.
+ */
+export function marcarSemRegistro(votacoes: VotacaoDetalhe[], politicos: PoliticoParcial[]) {
+  const deputados = politicos.filter((p) => p.casa === "camara");
+  for (const v of votacoes) {
+    if (v.casa !== "camara" || !v.votos.length) continue;
+    const votaram = new Set(v.votos.map((x) => x.pid));
+    v.semRegistro = deputados
+      .filter((p) => !votaram.has(p.id) && emExercicioEm(p, v.data))
+      .map((p) => ({ pid: p.id, nome: p.nome, partido: p.partido, uf: p.uf }))
+      .sort((a, b) => a.pid.localeCompare(b.pid));
+  }
+}
+
 // ------------------------------------------------------------ main
 
 export function montar(inp: BuildInput): BuildResult {
   const { hoje } = inp;
   enriquecerVotacoes(inp.votacoes);
+  marcarSemRegistro(inp.votacoes, inp.politicos);
   const v = calcularVotos(inp.votacoes, inp.politicos, SEN_PRESENTE);
   const presenca = calcularPresenca(inp.sessoes, inp.politicos);
   const gastosPorCasa = new Map<string, ReturnType<typeof calcularGastos>>();

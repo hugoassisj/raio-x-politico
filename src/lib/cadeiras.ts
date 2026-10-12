@@ -1,9 +1,8 @@
 import type { Cadeira, ItemLegenda } from "./plenario";
-import { rotuloVoto } from "./linguagem";
+import { CATEGORIAS_VOTO, rotuloVoto } from "./linguagem";
+import { COR_CATEGORIA, ORDEM_CATEGORIAS, contar, linhasDaVotacao, type LinhaVoto } from "./votos";
 import type { PoliticoResumo, VotacaoDetalhe } from "./types";
 import { COR_SEM_DADO, FAIXAS_GOVERNO, faixaGoverno, nomePartido, ordenarParaPlenario, type ResumoPartido } from "./partidos";
-
-const canon = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /** One seat per member, grouped by party and colored by how much the party votes with the government. */
 export function cadeirasPorPartido(membros: PoliticoResumo[], partidos: ResumoPartido[], destacar?: string): { cadeiras: Cadeira[]; legenda: ItemLegenda[] } {
@@ -31,60 +30,39 @@ export function cadeirasPorPartido(membros: PoliticoResumo[], partidos: ResumoPa
   return { cadeiras, legenda };
 }
 
-const GRUPOS = [
-  { id: "sim", rotulo: "Sim", cor: "var(--sim)" },
-  { id: "nao", rotulo: "Não", cor: "var(--nao)" },
-  { id: "outros", rotulo: "Abstenção ou obstrução", cor: "var(--abst)" },
-  { id: "ausente", rotulo: "Não votou", cor: "var(--ausente)" },
-] as const;
-
-const GRUPOS_SECRETA = [
-  { id: "sim", rotulo: "Participou (voto secreto)", cor: "var(--ink-2)" },
-  { id: "ausente", rotulo: "Não votou", cor: "var(--ausente)" },
-] as const;
-
-function grupoDoVoto(voto: string, secreta?: boolean) {
-  const v = canon(voto);
-  if (secreta) return v && v !== "ausente" ? "sim" : "ausente";
-  if (v === "sim") return "sim";
-  if (v === "nao") return "nao";
-  if (!v || v === "ausente") return "ausente";
-  return "outros";
-}
-
 /**
- * One seat per member colored by their vote. Members of the house who did not register a vote fill
- * the remaining seats, so the chart always shows the whole room.
+ * One seat per member colored by their vote group. Members of the house in office today who are
+ * missing from the official list fill the remaining seats, so the chart always shows the whole room.
+ * Groups are the same as in the list of votes (`votos.ts`), so a filter means the same in both.
  */
 export function cadeirasPorVoto(v: VotacaoDetalhe, membrosDaCasa: PoliticoResumo[]): { cadeiras: Cadeira[]; legenda: ItemLegenda[] } {
-  const conhecidos = new Map(membrosDaCasa.map((m) => [m.id, m]));
-  const votaram = new Set(v.votos.map((x) => x.pid));
-  const linhas = [
-    ...v.votos.map((x) => ({ id: x.pid, nome: x.nome, partido: x.partido, uf: x.uf, voto: x.voto })),
-    ...membrosDaCasa.filter((m) => m.emExercicio && !votaram.has(m.id)).map((m) => ({ id: m.id, nome: m.nome, partido: m.partido, uf: m.uf, voto: "" })),
-  ];
-  const grupos: readonly { id: string; rotulo: string; cor: string }[] = v.secreta ? GRUPOS_SECRETA : GRUPOS;
-  const ordemGrupo = new Map(grupos.map((g, i) => [g.id, i]));
-  linhas.sort(
-    (a, b) =>
-      ordemGrupo.get(grupoDoVoto(a.voto, v.secreta))! - ordemGrupo.get(grupoDoVoto(b.voto, v.secreta))! ||
-      a.partido.localeCompare(b.partido) ||
-      a.nome.localeCompare(b.nome, "pt-BR"),
+  return cadeirasDasLinhas(linhasDaVotacao(v, membrosDaCasa), v.secreta);
+}
+
+/** Seats from an already built list of votes; `aceso` dims the seats left out by a filter. */
+export function cadeirasDasLinhas(todas: LinhaVoto[], secreta?: boolean, aceso?: (l: LinhaVoto) => boolean): { cadeiras: Cadeira[]; legenda: ItemLegenda[] } {
+  const pos = new Map(ORDEM_CATEGORIAS.map((c, i) => [c, i]));
+  const linhas = [...todas].sort(
+    (a, b) => pos.get(a.categoria)! - pos.get(b.categoria)! || a.partido.localeCompare(b.partido) || a.nome.localeCompare(b.nome, "pt-BR") || a.pid.localeCompare(b.pid),
   );
-  const cadeiras: Cadeira[] = linhas.map((l) => {
-    const g = grupos.find((x) => x.id === grupoDoVoto(l.voto, v.secreta))!;
-    return {
-      id: l.id,
-      nome: conhecidos.get(l.id)?.nome ?? l.nome,
-      partido: l.partido,
-      uf: l.uf,
-      foto: conhecidos.get(l.id)?.foto,
-      cor: g.cor,
-      detalhe: !l.voto ? "não registrou voto" : v.secreta ? "participou; o voto é secreto" : votoLegivel(l.voto),
-      href: conhecidos.has(l.id) ? `/politico/${l.id}` : undefined,
-    };
-  });
-  const legenda = grupos.map((g) => ({ cor: g.cor, rotulo: g.rotulo, n: linhas.filter((l) => grupoDoVoto(l.voto, v.secreta) === g.id).length })).filter((l) => l.n > 0);
+  const cadeiras: Cadeira[] = linhas.map((l) => ({
+    id: l.pid,
+    nome: l.nome,
+    partido: l.partido,
+    uf: l.uf,
+    foto: l.foto,
+    cor: COR_CATEGORIA[l.categoria],
+    detalhe: secreta && l.categoria === "outro" ? "participou; o voto é secreto" : votoLegivel(l.original),
+    href: l.perfil ? `/politico/${l.pid}` : undefined,
+    esmaecido: aceso ? !aceso(l) : false,
+  }));
+  const n = contar(linhas);
+  const legenda = CATEGORIAS_VOTO.filter((c) => n[c.id] > 0).map((c) => ({
+    id: c.id,
+    cor: COR_CATEGORIA[c.id],
+    rotulo: secreta && c.id === "outro" ? "Participou (voto secreto)" : c.rotulo,
+    n: n[c.id],
+  }));
   return { cadeiras, legenda };
 }
 

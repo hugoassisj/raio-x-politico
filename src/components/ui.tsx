@@ -1,20 +1,18 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { rotuloVoto } from "@/lib/linguagem";
+import { COR_CATEGORIA } from "@/lib/votos";
 
 /** Canonical vote label + color. Color is never the only signal: the word is always shown. */
 export function VotoChip({ voto, compacto = false }: { voto?: string; compacto?: boolean }) {
   const r = rotuloVoto(voto);
-  const cls = {
-    sim: "bg-sim text-white",
-    nao: "bg-nao text-white",
-    outro: "bg-abst text-white",
-    ausente: "bg-surface-2 text-ink-2 ring-1 ring-inset ring-line",
-  }[r.tipo];
+  // Absences and missing records are outlined, so color always means a choice was recorded
+  const cheio = r.tipo !== "ausente";
   return (
     <span
       title={r.explicacao}
-      className={`inline-flex items-center whitespace-nowrap rounded-md font-semibold ${compacto ? "px-1.5 py-0.5 text-xs" : "px-2 py-0.5 text-sm"} ${cls}`}
+      className={`inline-flex items-center whitespace-nowrap rounded-md font-semibold ${compacto ? "px-1.5 py-0.5 text-xs" : "px-2 py-0.5 text-sm"} ${cheio ? "text-white" : "bg-surface-2 text-ink-2 ring-1 ring-inset ring-line"}`}
+      style={cheio ? { background: COR_CATEGORIA[r.categoria] } : undefined}
     >
       {r.rotulo}
     </span>

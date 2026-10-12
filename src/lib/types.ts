@@ -265,6 +265,12 @@ export interface ExplicacaoIA {
 
 export interface VotacaoDetalhe extends VotacaoResumo {
   votos: { pid: string; nome: string; partido: string; uf: string; voto: string }[];
+  /**
+   * Members in office on the vote date (by the house's own status history) who are missing from the
+   * official list. Absent when the eligible population is not known, so nobody is listed by guess.
+   * The party here is the current one.
+   */
+  semRegistro?: { pid: string; nome: string; partido: string; uf: string }[];
   orientacoes: { sigla: string; orientacao: string }[];
   url?: string;
 }

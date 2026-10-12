@@ -356,33 +356,67 @@ export function encurtar(texto: string, max: number): string {
 }
 
 /**
+ * How a recorded vote is grouped. "sem-registro" is a person in office today who is missing from the
+ * official list of that roll call: the source does not say why, so it is never called an absence.
+ */
+export type CategoriaVoto = "sim" | "nao" | "abstencao" | "obstrucao" | "outro" | "ausencia" | "sem-registro";
+
+/** Display order and plain meaning of each group. */
+export const CATEGORIAS_VOTO: { id: CategoriaVoto; rotulo: string; explicacao: string }[] = [
+  { id: "sim", rotulo: "Sim", explicacao: "Votou a favor." },
+  { id: "nao", rotulo: "Não", explicacao: "Votou contra." },
+  { id: "abstencao", rotulo: "Abstenção", explicacao: "Estava presente e registrou que não votaria nem a favor nem contra." },
+  { id: "obstrucao", rotulo: "Obstrução", explicacao: "Estava presente, mas não votou como forma de protesto, para tentar impedir a votação." },
+  { id: "outro", rotulo: "Outro registro", explicacao: "Presidia a sessão, estava presente sem votar, ou a votação era secreta." },
+  { id: "ausencia", rotulo: "Ausência registrada", explicacao: "A Casa registrou que a pessoa não estava, com ou sem justificativa (licença, missão oficial)." },
+  {
+    id: "sem-registro",
+    rotulo: "Sem voto registrado",
+    explicacao: "Estava no cargo no dia, segundo a própria Casa, mas não aparece na lista oficial desta votação. A fonte não diz o motivo.",
+  },
+];
+
+type TipoVoto = "sim" | "nao" | "outro" | "ausente";
+const TIPO: Record<CategoriaVoto, TipoVoto> = { sim: "sim", nao: "nao", abstencao: "outro", obstrucao: "outro", outro: "outro", ausencia: "ausente", "sem-registro": "ausente" };
+
+/**
  * Vote records as people understand them. The houses use codes ("Artigo 17", "P-NRV", "LS") that
  * mean very different things: presiding the session is not an absence, a health leave is not a
  * choice not to vote.
  */
-const VOTOS: [RegExp, { rotulo: string; explicacao: string; tipo: "sim" | "nao" | "outro" | "ausente" }][] = [
-  [/^sim$/i, { rotulo: "Sim", explicacao: "Votou a favor.", tipo: "sim" }],
-  [/^n[aã]o$/i, { rotulo: "Não", explicacao: "Votou contra.", tipo: "nao" }],
-  [/^absten/i, { rotulo: "Abstenção", explicacao: "Estava presente e registrou que não votaria nem a favor nem contra.", tipo: "outro" }],
-  [/^obstru/i, { rotulo: "Obstrução", explicacao: "Estava presente, mas não votou como forma de protesto, para tentar impedir a votação.", tipo: "outro" }],
+const VOTOS: [RegExp, { rotulo: string; explicacao: string; categoria: CategoriaVoto }][] = [
+  [/^sim$/i, { rotulo: "Sim", explicacao: "Votou a favor.", categoria: "sim" }],
+  [/^n[aã]o$/i, { rotulo: "Não", explicacao: "Votou contra.", categoria: "nao" }],
+  [/^absten/i, { rotulo: "Abstenção", explicacao: "Estava presente e registrou que não votaria nem a favor nem contra.", categoria: "abstencao" }],
+  [/^obstru/i, { rotulo: "Obstrução", explicacao: "Estava presente, mas não votou como forma de protesto, para tentar impedir a votação.", categoria: "obstrucao" }],
   [
     /^art(igo|\.)? ?17/i,
-    { rotulo: "Presidindo", explicacao: "Presidia a sessão. Pelo regimento da Câmara (art. 17), o presidente só vota em caso de empate ou votação secreta.", tipo: "outro" },
+    {
+      rotulo: "Presidindo",
+      explicacao: "Presidia a sessão. Pelo regimento da Câmara (art. 17), o presidente só vota em caso de empate ou votação secreta.",
+      categoria: "outro",
+    },
   ],
-  [/^presidente/i, { rotulo: "Presidindo", explicacao: "Presidia a sessão do Senado, e por isso não votou.", tipo: "outro" }],
-  [/^p-nrv/i, { rotulo: "Presente, não votou", explicacao: "Registrou presença, mas não registrou voto.", tipo: "outro" }],
-  [/^p-od/i, { rotulo: "Presente, não votou", explicacao: "Registrou presença, mas não votou por obstrução declarada.", tipo: "outro" }],
-  [/^ap$/i, { rotulo: "Em atividade oficial", explicacao: "Ausência justificada: estava em outra atividade do mandato autorizada pelo Senado.", tipo: "ausente" }],
-  [/^mis/i, { rotulo: "Em missão oficial", explicacao: "Ausência justificada: estava em missão oficial autorizada.", tipo: "ausente" }],
-  [/^ls$/i, { rotulo: "Licença de saúde", explicacao: "Ausência justificada por licença médica.", tipo: "ausente" }],
-  [/^lp$/i, { rotulo: "Licença particular", explicacao: "Estava de licença para tratar de assuntos particulares.", tipo: "ausente" }],
-  [/^l[a-z]{1,2}$/i, { rotulo: "De licença", explicacao: "Estava de licença autorizada pelo Senado.", tipo: "ausente" }],
-  [/^ncom/i, { rotulo: "Não compareceu", explicacao: "Não compareceu à sessão.", tipo: "ausente" }],
-  [/^participou/i, { rotulo: "Participou", explicacao: "Votação secreta: a casa publica quem participou, mas não o voto.", tipo: "outro" }],
-  [/^(ausente|)$/i, { rotulo: "Ausente", explicacao: "Não registrou voto nesta votação.", tipo: "ausente" }],
+  [/^presidente/i, { rotulo: "Presidindo", explicacao: "Presidia a sessão do Senado, e por isso não votou.", categoria: "outro" }],
+  [/^p-nrv/i, { rotulo: "Presente, não votou", explicacao: "Registrou presença, mas não registrou voto.", categoria: "outro" }],
+  [/^p-od/i, { rotulo: "Obstrução", explicacao: "Registrou presença, mas não votou por obstrução declarada.", categoria: "obstrucao" }],
+  [/^ap$/i, { rotulo: "Em atividade oficial", explicacao: "Ausência justificada: estava em outra atividade do mandato autorizada pelo Senado.", categoria: "ausencia" }],
+  [/^mis/i, { rotulo: "Em missão oficial", explicacao: "Ausência justificada: estava em missão oficial autorizada.", categoria: "ausencia" }],
+  [/^ls$/i, { rotulo: "Licença de saúde", explicacao: "Ausência justificada por licença médica.", categoria: "ausencia" }],
+  [/^lp$/i, { rotulo: "Licença particular", explicacao: "Estava de licença para tratar de assuntos particulares.", categoria: "ausencia" }],
+  [/^l[a-z]{1,2}$/i, { rotulo: "De licença", explicacao: "Estava de licença autorizada pelo Senado.", categoria: "ausencia" }],
+  [/^ncom/i, { rotulo: "Não compareceu", explicacao: "Não compareceu à sessão.", categoria: "ausencia" }],
+  [/^participou/i, { rotulo: "Participou", explicacao: "Votação secreta: a casa publica quem participou, mas não o voto.", categoria: "outro" }],
+  [/^ausente$/i, { rotulo: "Ausente", explicacao: "A Casa registrou ausência nesta votação.", categoria: "ausencia" }],
+  [/^$/, { rotulo: "Sem voto registrado", explicacao: CATEGORIAS_VOTO[6].explicacao, categoria: "sem-registro" }],
 ];
 
-export function rotuloVoto(voto: string | undefined) {
+/**
+ * Plain label of a house vote code. Unknown codes keep their original text and count as "outro",
+ * so nothing is silently turned into Sim, Não or an absence.
+ */
+export function rotuloVoto(voto: string | undefined): { rotulo: string; explicacao: string; categoria: CategoriaVoto; tipo: TipoVoto } {
   const v = (voto ?? "").trim();
-  return VOTOS.find(([re]) => re.test(v))?.[1] ?? { rotulo: v, explicacao: "Registro da casa legislativa, como publicado.", tipo: "outro" as const };
+  const r = VOTOS.find(([re]) => re.test(v))?.[1] ?? { rotulo: v, explicacao: "Registro da casa legislativa, como publicado.", categoria: "outro" as const };
+  return { ...r, tipo: TIPO[r.categoria] };
 }

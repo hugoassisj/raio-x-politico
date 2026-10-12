@@ -1,0 +1,187 @@
+# Plano de implementação (rastreador)
+
+Este é o registro oficial do que falta fazer, do que está em andamento e do que já foi conferido. Quem pegar o trabalho no meio (pessoa ou agente) deve começar por aqui.
+
+- **Leia antes:** [PRODUCT.md](../PRODUCT.md) (princípios, que são requisitos) e [AGENTS.md](../AGENTS.md) (regras do código).
+- **Situações:** `NOT_STARTED` (não começou), `IN_PROGRESS` (em andamento), `BLOCKED` (travado, com o motivo), `IMPLEMENTED` (código escrito), `VERIFIED` (critérios de aceite testados, com a prova anotada).
+- **Prioridades:** P0 (correção e base), P1 (melhoria central para o cidadão), P2 (capacidade avançada), P3 (acabamento e futuro).
+- Um item só vira `VERIFIED` com prova: teste automatizado com nome, página conferida no navegador com data, ou execução real do coletor. Compilar não é prova.
+
+## 1. Objetivos e princípios
+
+1. Qualquer pessoa, inclusive quem lê pouco, entende o que um político fez, com a fonte oficial ao lado de cada número.
+2. Neutro: sem nota, ranking, rótulo ideológico ou juízo de valor. Fato, cálculo, inferência e texto de IA aparecem separados e marcados.
+3. Melhor faltar do que errar: dado ausente é dito como ausente, nunca vira zero; ligação incerta entre registros não é publicada como certa.
+4. Rápido e simples no celular; detalhes ficam a um toque (revelação progressiva).
+5. Código limpo: uma fonte para cada definição (`metricas.ts`, `linguagem.ts`, `perguntas.ts`, `types.ts`), coletores que desconfiam das APIs, testes para cada regra.
+
+## 2. O que já existe (conferido no código em 2026-10-12)
+
+| Área | O que existe | Onde |
+|---|---|---|
+| Páginas | Início, políticos, perfil, votações, votação, partidos, partido, estado, gastos, falas, comparar, análises, como funciona, dados, sobre, API de índice | `src/app/**/page.tsx` |
+| Coleta | Câmara, Senado, TSE (candidaturas, bens, redes), histórico TSE desde 1994, contas de campanha (2018 em diante), assembleias, Emendas Pix (Transferegov), Portal da Transparência (com chave), discursos, redes sociais oficiais, matérias votadas | `pipeline/sources/*.ts` |
+| Confiabilidade | Verificações antes de publicar (bloqueiam a publicação), manifesto SHA-256 dos arquivos oficiais, cartão “Como sabemos disso?” com período, cálculo, limites e cobertura | `pipeline/qualidade.ts`, `pipeline/lib/http.ts`, `src/components/ComoSabemos.tsx` |
+| Linguagem simples | Glossário com toque, regras públicas para explicar cada etapa de votação, rótulos para códigos de voto (Artigo 17, P-NRV, AP, LS...), explicações por IA com regras de validação | `src/lib/linguagem.ts`, `pipeline/explicar.ts` |
+| Votações | Lista com filtros por assunto e casa, página da votação com explicação, regra de aprovação desenhada, plenário (uma bolinha por cadeira), votos do meu estado, linha do tempo do projeto, tabela por partido, lista nominal com busca e filtro por voto (situação antes deste plano) | `src/app/votacao/[id]/page.tsx`, `src/components/{Plenario,Quorum,MeuEstado}.tsx` |
+| Vida pública | Linha do tempo de candidaturas, trocas de partido, curva de patrimônio, dinheiro de campanha, mandatos | `src/components/VidaPublica.tsx`, `src/lib/carreira.ts` |
+| Design | Tokens em três camadas (primitivos OKLCH, semânticos, receitas), tema claro e escuro por preferência do sistema e por `data-theme`, movimento contido com respeito a `prefers-reduced-motion`, ícones Lucide | `src/app/globals.css`, `src/components/Icone.tsx` |
+| Testes | 89 testes (Vitest): cálculos, coletores com respostas simuladas, banco, interface, linguagem | `pipeline/tests/*`, `src/lib/*.test.ts` |
+
+**Achados da auditoria**
+
+- **Não há shadcn/ui.** A especificação fala em “base shadcn/ui existente”, mas o projeto usa Tailwind v4 com componentes próprios (`ui.tsx`, receitas `.cartao`, `.chip`, `.botao`). Decisão: manter os componentes próprios e os tokens atuais; não introduzir shadcn só por introduzir (registrado em DEC-01).
+- **Tabelas:** não há TanStack Table. Tabelas são HTML com ordenação por URL (`/politicos`) ou filtros no cliente (`VotosNominais`).
+- **Tema:** os tokens escuros existem, mas não há botão para trocar o tema nem preferência salva.
+- **Paginação:** cada lista resolve do seu jeito (“mostrar mais” em `VotosNominais`, cortes fixos em outras). Não há componente comum nem estado na URL.
+- **Partido na época do voto:** a lista de votos de cada votação traz o partido registrado pela Casa naquele voto. Em 20.228 dos 110.872 votos guardados, esse partido é diferente do partido atual da pessoa. Ou seja, a fonte guarda o partido da época, e a interface deve usar esse, não o atual.
+- **Totais oficiais e votos individuais:** nas 351 votações publicadas, a contagem de Sim e Não feita a partir dos votos individuais bate com o total oficial em todas as votações abertas. As 53 diferenças são todas votações secretas (a Casa publica o total, mas não o voto de cada pessoa).
+- **Códigos de voto vistos nos dados reais:** Câmara: Sim, Não, Abstenção, Obstrução, Artigo 17, Participou (voto secreto). Senado: Sim, Não, Abstenção, AP, MIS, LS, LP, LAP, NCom, P-NRV, Presidente (art. 51 RISF).
+- **Execução completa do TSE:** a execução com histórico e contas (run 38259518839) falhou com código 1 sem mensagem visível. Os erros do pipeline agora viram anotações da execução (DADOS-02), e uma nova execução completa foi disparada.
+
+## 3. Lacunas
+
+| Tema | Lacuna |
+|---|---|
+| Produto | Presidente da República sem página; empresas (CNPJ) sem página; emendas sem ciclo completo (empenho, liquidação, pagamento); sem grafo de relações |
+| UX | Votação: os números do resultado não filtram a lista; não dá para esconder uma categoria; “sem voto registrado” se mistura com “ausente”; tema sem botão; paginação desigual |
+| Dados | Histórico TSE e contas de campanha ainda não conferidos com dados reais; explicações por IA ainda não geradas (sem chave); partido por data só existe nos votos |
+| Qualidade de dados | Falta registrar a data da coleta por voto individual (hoje vale a data da coleta geral, em `meta.json`) |
+| Arquitetura | Sem primitivos de tabela e paginação compartilhados |
+| Acessibilidade | Falta conferência sistemática (teclado, leitor de tela, zoom 200%) por página |
+| Testes | Faltam testes de interface para filtros com estado na URL |
+| Operação | Execuções longas falham sem mensagem (corrigido em DADOS-02); capturas de tela do README ausentes |
+
+## 4. Itens por frente de trabalho
+
+Formato de cada item: **ID**, situação, prioridade, o que é, critérios de aceite, depende de, prova.
+
+### 4.1 Votações (adendo “Ficha do Político e votos para o cidadão”)
+
+| ID | Situação | P | O que é | Critérios de aceite | Depende de |
+|---|---|---|---|---|---|
+| VOT-01 | VERIFIED | P0 | Definições das categorias de voto | Uma função pura transforma o código original da Casa em uma categoria (Sim, Não, Abstenção, Obstrução, Outro registro, Ausência registrada, Sem voto registrado), sem perder o código original. Testes cobrem cada código visto nos dados reais. “Sem voto registrado” nunca vira “Não” nem “ausente”. | |
+| VOT-02 | VERIFIED | P0 | Contagens que filtram a lista | Tocar em Sim, Não ou outra categoria no resumo filtra a lista real de pessoas; o filtro ativo fica evidente; um toque desfaz; outra categoria pode ser escolhida direto. | VOT-01, PAG-01 |
+| VOT-03 | VERIFIED | P0 | Esconder e mostrar categorias | “Esconder quem votou Sim”, “Mostrar todos de novo”, chips removíveis, “Limpar filtros”. Esconder não muda os totais oficiais. | VOT-02 |
+| VOT-04 | VERIFIED | P0 | Totais oficiais separados do que está visível | O total oficial aparece sempre; a contagem da lista filtrada aparece como “mostrando X de Y”. | VOT-02 |
+| VOT-05 | VERIFIED | P1 | Lista de votos (roster) | Cada linha: foto, nome, partido da época do voto, estado, voto com explicação, link para o perfil. Modo compacto e modo detalhado; no celular, lista legível sem rolagem lateral. | VOT-01 |
+| VOT-06 | VERIFIED | P1 | Filtros combinados com estado na URL | Busca, partido, estado, categoria, ordem, visão e página vão para a URL; atualizar, compartilhar, voltar e avançar funcionam. Ordem determinística (critério + nome + id). | PAG-01 |
+| VOT-07 | VERIFIED | P1 | Partidos sem ranking | Por partido, a distribuição de todos os tipos de voto, a orientação do partido separada do voto de cada membro, ordem alfabética declarada, tocar no partido filtra a lista; visão “por partido” com os membros. | VOT-05 |
+| VOT-08 | IMPLEMENTED | P1 | Partido da época | Votos usam o partido gravado pela Casa no voto. Para quem não tem voto registrado, a interface diz que o partido mostrado é o atual. | VOT-05 |
+| VOT-09 | NOT_STARTED | P1 | Contexto da votação | Pergunta votada, etapa, resultado desta votação separado do destino final do projeto; não dizer “virou lei” sem prova. | |
+| VOT-10 | NOT_STARTED | P1 | Procedimento ou mérito | Cada votação marcada como “sobre o andamento” (pedido, requerimento) ou “sobre o conteúdo”, com regra pública e testada. Filtro no catálogo. | VOT-01 |
+| VOT-11 | NOT_STARTED | P1 | Catálogo de votações | Busca por texto, filtros por casa, assunto, resultado, tipo (andamento ou conteúdo), período; estado na URL; paginação comum. | PAG-01, VOT-10 |
+| VOT-12 | NOT_STARTED | P1 | Votos no perfil | No perfil, filtrar votos por voto, assunto, ano e casa, com link para cada votação. | VOT-01 |
+| VOT-13 | IN_PROGRESS | P0 | Origem de cada voto | Identificador oficial da votação, casa, data, código original do voto e link oficial visíveis no detalhe; data da coleta mostrada. | VOT-05 |
+| VOT-14 | IN_PROGRESS | P0 | Testes de votação | Testes para: Sim, Não, abstenção, obstrução, sem voto, presidindo, licença, voto secreto, Câmara e Senado, troca de partido, filtro vazio, combinação de filtros com URL e paginação. | VOT-01 a VOT-06 |
+| VOT-15 | IN_PROGRESS | P1 | Conferência na tela | Página de votação conferida no navegador, claro e escuro, celular e computador, só com teclado. | VOT-02 a VOT-08, TEMA-01 |
+
+### 4.2 Base de design e navegação
+
+| ID | Situação | P | O que é | Critérios de aceite | Depende de |
+|---|---|---|---|---|---|
+| TEMA-01 | NOT_STARTED | P1 | Botão de tema | Botão visível (claro, escuro, do sistema), preferência salva, sem piscar na carga, nome acessível. | |
+| PAG-01 | VERIFIED | P0 | Paginação comum | Uma função pura (`src/lib/paginacao.ts`) e um componente (`Paginacao`); página na URL; volta à página 1 quando um filtro muda; ordem estável. | |
+| PAG-02 | IN_PROGRESS | P1 | Paginação nas listas | Políticos, votações, falas e lista de votos usam PAG-01. | PAG-01 |
+| TAB-01 | NOT_STARTED | P2 | Primitivos de tabela | Avaliar TanStack Table para `/politicos` e gastos: ordenar, esconder colunas, redimensionar, exportar CSV, preferências salvas. Decidir com base em peso e acessibilidade. | PAG-01 |
+| NAV-01 | NOT_STARTED | P2 | Navegação | Presidente e empresas na navegação quando existirem; revisar menu do celular. | PRES-01 |
+| DS-01 | IMPLEMENTED | P1 | Tokens e movimento | Tokens em três camadas e animações contidas já existem. Falta conferir contraste AA de todos os pares no tema escuro. | |
+
+### 4.3 Partidos
+
+| ID | Situação | P | O que é | Critérios de aceite | Depende de |
+|---|---|---|---|---|---|
+| PART-01 | NOT_STARTED | P1 | Cor de cada partido com fonte | Cores tiradas do material oficial de cada partido, guardadas com a URL e a data da consulta; contraste conferido nos dois temas. | |
+| PART-02 | NOT_STARTED | P1 | Componentes de partido | `PartyBadge` (sigla com cor e nome completo), legenda, opção de filtro; mesma aparência em todas as páginas. | PART-01 |
+| PART-03 | BLOCKED | P2 | Logos dos partidos | Logos são marcas registradas. Só guardar com licença ou permissão clara; até lá, sigla tipográfica. Motivo do bloqueio: falta revisão de licença. | PART-01 |
+| PART-04 | NOT_STARTED | P1 | Filiação ao longo do tempo | Partido por data a partir das candidaturas do TSE e dos votos; nunca supor o partido de uma data pelo partido atual. | DADOS-01 |
+
+### 4.4 Perfis, história e Presidência
+
+| ID | Situação | P | O que é | Critérios de aceite | Depende de |
+|---|---|---|---|---|---|
+| PERF-01 | IN_PROGRESS | P1 | Cobertura por seção | Cada seção do perfil diz se o dado está completo, parcial, indisponível ou não se aplica. Já existe nas métricas (`ComoSabemos`); falta nas seções. | |
+| PERF-02 | IMPLEMENTED | P1 | Vida pública desde 1994 | Linha do tempo, partidos, bens e contas. Falta conferir com dados reais. | DADOS-01 |
+| PRES-01 | NOT_STARTED | P0 | Presidente da República | Página do Presidente atual, encontrável na navegação; eleições, bens e contas de campanha pelo TSE; atos oficiais com fonte. Testes. | DADOS-01 |
+| CONT-01 | NOT_STARTED | P1 | “Contato, redes e fontes” | Dividir em Contato, Redes sociais, Sites oficiais, Fontes e transparência, Sobre os dados; ícones iguais para cada rede. | |
+| PL-01 | NOT_STARTED | P1 | Projetos de lei | Autoria e coautoria separadas, situação, histórico, link oficial, filtros. | |
+
+### 4.5 Dinheiro público, empresas e relações
+
+| ID | Situação | P | O que é | Critérios de aceite | Depende de |
+|---|---|---|---|---|---|
+| EMD-01 | NOT_STARTED | P1 | Ciclo da emenda | Indicação, empenho, liquidação e pagamento separados, com fonte de cada etapa. | |
+| EMD-02 | NOT_STARTED | P2 | Caminho pelo município | Ver todas as emendas que chegaram a uma cidade. | EMD-01 |
+| CNPJ-01 | NOT_STARTED | P1 | CNPJ normalizado | Função pura com dígitos verificadores e testes. | |
+| CNPJ-02 | NOT_STARTED | P2 | Página da empresa | Gastos, doações e emendas ligados a um CNPJ, sem contar duas vezes. | CNPJ-01 |
+| CNPJ-03 | NOT_STARTED | P2 | Ligação certa ou possível | Ligações confirmadas (mesmo CNPJ) separadas das possíveis (mesmo nome). | CNPJ-01 |
+| GRAFO-01 | NOT_STARTED | P2 | Grafo de relações | Grafo interativo real com tipos de ligação e prova de cada uma, busca, expandir um nó, filtros, painel lateral, visão em lista e uso pelo teclado. Teste: ligação sem prova não sai como confirmada. | CNPJ-03 |
+
+### 4.6 Confiança, acessibilidade e operação
+
+| ID | Situação | P | O que é | Critérios de aceite | Depende de |
+|---|---|---|---|---|---|
+| PROV-01 | IMPLEMENTED | P0 | “Como sabemos disso?” | Cartão de evidência por métrica. Falta estender a todas as seções. | |
+| PROV-02 | NOT_STARTED | P1 | Fato, cálculo, inferência e IA | Marcas visuais e texto diferentes para cada tipo. | |
+| PROV-03 | IMPLEMENTED | P1 | Pedido de correção | Modelo de issue “erro nos dados” já existe; falta registro público das correções feitas. | |
+| BAND-01 | NOT_STARTED | P3 | Bandeiras dos estados | Arquivos locais das fontes oficiais de cada estado, com fonte e licença. | |
+| A11Y-01 | NOT_STARTED | P1 | Conferência de acessibilidade | Teclado, leitor de tela, zoom 200%, contraste, nas páginas principais. | |
+| DADOS-01 | IN_PROGRESS | P0 | Execução completa do TSE | Histórico desde 1994 e contas de campanha publicados e conferidos em perfis reais. | DADOS-02 |
+| DADOS-02 | IMPLEMENTED | P0 | Erros visíveis na execução | Erros e verificações que falham viram anotações do GitHub Actions. | |
+| IA-01 | BLOCKED | P1 | Explicações por IA | Gerar e validar as explicações dos projetos votados. Bloqueio: o ambiente não tem `ANTHROPIC_API_KEY`. Caminho: gerar fora e importar com `pipeline:explicar -- --importar`. | |
+| DOC-01 | NOT_STARTED | P2 | Capturas de tela do README | `docs/telas/*.png` existem e mostram o site real. | VOT-15 |
+| VAL-01 | NOT_STARTED | P1 | Oito casos nos dois temas | Político com muitos dados, com poucos, candidato histórico, empresa, identidade ambígua, emenda com pagamento, grafo, página sem registros. | vários |
+
+### 4.7 Referências estudadas
+
+| ID | Situação | P | O que é | Decisão |
+|---|---|---|---|---|
+| REF-01 | VERIFIED | P2 | EloSys (github.com/YuriRDev/elosys) | Python e SQLite, sem licença: só ideias, nenhum código copiado. Adotado: seguir a mesma pessoa pelas fontes por identificador forte. Rejeitado: pontuações de risco (juízo de valor). Detalhes em PRODUCT.md, “Referências estudadas”. |
+| REF-02 | VERIFIED | P1 | Ficha do Político (fichadopolitico.com.br) | Astro, licença MIT, nenhum código copiado. Adotado: vida pública inteira e contas de campanha. Adaptado: lista de votos fácil de filtrar (aqui com contagens clicáveis e estado na URL). Rejeitado: qualquer nota ou selo de “ficha limpa” feito por nós; só mostramos o que a fonte oficial diz. Detalhes em PRODUCT.md. |
+| REF-03 | VERIFIED | P1 | Licenças de reuso | Nenhum código de terceiros copiado; dados só de fontes oficiais com termos de uso abertos. |
+
+### 4.8 Provas de cada item conferido
+
+| ID | Prova |
+|---|---|
+| VOT-01 | `src/lib/votos.test.ts`, “normalizes every house code seen in real data and keeps the original” (16 códigos reais + código desconhecido) e “counts groups that match the official totals”. Código: `CATEGORIAS_VOTO` e `rotuloVoto` em `src/lib/linguagem.ts`. |
+| VOT-02 | Teste “tapping a total shows only that group...”. Navegador (2026-10-12, Chromium sem interface): tocar em “Não” em `/votacao/cam-106701-223` leva a `?voto=nao` e “Mostrando 1 de 429 pessoas”; tecla Enter no primeiro total em `/votacao/sen-7016` leva a `?voto=sim` (“Mostrando 36 de 81”). Atalhos “Quem votou Sim/Não” no cartão do resultado. |
+| VOT-03 | Teste “hides one group and brings it back”. Navegador: botão do olho “Mostrar quem teve Sim” leva a `?voto=sim,nao`; chips removíveis e “Mostrar todos de novo” na tela. A legenda do plenário usa a mesma função (`alternar`). |
+| VOT-04 | Teste “never changes the totals when filtering”. Na tela, os totais ficam fixos com a linha “X com os filtros” e o texto “Mostrando X de Y pessoas”. |
+| VOT-05 | Capturas de tela: lista (claro), detalhes (escuro), por partido, celular 390 px sem rolagem lateral (`scrollWidth` igual à largura). Linha com foto, nome com link, partido, estado, voto com explicação; modo detalhes mostra o código original quando é diferente do rótulo. |
+| VOT-06 | Teste “round-trips through the address and ignores junk” e “sorts deterministically”. Navegador: voltar no histórico restaura `?voto=nao` e a lista. HTML estático da página já traz a lista completa (sem depender de JavaScript). |
+| VOT-07 | Teste “groups by party alphabetically and keeps each person's vote”. Tela `?visao=partido&partido=PT`: barra com todos os tipos de voto, “Partido pediu: Sim” separado dos votos, botão “Ver só este partido”. |
+| VOT-08 | Partido da época: teste “builds one row per person with the party of the vote day”. “Sem voto registrado” agora vem do histórico de exercício da Câmara (`marcarSemRegistro` em `pipeline/build.ts`, testes em `pipeline/tests/core.test.ts`). Falta: a próxima coleta publicar o campo `semRegistro` e conferir na tela. |
+| PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
+
+## 5. Fontes, documentação e licenças
+
+| Fonte | Uso | Documentação |
+|---|---|---|
+| Câmara dos Deputados | Deputados, votos, presença, gastos, proposições | https://dadosabertos.camara.leg.br/swagger/api.html |
+| Senado Federal | Senadores, votos, gastos, matérias | https://legis.senado.leg.br/dadosabertos/docs/ |
+| TSE | Candidaturas desde 1994, bens, contas, redes | https://dadosabertos.tse.jus.br |
+| Transferegov | Emendas Pix | https://api.transferegov.gestao.gov.br/transferenciasespeciais/ |
+| Portal da Transparência | Emendas parlamentares | https://portaldatransparencia.gov.br/api-de-dados |
+
+Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Lei 12.527/2011) e podem ser reutilizados citando a fonte.
+
+## 6. Decisões
+
+- **DEC-01 (2026-10-12):** sem shadcn/ui. Os componentes próprios e os tokens já cobrem o que a especificação pede; trocar a base agora geraria retrabalho sem ganho para quem usa.
+- **DEC-02 (2026-10-12):** filtros da lista de votos vivem no navegador, com estado na URL. Uma votação tem no máximo 513 votos, então filtrar no cliente é rápido e não exige servidor. Listas grandes (todas as votações, todos os políticos) seguem com dados pré-calculados.
+- **DEC-03 (2026-10-12):** “Sem voto registrado” é uma categoria própria: pessoas que a Câmara registra como em exercício no dia da votação e que não aparecem na lista oficial. A fonte não diz o motivo, então não chamamos de falta. Antes, a lista usava quem está no cargo hoje, o que incluía quem só assumiu depois (546 pessoas numa casa de 513). No Senado a lista oficial já nomeia cada senador com um código (licença, missão, ausência), então não acrescentamos ninguém.
+- **DEC-04 (2026-10-12):** um só agrupamento de votos para tudo (`src/lib/votos.ts`): totais, lista, plenário, legenda e partidos usam as mesmas categorias. Isso corrigiu o plenário, que contava licenças e “presidindo” como “abstenção ou obstrução”.
+- **DEC-05 (2026-10-12):** cores de partido. O PRODUCT.md decidiu não usar cor de partido nos gráficos, para nenhuma tela parecer favorecer um lado. A especificação pede cores oficiais. Proposta para PART-01: cor oficial só no selo do partido (pequeno, sempre com a sigla), nunca como cor de gráfico ou de plenário.
+
+## 7. Resultados de testes
+
+| Data | Comando | Resultado |
+|---|---|---|
+| 2026-10-12 | `npm run lint`, `tsc --noEmit`, `vitest run` | sem erros; 89 testes passando |
+| 2026-10-12 | `npm run lint`, `tsc --noEmit`, `vitest run`, `npm run build` | sem erros; 107 testes passando; build com as 351 votações estáticas |
+
+## 8. Registro de progresso
+
+- **2026-10-12 (2):** lista “Quem votou como” na página da votação (`src/components/PainelVotos.tsx`): totais que filtram, esconder e mostrar grupos, plenário aceso pelo filtro, busca, partido, estado, ordem, três visões, paginação e tudo na URL. Plenário corrigido (o filtro de destaque não apagava as cadeiras por causa da animação; agora usa `fill-opacity`). Código antigo `VotosNominais.tsx` removido. Próximo: TEMA-01, VOT-10/11 (catálogo), VOT-12 (votos no perfil).
+- **2026-10-12:** rastreador criado a partir da auditoria do código e dos dados reais. Trabalho anterior enviado (vida pública, contas de campanha, “Como sabemos disso?”, “Quem resolve”). Erros do pipeline agora aparecem como anotações. Nova execução completa do TSE disparada. Próximo passo: VOT-01 a VOT-08.
