@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CircleAlert, CircleCheck } from "lucide-react";
 import { Container, Fonte, Secao } from "@/components/ui";
 import { getMeta } from "@/lib/data";
-import { dataHora, moeda, numero } from "@/lib/format";
+import { data, dataHora, moeda, numero } from "@/lib/format";
 import { NATUREZAS, type Natureza } from "@/lib/linguagem";
 import { METRICAS } from "@/lib/metricas";
 import { SeloNatureza } from "@/components/Natureza";
@@ -184,6 +185,36 @@ export default async function Dados() {
           </details>
         </Secao>
       )}
+
+      <Secao
+        titulo="Retratos anteriores"
+        subtitulo="Cada atualização dos dados é gravada como uma versão no repositório público, com data. Nada é apagado: dá para abrir o site como ele estava em qualquer dia e conferir o que mudou."
+      >
+        <ul className="grid gap-3 sm:grid-cols-3">
+          {[
+            { href: `${REPO_URL}/commits/main/data/meta.json`, titulo: "Lista de todas as atualizações", texto: "Uma versão por coleta, com a data e o que mudou." },
+            {
+              href: `${REPO_URL}/tree/main/data`,
+              titulo: "Dados desta versão",
+              texto: meta ? `Gerados em ${data(meta.geradoEm.slice(0, 10))}, com o manifesto dos arquivos oficiais acima.` : "Arquivos JSON publicados.",
+            },
+            { href: "/correcoes", titulo: "Correções publicadas", texto: "O que o site mostrou errado, o que mudou e quando." },
+          ].map((x) => (
+            <li key={x.href} className="cartao rounded-xl p-4">
+              {x.href.startsWith("http") ? (
+                <a href={x.href} target="_blank" rel="noopener noreferrer" className="link font-semibold">
+                  {x.titulo}
+                </a>
+              ) : (
+                <Link href={x.href} className="link font-semibold">
+                  {x.titulo}
+                </Link>
+              )}
+              <p className="mt-1 text-sm text-ink-2">{x.texto}</p>
+            </li>
+          ))}
+        </ul>
+      </Secao>
 
       <Secao titulo="Salários (subsídios)" subtitulo="Valores mensais brutos definidos em lei, sem contar cota, auxílios e verba de gabinete.">
         <ul className="grid gap-4 md:grid-cols-3">
