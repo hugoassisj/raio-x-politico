@@ -192,7 +192,9 @@ export function somarVotosZip(zip: Uint8Array): Map<string, number> {
     };
     f.start();
   };
-  uz.push(zip, true);
+  // Feed the archive in slices: pushed whole, the decompressor would emit each file as one chunk.
+  const FATIA = 1 << 16;
+  for (let i = 0; i < zip.length; i += FATIA) uz.push(zip.subarray(i, i + FATIA), i + FATIA >= zip.length);
   return s.totais;
 }
 

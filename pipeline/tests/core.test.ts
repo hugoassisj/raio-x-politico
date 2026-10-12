@@ -273,7 +273,8 @@ describe("TSE bulk results", () => {
   });
   it("streams the same totals straight from a ZIP", () => {
     const csv = ['"NR_TURNO";"CD_CARGO";"SQ_CANDIDATO";"QT_VOTOS_NOMINAIS"', ...Array.from({ length: 5000 }, (_, i) => `"1";"6";"${i % 3}";"2"`)].join("\n");
-    const zip = zipSync({ "votacao_candidato_munzona_2022_BR.csv": strToU8(csv), "leiame.pdf": strToU8("x") });
+    // level 0 stores the file uncompressed, so the archive spans several input slices
+    const zip = zipSync({ "votacao_candidato_munzona_2022_BR.csv": [strToU8(csv), { level: 0 }], "leiame.pdf": strToU8("x") });
     const t = somarVotosZip(zip);
     expect([...t.values()].reduce((a, b) => a + b, 0)).toBe(10000);
     expect(t.get("0")).toBe(3334);
