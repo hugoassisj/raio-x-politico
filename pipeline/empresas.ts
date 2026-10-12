@@ -4,7 +4,7 @@
  * exists only when the CNPJ is the same and valid; names alone never link anything.
  */
 import { documentoPublicavel } from "../src/lib/cnpj";
-import type { EmpresaDetalhe, EmpresaResumo } from "../src/lib/types";
+import type { EmpresaDetalhe, EmpresaResumo, PagamentoEmpresa } from "../src/lib/types";
 import { round } from "./lib/util";
 import type { Despesa } from "./model";
 import type { RegistroCampanhaCnpj } from "./sources/tse-contas";
@@ -24,6 +24,9 @@ export function limparNomeEmpresa(nome: string): string {
 /** Detail files are grouped by the first two characters of the CNPJ. */
 export const balde = (cnpj: string) => cnpj.slice(0, 2);
 
+/** Payments kept per person on the company page; the person's own page has the full list. */
+export const PAGAMENTOS_POR_PESSOA = 12;
+
 export function montarEmpresas(inp: {
   despesas: Despesa[];
   campanhas: RegistroCampanhaCnpj[];
@@ -42,13 +45,15 @@ export function montarEmpresas(inp: {
   };
 
   // Parliamentary quota
-  const cota = new Map<string, Map<string, { valor: number; n: number; primeira?: string; ultima?: string; exemplo?: string }>>();
+  type Acum = { valor: number; n: number; primeira?: string; ultima?: string; exemplo?: string; pagamentos: PagamentoEmpresa[] };
+  const cota = new Map<string, Map<string, Acum>>();
+  const categorias = new Map<string, Map<string, { valor: number; n: number }>>();
   for (const d of inp.despesas) {
     const cnpj = documentoPublicavel(d.doc);
     if (!cnpj || !(d.valor > 0)) continue;
     de(cnpj, d.fornecedor, d.valor);
-    const porPessoa = cota.get(cnpj) ?? new Map();
-    const x = porPessoa.get(d.pid) ?? { valor: 0, n: 0 };
+    const porPessoa = cota.get(cnpj) ?? new Map<string, Acum>();
+    const x = porPessoa.get(d.pid) ?? { valor: 0, n: 0, pagamentos: [] };
     x.valor += d.valor;
     x.n++;
     const quando = d.data ?? `${d.ano}-${String(d.mes).padStart(2, "0")}`;
@@ -57,12 +62,26 @@ export function montarEmpresas(inp: {
       x.ultima = quando;
       x.exemplo = d.url ?? x.exemplo;
     }
+    x.pagamentos.push({ data: quando, valor: round(d.valor, 2)!, categoria: d.categoria, url: d.url });
     porPessoa.set(d.pid, x);
     cota.set(cnpj, porPessoa);
+    const porCat = categorias.get(cnpj) ?? new Map();
+    const c = porCat.get(d.categoria) ?? { valor: 0, n: 0 };
+    c.valor += d.valor;
+    c.n++;
+    porCat.set(d.categoria, c);
+    categorias.set(cnpj, porCat);
   }
   for (const [cnpj, porPessoa] of cota) {
     const lista = [...porPessoa]
-      .map(([pid, x]) => ({ pid, nome: inp.nomes.get(pid) ?? pid, ...x, valor: round(x.valor, 2)! }))
+      .map(([pid, x]) => ({
+        pid,
+        nome: inp.nomes.get(pid) ?? pid,
+        ...x,
+        valor: round(x.valor, 2)!,
+        // Newest first; ties by value so the order is stable between runs
+        pagamentos: [...x.pagamentos].sort((a, b) => b.data.localeCompare(a.data) || b.valor - a.valor).slice(0, PAGAMENTOS_POR_PESSOA),
+      }))
       .sort((a, b) => b.valor - a.valor || a.pid.localeCompare(b.pid));
     det.get(cnpj)!.cota = {
       total: round(
@@ -72,6 +91,9 @@ export function montarEmpresas(inp: {
       n: lista.reduce((s, x) => s + x.n, 0),
       periodo: inp.periodoCota,
       porPessoa: lista,
+      porCategoria: [...(categorias.get(cnpj) ?? [])]
+        .map(([categoria, c]) => ({ categoria, valor: round(c.valor, 2)!, n: c.n }))
+        .sort((a, b) => b.valor - a.valor || a.categoria.localeCompare(b.categoria)),
       fonte: "Câmara dos Deputados e Senado Federal: cota para o exercício da atividade parlamentar",
     };
   }

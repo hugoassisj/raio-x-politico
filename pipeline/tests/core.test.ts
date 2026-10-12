@@ -438,6 +438,32 @@ describe("companies by CNPJ", () => {
       ["dep-2", 30, 1, "2026-03-01", "2026-03-01"],
     ]);
     expect(e.campanhas?.registros).toEqual([{ pid: "dep-2", nome: "Bia", papel: "fornecedor", ano: 2022, valor: 520 }]);
+    // Each person's payments, newest first, and what the money paid for
+    expect(e.cota?.porPessoa[0].pagamentos).toEqual([
+      { data: "2026-05-01", valor: 50, categoria: "Divulgação", url: undefined },
+      { data: "2026-02-01", valor: 100, categoria: "Divulgação", url: undefined },
+    ]);
+    expect(e.cota?.porCategoria).toEqual([{ categoria: "Divulgação", valor: 180, n: 3 }]);
+  });
+
+  it("keeps only the most recent payments per person on the company page", async () => {
+    const { montarEmpresas, PAGAMENTOS_POR_PESSOA } = await import("../empresas");
+    const despesas = Array.from({ length: PAGAMENTOS_POR_PESSOA + 5 }, (_, i) => ({
+      pid: "dep-1",
+      ano: 2026,
+      mes: 1,
+      data: `2026-01-${String(i + 1).padStart(2, "0")}`,
+      categoria: i % 2 ? "Combustível" : "Divulgação",
+      fornecedor: "POSTO X",
+      doc: "11222333000181",
+      valor: 10,
+    }));
+    const r = montarEmpresas({ despesas, campanhas: [], donoCandidatura: new Map(), nomes: new Map(), periodoCota: { inicio: "2026-01-01", fim: "2026-01-31" } });
+    const p = r.baldes.get("11")!["11222333000181"].cota!.porPessoa[0];
+    expect(p.n).toBe(PAGAMENTOS_POR_PESSOA + 5);
+    expect(p.pagamentos).toHaveLength(PAGAMENTOS_POR_PESSOA);
+    expect(p.pagamentos![0].data).toBe("2026-01-17");
+    expect(r.baldes.get("11")!["11222333000181"].cota!.porCategoria!.map((c) => c.categoria)).toEqual(["Divulgação", "Combustível"]);
   });
 });
 

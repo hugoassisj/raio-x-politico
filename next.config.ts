@@ -31,6 +31,8 @@ const SEGURANCA = [
 ];
 
 const nextConfig: NextConfig = {
+  // A second dev server (for example on the demo data) needs its own build folder
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   async headers() {
     return [{ source: "/:path*", headers: SEGURANCA }];
   },

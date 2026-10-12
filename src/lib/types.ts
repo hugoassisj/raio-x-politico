@@ -440,6 +440,15 @@ export interface EmpresaResumo {
   pessoas: number;
 }
 
+/** One reimbursed expense paid to a company, with the official document when published. */
+export interface PagamentoEmpresa {
+  /** ISO date, or year-month when the house publishes no day */
+  data: string;
+  valor: number;
+  categoria: string;
+  url?: string;
+}
+
 /**
  * Everything linked to one CNPJ. Only an exact CNPJ match creates a link; similar names never do,
  * so every link here is confirmed by the official record shown next to it.
@@ -453,7 +462,19 @@ export interface EmpresaDetalhe {
     total: number;
     n: number;
     periodo: { inicio: string; fim: string };
-    porPessoa: { pid: string; nome: string; valor: number; n: number; primeira?: string; ultima?: string; exemplo?: string }[];
+    porPessoa: {
+      pid: string;
+      nome: string;
+      valor: number;
+      n: number;
+      primeira?: string;
+      ultima?: string;
+      exemplo?: string;
+      /** Most recent payments of this person to the company, newest first (at most PAGAMENTOS_POR_PESSOA) */
+      pagamentos?: PagamentoEmpresa[];
+    }[];
+    /** What the money paid for, by the category the house publishes, largest first */
+    porCategoria?: { categoria: string; valor: number; n: number }[];
     fonte: string;
   };
   campanhas?: {
