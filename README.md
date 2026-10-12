@@ -2,7 +2,7 @@
 
 **O que fazem os políticos que você elegeu, explicado em palavras simples e com a fonte oficial de cada número.**
 
-O Raio-X Político é um site gratuito, sem partido e sem cadastro. Ele mostra o que fazem os 81 senadores, os 513 deputados federais e os mais de mil deputados estaduais do Brasil: se vão trabalhar, como votam, o que propõem, quanto gastam, para onde mandam dinheiro e o que dizem.
+O Raio-X Político é um site gratuito, sem partido e sem cadastro. Ele mostra o que fazem os 81 senadores, os 513 deputados federais e os mais de mil deputados estaduais do Brasil: se vão trabalhar, como votam, o que propõem, quanto gastam, para onde mandam dinheiro e o que dizem. E conta a vida pública inteira de cada um: todas as eleições que disputou desde 1994, os partidos por onde passou, os bens que declarou e quem pagou cada campanha.
 
 ![Página inicial: “Quem te representa?”, com busca e mapa do Brasil](docs/telas/inicio.png)
 
@@ -17,8 +17,11 @@ O Raio-X Político junta esses dados todos os dias, traduz para o português do 
 | Pergunta | Onde o site responde |
 |---|---|
 | Quem me representa? | Toque no seu estado no mapa e veja os 3 senadores, os deputados federais e os estaduais, com foto e partido. |
-| Meu deputado vai trabalhar? | Cada perfil mostra quantas sessões a pessoa compareceu e em quantas votações registrou voto, comparado com os colegas. |
 | O que foi votado e o que muda para mim? | Cada projeto explicado em palavras simples, com o resultado e o que significava votar Sim ou Não. |
+| Quem resolve o problema da minha rua? | Digite o problema (buraco, polícia, aposentadoria) e veja se é da cidade, do estado ou do país, e quem cobrar. |
+| Meu deputado vai trabalhar? | Cada perfil mostra quantas sessões a pessoa compareceu e em quantas votações registrou voto, comparado com os colegas. |
+| Quem pagou a campanha? | Quanto cada campanha arrecadou, quanto foi dinheiro público, quem mais doou e com quem mais gastou. |
+| Que cargos já disputou e por quais partidos passou? | Todas as candidaturas desde 1994, de vereador a senador, com resultado, partido e bens declarados. |
 | Como votaram os representantes do meu estado? | Em toda votação, escolha seu estado uma vez e veja o voto de cada um, com foto. |
 | Quantos votos uma lei precisa para passar? | Mudar a Constituição exige 308 deputados; uma lei comum, mais Sim do que Não. Cada regra aparece desenhada no plenário. |
 | Quanto gastam da verba do mandato, e com o quê? | Gastos da cota parlamentar mês a mês, por tipo de despesa e por fornecedor, com o link de cada nota fiscal. |
@@ -56,13 +59,17 @@ O Raio-X Político junta esses dados todos os dias, traduz para o português do 
 - **Todo número tem endereço.** Ao lado de cada dado há o link para o registro oficial de onde ele veio: Câmara, Senado, Tribunal Superior Eleitoral (TSE), Transferegov, Portal da Transparência e assembleias estaduais.
 - **Atualizado todo dia.** Um programa visita os sites oficiais toda madrugada e publica os dados novos.
 - **Inteligência artificial com regras duras.** Quando usamos IA para explicar um projeto em palavras simples, ela só pode usar o texto oficial, precisa copiar os trechos em que se baseou e não pode inventar números. Se quebrar uma regra, a explicação é descartada automaticamente. Tudo o que foi feito por IA vem marcado no site.
-- **Tudo aberto.** Este código e todos os dados ficam públicos aqui. Qualquer pessoa pode conferir como cada conta é feita.
+- **Cada número explica a si mesmo.** Um toque em “Como sabemos disso?” mostra o período, o cálculo, o que o número não diz, a fonte oficial, quando os dados foram coletados e se estão completos ou parciais.
+- **Conferido antes de ir ao ar.** Antes de cada atualização, o programa confere o retrato inteiro (número de parlamentares, datas, porcentagens, fontes). Se algo grave falha, nada é publicado e a versão anterior continua no site.
+- **Melhor faltar do que errar de pessoa.** Para juntar as candidaturas de alguém ao longo dos anos, seguimos o título de eleitor. Quando há dúvida, a informação fica de fora.
+- **Tudo aberto.** Este código e todos os dados ficam públicos aqui, com a impressão digital (SHA-256) de cada arquivo oficial usado. Qualquer pessoa pode conferir como cada conta é feita.
 
 ## Como os dados chegam ao site
 
 1. **Coletar.** Toda madrugada, um programa (o _pipeline_, na pasta `pipeline/`) baixa os dados dos sites oficiais. Se um site estiver fora do ar, os outros continuam e o problema fica registrado.
-2. **Organizar e calcular.** O programa junta a mesma pessoa em fontes diferentes (por exemplo, a deputada na Câmara e a candidata no TSE), calcula presença, gastos e votos, e explica cada votação em palavras simples.
-3. **Publicar.** Os dados vão para a pasta [`data/`](data/README.md), que qualquer pessoa pode baixar, e o site é atualizado a partir deles.
+2. **Organizar e calcular.** O programa junta a mesma pessoa em fontes diferentes (por exemplo, a deputada na Câmara e a candidata a vereadora de anos atrás no TSE), calcula presença, gastos e votos, e explica cada votação em palavras simples.
+3. **Conferir.** Antes de publicar, uma lista de verificações confere se o retrato faz sentido. Se não fizer, a atualização para.
+4. **Publicar.** Os dados vão para a pasta [`data/`](data/README.md), que qualquer pessoa pode baixar, e o site é atualizado a partir deles.
 
 Os detalhes de cada decisão, cada fonte e cada cálculo estão no [documento de produto (PRODUCT.md)](PRODUCT.md).
 
@@ -101,6 +108,7 @@ Abra http://localhost:3000.
 | `npm run pipeline` | Coleta tudo e grava a pasta `data/` |
 | `npm run pipeline -- --only=senado,camara` | Coleta de novo só algumas fontes, reaproveitando as outras |
 | `npm run pipeline -- --dias=90` | Janela menor para votos, presença e discursos |
+| `npm run pipeline -- --pular=historico,contas` | Reaproveita a vida pública e as contas de campanha da última coleta (os arquivos do TSE têm vários gigabytes) |
 | `npm run pipeline:explicar` | Explica os projetos votados em palavras simples (precisa de `ANTHROPIC_API_KEY`) |
 | `npm run pipeline:ai` | Resume o que cada parlamentar disse, com citações (precisa de `ANTHROPIC_API_KEY`) |
 | `npm run db:migrate` e `npm run pipeline:db` | Cria as tabelas e carrega os dados no Postgres (precisa de `DATABASE_URL`) |

@@ -1,7 +1,7 @@
 import type { Casa } from "@/lib/types";
 import { METRICAS, NOME_PARES, parcela, percentil, type ChaveMetrica, type DefMetrica } from "@/lib/metricas";
 import { IconeTema } from "./Icone";
-import { Fonte } from "./ui";
+import { ComoSabemosMetrica } from "./ComoSabemos";
 
 type Dist = { min: number; max: number; mediana: number; p10: number; p90: number; n: number; valores: number[] };
 
@@ -34,6 +34,7 @@ export function TileMetrica({
   dist,
   nota,
   destaque,
+  coletadoEm,
 }: {
   def: DefMetrica;
   valor: number | undefined;
@@ -41,6 +42,8 @@ export function TileMetrica({
   dist?: Dist;
   nota?: string;
   destaque?: boolean;
+  /** When the data was collected, shown in the evidence card */
+  coletadoEm?: string;
 }) {
   const p = percentil(valor, dist?.valores ?? []);
   const pares = NOME_PARES[casa];
@@ -62,7 +65,7 @@ export function TileMetrica({
         </div>
       </div>
       {valor == null ? (
-        <p className="mt-3 text-ink-3">Sem dados para esta pessoa nas fontes consultadas.</p>
+        <p className="mt-3 text-ink-3">{def.cobertura?.[casa]?.motivo ?? "Sem dados para esta pessoa nas fontes consultadas."}</p>
       ) : (
         <>
           <p className="figure mt-3 text-[2.4rem] font-bold">
@@ -87,21 +90,7 @@ export function TileMetrica({
           {p != null && <p className="mt-2 text-sm text-ink-2">{extremo ?? def.comparacao(parcela(p), pares)}.</p>}
         </>
       )}
-      <details className="group mt-auto pt-3 text-sm">
-        <summary className="text-ink-3 underline decoration-dotted underline-offset-4 hover:text-ink">O que é isso e como calculamos</summary>
-        <div className="mt-2 space-y-2 text-ink-2">
-          <p className="text-ink">{def.explicacao}</p>
-          <p>{def.calculo}</p>
-          <p className="text-ink-3">{def.limites}</p>
-          <p className="flex flex-wrap gap-x-3">
-            {def.fontes.map((f) => (
-              <Fonte key={f.url} href={f.url}>
-                {f.nome}
-              </Fonte>
-            ))}
-          </p>
-        </div>
-      </details>
+      <ComoSabemosMetrica def={def} casa={casa} coletadoEm={coletadoEm} />
     </article>
   );
 }

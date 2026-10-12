@@ -1,6 +1,9 @@
 import {
   Briefcase,
   GitCompare,
+  History,
+  PiggyBank,
+  Wrench,
   HandCoins,
   MapPin,
   MessageSquareQuote,
@@ -67,7 +70,22 @@ export function IconeAssunto({ nome, className = "h-4 w-4" }: { nome: string; cl
   return <I className={className} aria-hidden />;
 }
 
-const PERGUNTA: Record<string, LucideIcon> = { MapPin, CalendarCheck, Vote, Scale, Wallet, Users, MessageSquareQuote, Landmark, GitCompare, HandCoins, FileText };
+const PERGUNTA: Record<string, LucideIcon> = {
+  MapPin,
+  CalendarCheck,
+  Vote,
+  Scale,
+  Wallet,
+  Users,
+  MessageSquareQuote,
+  Landmark,
+  GitCompare,
+  HandCoins,
+  FileText,
+  History,
+  PiggyBank,
+  Wrench,
+};
 
 /** Icon of a question the site answers (see src/lib/perguntas.ts). */
 export function IconePergunta({ nome, className = "h-5 w-5" }: { nome: string; className?: string }) {

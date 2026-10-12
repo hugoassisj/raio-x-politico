@@ -26,8 +26,16 @@ export interface DefMetrica {
   casas: Casa[];
   calculo: string;
   fontes: { nome: string; url: string }[];
+  /** What the number does not tell (shown as "O que isso não diz") */
   limites: string;
+  /** Period the number refers to, in plain words */
+  periodo: string;
+  /** Houses where the data is missing or partial, and why: shown instead of a silent blank */
+  cobertura?: Partial<Record<Casa, { estado: "parcial" | "indisponivel"; motivo: string }>>;
 }
+
+/** Plain words for the coverage states shown next to each number. */
+export const ROTULO_COBERTURA = { disponivel: "Dados completos", parcial: "Dados parciais", indisponivel: "Sem dados" } as const;
 
 const CAM = { nome: "Câmara dos Deputados - Dados Abertos", url: "https://dadosabertos.camara.leg.br" };
 const SEN = { nome: "Senado Federal - Dados Abertos", url: "https://www12.senado.leg.br/dados-abertos" };
@@ -46,6 +54,8 @@ export const METRICAS: DefMetrica[] = [
     calculo:
       "Câmara: sessões deliberativas do Plenário já encerradas em que o deputado registrou presença, divididas pelo total dessas sessões desde o início do seu exercício atual. Senado: dias com votação nominal em que o senador registrou voto ou presença, divididos pelos dias com votação nominal em que ele estava em exercício. Período: últimos 12 meses.",
     fontes: [CAM, SEN],
+    periodo: "Últimos 12 meses, contando só o tempo em que a pessoa estava no cargo.",
+    cobertura: { assembleia: { estado: "indisponivel", motivo: "As assembleias estaduais ainda não publicam a presença de cada deputado em formato aberto." } },
     limites:
       "A Câmara não publica em formato aberto se a ausência foi justificada (licença médica, missão oficial). No Senado, ausências justificadas aparecem separadas no detalhe do perfil.",
   },
@@ -61,6 +71,8 @@ export const METRICAS: DefMetrica[] = [
     calculo:
       "Votações nominais do Plenário em que registrou voto (Sim, Não, Abstenção, Obstrução ou presença sem voto), divididas pelas votações nominais ocorridas enquanto estava em exercício, nos últimos 12 meses. Votações secretas do Senado não entram.",
     fontes: [CAM, SEN],
+    periodo: "Votações nominais dos últimos 12 meses em que a pessoa estava no cargo.",
+    cobertura: { assembleia: { estado: "indisponivel", motivo: "As assembleias estaduais ainda não publicam o voto de cada deputado em formato aberto." } },
     limites: "Quem preside a sessão normalmente não vota. Votações simbólicas (sem registro individual) não entram.",
   },
   {
@@ -75,6 +87,7 @@ export const METRICAS: DefMetrica[] = [
     calculo:
       "Entre as votações em que votou Sim, Não, Abstenção ou Obstrução e o partido deu orientação, a porcentagem em que o voto foi igual à orientação. Votos liberados e ausências não contam. Mínimo de 10 votações comparáveis. Câmara: orientação oficial da liderança do partido, federação ou bloco. Senado: como o Senado não publica orientações neste formato, usa-se a posição da maioria da bancada do partido naquela votação.",
     fontes: [CAM, SEN],
+    periodo: "Votações nominais dos últimos 12 meses.",
     limites: "Seguir ou não o partido não é bom nem ruim por si só: indica alinhamento, não qualidade.",
   },
   {
@@ -89,6 +102,7 @@ export const METRICAS: DefMetrica[] = [
     calculo:
       "Entre as votações em que a liderança do Governo orientou Sim ou Não (ou Obstrução/Abstenção) e o deputado votou, a porcentagem em que o voto coincidiu com a orientação do Governo. Mínimo de 10 votações comparáveis.",
     fontes: [CAM],
+    periodo: "Votações nominais dos últimos 12 meses.",
     limites: "Disponível apenas para a Câmara, que publica a orientação do Governo em cada votação.",
   },
   {
@@ -106,6 +120,8 @@ export const METRICAS: DefMetrica[] = [
       { nome: "Câmara - Cota parlamentar", url: "https://www.camara.leg.br/transparencia/gastos-parlamentares" },
       { nome: "Senado - CEAPS", url: "https://www12.senado.leg.br/transparencia/sen/" },
     ],
+    periodo: "Os últimos 12 meses completos.",
+    cobertura: { assembleia: { estado: "parcial", motivo: "Só algumas assembleias (como as de São Paulo e Minas Gerais) publicam os gastos de cada deputado." } },
     limites:
       "O teto da cota varia por estado (passagens para Brasília custam diferente), por isso a comparação justa é com colegas do mesmo estado. Salários e verba de gabinete não entram.",
   },
@@ -121,6 +137,7 @@ export const METRICAS: DefMetrica[] = [
     calculo:
       "Regras automáticas inspiradas na Operação Serenata de Amor: CNPJ/CPF do fornecedor com dígito verificador inválido (códigos internos que a casa usa para serviços próprios não entram); refeição com valor muito acima do padrão da casa (média + 4 desvios-padrão); valor entre os 0,1% maiores da categoria; o mesmo documento fiscal (fornecedor, número, valor e data de emissão iguais) reembolsado mais de uma vez; mais de 50% do gasto de 12 meses concentrado em um único fornecedor.",
     fontes: [{ nome: "Serenata de Amor (metodologia de referência)", url: "https://github.com/okfn-brasil/serenata-de-amor" }],
+    periodo: "Os últimos 12 meses completos.",
     limites: "Um ponto de atenção não é acusação de irregularidade: é um gasto fora do padrão que vale conferir no documento original, sempre linkado.",
   },
   {
@@ -135,6 +152,7 @@ export const METRICAS: DefMetrica[] = [
     calculo:
       "Projetos de lei (PL), projetos de lei complementar (PLP), propostas de emenda à Constituição (PEC) e projetos de decreto legislativo (PDL) em que é autor ou coautor, em toda a carreira registrada pela casa.",
     fontes: [CAM, SEN],
+    periodo: "Toda a carreira: na Câmara, projetos apresentados desde 1988; no Senado, todas as matérias de autoria.",
     limites: "Quantidade não mede qualidade nem impacto. Coautorias contam como autoria. Requerimentos e indicações não entram.",
   },
   {
@@ -148,6 +166,7 @@ export const METRICAS: DefMetrica[] = [
     casas: ["camara", "senado"],
     calculo: "Projetos da lista acima cuja situação atual é 'Transformado em Norma Jurídica' (Câmara) ou que geraram norma (Senado).",
     fontes: [CAM, SEN],
+    periodo: "Toda a carreira, com a situação atual de cada projeto.",
     limites: "Considera os 100 projetos mais recentes de cada parlamentar.",
   },
   {
@@ -162,6 +181,7 @@ export const METRICAS: DefMetrica[] = [
     calculo:
       "Soma dos valores de investimento e custeio dos planos de ação de transferências especiais (as chamadas 'emendas Pix') indicadas pelo parlamentar desde 2020, segundo o Transferegov. Quando a chave da API do Portal da Transparência está configurada, usa todas as emendas individuais pagas.",
     fontes: [{ nome: "Transferegov - Transferências Especiais", url: "https://api.transferegov.gestao.gov.br/transferenciasespeciais/" }],
+    periodo: "Desde 2020.",
     limites: "A ligação entre emenda e parlamentar é feita pelo nome do autor, que pode falhar em nomes muito comuns.",
   },
   {
@@ -173,8 +193,9 @@ export const METRICAS: DefMetrica[] = [
     formato: (n) => moedaCurta(n),
     comparacao: (p, pares) => `Patrimônio maior que o de ${p} ${pares}`,
     casas: ["camara", "senado", "assembleia"],
-    calculo: "Soma dos bens declarados ao TSE no registro da candidatura mais recente encontrada (2018, 2022 ou 2026).",
+    calculo: "Soma dos bens declarados ao TSE no registro da candidatura mais recente encontrada. A seção Vida pública mostra a declaração de cada eleição desde 2006.",
     fontes: [TSE],
+    periodo: "A declaração mais recente entregue ao TSE.",
     limites: "É o valor declarado pelo próprio candidato, geralmente pelo valor histórico de compra, não pelo valor de mercado.",
   },
   {
@@ -188,6 +209,7 @@ export const METRICAS: DefMetrica[] = [
     casas: ["camara", "senado", "assembleia"],
     calculo: "Votos nominais recebidos no 1º turno das eleições de 2022, segundo os resultados oficiais do TSE.",
     fontes: [TSE],
+    periodo: "Eleição de 2022, 1º turno.",
     limites: "Suplentes que assumiram o mandato recebem menos votos por definição.",
   },
 ];

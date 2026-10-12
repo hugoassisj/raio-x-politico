@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { GLOSSARIO } from "@/lib/linguagem";
+import { CARGOS, NIVEL } from "@/lib/cargos";
+import { QuemResolve } from "@/components/QuemResolve";
 import { MiniPlenario } from "@/components/Plenario";
 import { Container, Fonte, Secao } from "@/components/ui";
 import { numero } from "@/lib/format";
 import { descricaoExigencia, MEMBROS, REGRAS, votosNecessarios } from "@/lib/quorum";
 
 export const metadata: Metadata = {
-  title: "Como funciona: como uma lei é aprovada",
-  description: "Como uma ideia vira lei no Brasil e quantos votos cada tipo de proposta precisa na Câmara e no Senado, explicado de forma simples.",
+  title: "Como funciona a política no Brasil",
+  description: "Quem resolve cada problema do dia a dia, o que faz cada cargo, como uma ideia vira lei e quantos votos cada proposta precisa, explicado de forma simples.",
 };
 
 const PASSOS = [
@@ -24,10 +26,76 @@ export default function ComoFunciona() {
     <Container className="py-10">
       <h1 className="display text-4xl font-extrabold sm:text-5xl">Como funciona</h1>
       <p className="mt-4 max-w-3xl text-xl leading-relaxed text-ink-2">
-        O Congresso Nacional tem duas casas: a Câmara dos Deputados, com 513 deputados, e o Senado Federal, com 81 senadores. Quase toda lei precisa passar pelas duas.
+        A política no Brasil tem três níveis: a cidade, o estado e o país. Em cada um, uma pessoa governa (prefeito, governador, Presidente) e um grupo faz as leis e fiscaliza
+        (vereadores, deputados estaduais, deputados federais e senadores). Aqui você descobre quem cuida de cada coisa e como as decisões são tomadas.
       </p>
+      <nav aria-label="Nesta página" className="mt-6 flex flex-wrap gap-2">
+        {[
+          ["#quem-resolve", "Quem resolve isso?"],
+          ["#cargos", "O que faz cada cargo"],
+          ["#lei", "Como uma ideia vira lei"],
+          ["#votos", "Quantos votos cada proposta precisa"],
+          ["#palavras", "Palavras que aparecem muito"],
+        ].map(([h, r]) => (
+          <a key={h} href={h} className="chip">
+            {r}
+          </a>
+        ))}
+      </nav>
 
-      <Secao titulo="Como uma ideia vira lei">
+      <Secao
+        id="quem-resolve"
+        titulo="Quem resolve isso?"
+        subtitulo="Cada problema do dia a dia é responsabilidade de um nível de governo: cidade, estado ou país. Saber quem cuida ajuda a cobrar a pessoa certa."
+      >
+        <QuemResolve />
+      </Secao>
+
+      <Secao id="cargos" titulo="O que faz cada cargo" subtitulo="Do vereador ao Presidente: o que cada um decide, quantos são e por quanto tempo ficam.">
+        {(["municipio", "estado", "uniao"] as const).map((nivel) => (
+          <div key={nivel} className="mb-8">
+            <h3 className="mb-3 text-sm font-bold text-accent-ink">
+              {NIVEL[nivel].nome}: {NIVEL[nivel].quem}
+            </h3>
+            <ul className="grid gap-4 md:grid-cols-2">
+              {CARGOS.filter((c) => c.nivel === nivel).map((c) => (
+                <li key={c.id} className="cartao p-5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h4 className="text-lg font-bold">{c.nome}</h4>
+                    {c.acompanhado ? (
+                      <span className="rounded-md bg-sim-soft px-2 py-0.5 text-xs font-bold text-sim">Acompanhado no site</span>
+                    ) : (
+                      <span className="rounded-md bg-surface-3 px-2 py-0.5 text-xs font-bold text-ink-3">Aparece na vida pública de quem acompanhamos</span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-lg">{c.faz}</p>
+                  <ul className="mt-2 list-disc space-y-0.5 pl-5 text-ink-2">
+                    {c.exemplos.map((e) => (
+                      <li key={e}>{e}</li>
+                    ))}
+                  </ul>
+                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <dt className="text-ink-3">Quantos</dt>
+                    <dd>{c.quantos}</dd>
+                    <dt className="text-ink-3">Mandato</dt>
+                    <dd>{c.mandato}</dd>
+                    <dt className="text-ink-3">Como é eleito</dt>
+                    <dd>{c.comoEleito}</dd>
+                  </dl>
+                  <p className="mt-2 text-xs text-ink-3">{c.artigo}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+        <p className="cartao p-4 text-ink-2">
+          <b className="text-ink">Eleição proporcional, em poucas palavras:</b> para vereador e deputado, os votos de todos os candidatos de um partido são somados. Essa soma
+          define quantas cadeiras o partido ganha, e elas vão para os seus candidatos mais votados. Por isso alguém com muitos votos pode ajudar a eleger colegas do mesmo partido,
+          e alguém com menos votos pode ser eleito.
+        </p>
+      </Secao>
+
+      <Secao id="lei" titulo="Como uma ideia vira lei">
         <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {PASSOS.map((p, i) => (
             <li key={p.titulo} className="cartao p-5">
@@ -40,6 +108,7 @@ export default function ComoFunciona() {
       </Secao>
 
       <Secao
+        id="votos"
         titulo="Quantos votos cada proposta precisa"
         subtitulo="Quanto mais importante a mudança, mais votos são necessários. Nos desenhos, as cadeiras escuras mostram o mínimo de votos Sim (ou de presentes, na maioria simples)."
       >
@@ -77,7 +146,7 @@ export default function ComoFunciona() {
         </ul>
       </Secao>
 
-      <Secao titulo="Palavras que aparecem muito">
+      <Secao id="palavras" titulo="Palavras que aparecem muito">
         <dl className="grid gap-4 sm:grid-cols-2">
           {[...GLOSSARIO]
             .sort((a, b) => a.termo.localeCompare(b.termo, "pt-BR"))

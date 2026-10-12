@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CircleAlert, CircleCheck } from "lucide-react";
 import { Container, Fonte, Secao } from "@/components/ui";
 import { getMeta } from "@/lib/data";
 import { dataHora, moeda, numero } from "@/lib/format";
@@ -108,6 +109,63 @@ export default async function Dados() {
         )}
       </Secao>
 
+      {!!meta?.qualidade?.length && (
+        <Secao
+          titulo="Verificações antes de publicar"
+          subtitulo="A cada atualização, conferimos o retrato inteiro antes de colocá-lo no ar. Se uma verificação importante falha, nada é publicado e a versão anterior continua no site."
+        >
+          <ul className="grid gap-3 md:grid-cols-2">
+            {meta.qualidade.map((q) => (
+              <li key={q.id} className="cartao flex items-start gap-3 rounded-xl p-4">
+                {q.ok ? <CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-sim" aria-hidden /> : <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-alerta" aria-hidden />}
+                <span>
+                  <span className="block font-semibold">{q.descricao}</span>
+                  <span className="block text-sm text-ink-3">
+                    {q.ok ? "Passou" : q.bloqueia ? "Falhou e bloqueou a publicação" : "Ponto de atenção"}
+                    {q.detalhe ? `: ${q.detalhe}` : ""}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Secao>
+      )}
+
+      {!!meta?.arquivos?.length && (
+        <Secao
+          titulo="Arquivos oficiais usados"
+          subtitulo="Os arquivos grandes baixados nesta atualização, com a impressão digital (SHA-256) de cada um. Quem baixar o mesmo endereço pode conferir que é exatamente o arquivo que processamos."
+        >
+          <details className="cartao rounded-xl p-4">
+            <summary className="font-semibold">Ver os {meta.arquivos.length} arquivos</summary>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-ink-3">
+                  <tr>
+                    <th className="py-1.5 pr-3 font-normal">Arquivo</th>
+                    <th className="py-1.5 pr-3 text-right font-normal">Tamanho</th>
+                    <th className="py-1.5 font-normal">SHA-256</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {meta.arquivos.map((a) => (
+                    <tr key={a.url}>
+                      <td className="py-1.5 pr-3">
+                        <a href={a.url} className="link break-all">
+                          {a.url.replace(/^https?:\/\//, "")}
+                        </a>
+                      </td>
+                      <td className="tnum py-1.5 pr-3 text-right">{numero(Math.round(a.bytes / 1e6))} MB</td>
+                      <td className="py-1.5 font-mono text-xs break-all text-ink-3">{a.sha256}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </Secao>
+      )}
+
       <Secao titulo="Salários (subsídios)" subtitulo="Valores mensais brutos definidos em lei, sem contar cota, auxílios e verba de gabinete.">
         <ul className="grid gap-4 md:grid-cols-3">
           {(meta?.subsidios ?? []).map((s) => (
@@ -124,7 +182,12 @@ export default async function Dados() {
         <ul className="list-disc space-y-2 pl-5 text-ink-2">
           <li>A Câmara não publica em formato aberto se uma ausência foi justificada. O Senado publica, e mostramos separado.</li>
           <li>Poucas assembleias legislativas publicam presença, votos e gastos em formato aberto. Para os estados sem dados, mostramos o que o TSE informa.</li>
-          <li>A ligação entre um parlamentar e seus registros no TSE e no Transferegov é feita por nome e data de nascimento, e pode falhar em casos raros de homônimos.</li>
+          <li>
+            A ligação com o TSE começa por uma candidatura recente (data de nascimento, nome e, na Câmara, parte do CPF) e depois segue o título de eleitor. Candidaturas antigas
+            sem título nem CPF só são ligadas com nome e data de nascimento idênticos. A ligação com o Transferegov é feita pelo nome do autor da emenda.
+          </li>
+          <li>Os arquivos de candidaturas do TSE começam em 1994; as declarações de bens, em 2006; as prestações de contas de campanha, neste formato, em 2018.</li>
+          <li>Votos recebidos só aparecem para a eleição de 2022. Para as outras, mostramos o resultado (eleito, suplente, não eleito).</li>
           <li>Patrimônio é o valor declarado pelo próprio candidato, geralmente o preço histórico de compra, não o de mercado.</li>
           <li>Os dados oficiais podem ser corrigidos pelas próprias casas depois da publicação. Atualizamos tudo diariamente.</li>
         </ul>

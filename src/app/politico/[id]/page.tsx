@@ -12,13 +12,14 @@ import { ListaVotos } from "@/components/ListaVotos";
 import { ResumoIA } from "@/components/ResumoIA";
 import { Barras, Container, Fonte, Origem, Secao, Vazio } from "@/components/ui";
 import { getExplicacoes, getFalas, getIA, getPolitico, getPoliticos, getVotacoes, urlDadoBruto } from "@/lib/data";
-import { data, idade, moeda, moedaCurta, numero, pct, plural, VAZIO } from "@/lib/format";
+import { data, idade, moeda, moedaCurta, numero, plural } from "@/lib/format";
 import { distribuicao, metrica, NOME_CASA } from "@/lib/metricas";
 import { fraseResumo } from "@/lib/resumo";
 import { nomeUf } from "@/lib/ufs";
 import { encurtar, explicarCategoria, explicarEtapa } from "@/lib/linguagem";
 import { partesDescricao } from "@/lib/format";
 import type { VotoLinha } from "@/components/ListaVotos";
+import { CurvaPatrimonio, DinheiroCampanha, LinhaDaVida, MandatosRegistrados, ResumoVida } from "@/components/VidaPublica";
 
 export const dynamicParams = false;
 
@@ -80,6 +81,8 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
   const anoAtual = new Date().getUTCFullYear();
   const anos = p.inicioPolitica ? anoAtual - p.inicioPolitica : undefined;
   const id_ = idade(p.perfil.nascimento);
+  const campanhas = [...p.eleicoes].filter((e) => e.campanha).sort((a, b) => b.ano - a.ano);
+  const ultimaComBens = [...p.eleicoes].filter((e) => e.bens?.length).sort((a, b) => b.ano - a.ano)[0];
   const defs = metricasDaCasa(p.casa);
   const contraPartido = p.votos.filter((v) => v.orientacaoPartido && /^(sim|não)$/i.test(v.voto) && v.voto.toLowerCase() !== v.orientacaoPartido.toLowerCase()).length;
 
@@ -93,7 +96,8 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
     ...(p.proposicoesLista.length || Object.keys(p.proposicoesPorTipo).length ? [["projetos", "Projetos"]] : []),
     ...(falas.length || ia.length ? [["falas", "Falas"]] : []),
     ...(p.emendas ? [["emendas", "Emendas"]] : []),
-    ["carreira", "Carreira e bens"],
+    ["vida", "Vida pública"],
+    ...(campanhas.length ? [["campanhas", "Campanhas"]] : []),
     ["fontes", "Fontes"],
   ] as [string, string][];
 
@@ -200,7 +204,10 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             <CartoesResumo itens={resumoRapido(p, todos)} />
           </div>
           <h2 className="display mt-14 text-2xl font-bold">Todos os números</h2>
-          <p className="mt-1 text-ink-2">Cada cartão mostra onde esta pessoa fica entre todos os colegas. Toque em &ldquo;O que é isso&rdquo; para entender cada número.</p>
+          <p className="mt-1 text-ink-2">
+            Cada cartão mostra onde esta pessoa fica entre todos os colegas. Toque em &ldquo;Como sabemos disso?&rdquo; para ver o período, o cálculo, a fonte oficial e o que o
+            número não diz.
+          </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {defs.map((d, i) => (
               <TileMetrica
@@ -210,6 +217,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                 casa={p.casa}
                 dist={distribuicao(todos, p.casa, d.chave)}
                 destaque={i === 0}
+                coletadoEm={p.atualizadoEm}
                 nota={
                   d.chave === "presenca" && p.presenca
                     ? `${numero(p.presenca.presente)} de ${numero(p.presenca.sessoes)} sessões${p.presenca.justificadas ? `, ${p.presenca.justificadas} ausências justificadas` : ""}`
@@ -500,94 +508,61 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
         )}
 
         <Secao
-          id="carreira"
-          titulo="Carreira, eleições e bens"
-          subtitulo={anos != null ? `Primeiro mandato encontrado em ${p.inicioPolitica}.` : "Sem mandatos anteriores nos registros consultados."}
+          id="vida"
+          titulo="Vida pública"
+          subtitulo="Todas as candidaturas encontradas no TSE desde 1994, de vereador a presidente, com o resultado, o partido e os bens declarados."
           origem={
             <>
               <p>
-                Mandatos vêm do histórico da {p.casa === "senado" ? "Senado" : "Câmara"} e das candidaturas eleitas registradas no TSE (2018, 2022 e 2026). A ligação com o TSE usa
-                data de nascimento e nome{p.casa === "camara" ? ", conferidos com os dígitos visíveis do CPF publicados pela Câmara" : ""}.
+                As candidaturas vêm dos arquivos oficiais do Tribunal Superior Eleitoral (TSE), de todas as eleições desde 1994, inclusive as municipais. Para saber que duas
+                candidaturas são da mesma pessoa, seguimos o número do título de eleitor, que nunca muda, e depois o CPF completo. Nos arquivos antigos, sem esses números,
+                aceitamos só data de nascimento e nome exatamente iguais. Se um número aparece para duas pessoas diferentes, ele é descartado: preferimos deixar de mostrar uma
+                candidatura a mostrar a de outra pessoa.
               </p>
               <p>{metrica("patrimonio").limites}</p>
             </>
           }
         >
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="cartao rounded-xl p-4 sm:p-5">
-              <h3 className="mb-3 font-semibold">Linha do tempo</h3>
-              {p.carreira.length ? (
-                <ol className="relative space-y-4 border-l-2 border-line pl-5">
-                  {[...p.carreira].reverse().map((c, i) => (
-                    <li key={i} className="relative">
-                      <span className="absolute -left-[27px] top-1.5 h-3 w-3 rounded-full border-2 border-surface bg-ink" aria-hidden />
-                      <p className="tnum text-sm text-ink-3">
-                        {c.inicio}
-                        {c.fim ? `–${c.fim}` : "–atual"}
-                      </p>
-                      <p className="font-semibold">{c.cargo}</p>
-                      <p className="text-sm text-ink-2">{[c.municipio, c.uf, c.partido].filter(Boolean).join(" · ")}</p>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <Vazio>Sem mandatos registrados nas fontes consultadas.</Vazio>
-              )}
-            </div>
-            <div className="cartao rounded-xl p-4 sm:p-5">
-              <h3 className="mb-3 font-semibold">Eleições e patrimônio declarado</h3>
-              {p.eleicoes.length ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="text-left text-ink-3">
-                      <tr>
-                        <th className="py-1.5 pr-3 font-normal">Ano</th>
-                        <th className="py-1.5 pr-3 font-normal">Cargo e resultado</th>
-                        <th className="py-1.5 pr-3 text-right font-normal">Votos</th>
-                        <th className="py-1.5 text-right font-normal">Bens</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                      {[...p.eleicoes].reverse().map((e) => (
-                        <tr key={`${e.ano}-${e.cargo}`}>
-                          <td className="tnum py-2 pr-3 font-semibold">{e.ano}</td>
-                          <td className="py-2 pr-3">
-                            <span className="block capitalize">{e.cargo.toLowerCase()}</span>
-                            <span className="block text-ink-3 capitalize">{(e.situacao ?? "").toLowerCase()}</span>
-                          </td>
-                          <td className="tnum py-2 pr-3 text-right">{e.votos != null ? numero(e.votos) : VAZIO}</td>
-                          <td className="tnum py-2 text-right">{moedaCurta(e.patrimonio)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {p.m.patrimonioVariacao != null && (
-                    <p className="mt-3 text-sm text-ink-2">
-                      Variação do patrimônio declarado entre as duas últimas candidaturas: <b>{pct(p.m.patrimonioVariacao)}</b>.
-                    </p>
+          {p.eleicoes.length ? (
+            <div className="space-y-8">
+              <ResumoVida eleicoes={p.eleicoes} sexo={p.sexo} />
+              <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+                <LinhaDaVida eleicoes={p.eleicoes} sexo={p.sexo} />
+                <div className="space-y-6">
+                  {p.eleicoes.some((e) => e.patrimonio != null) && (
+                    <div className="cartao p-5">
+                      <h3 className="mb-4 font-semibold">Bens declarados em cada eleição</h3>
+                      <CurvaPatrimonio eleicoes={p.eleicoes} />
+                      {!!ultimaComBens?.bens?.length && (
+                        <details className="mt-4 text-sm">
+                          <summary className="font-semibold text-accent-ink underline decoration-dotted underline-offset-4">Ver os bens declarados em {ultimaComBens.ano}</summary>
+                          <ul className="mt-2 divide-y divide-line">
+                            {ultimaComBens.bens.map((b, i) => (
+                              <li key={i} className="flex justify-between gap-4 py-1.5">
+                                <span className="min-w-0">
+                                  <span className="block">{b.tipo}</span>
+                                  <span className="block truncate text-ink-3">{b.descricao}</span>
+                                </span>
+                                <span className="tnum shrink-0">{moeda(b.valor)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+                    </div>
                   )}
-                  {!!p.eleicoes[p.eleicoes.length - 1]?.bens?.length && (
-                    <details className="mt-3 text-sm">
-                      <summary className="font-semibold text-ink-2 underline decoration-dotted underline-offset-4">Ver bens da última declaração</summary>
-                      <ul className="mt-2 divide-y divide-line">
-                        {p.eleicoes[p.eleicoes.length - 1].bens!.map((b, i) => (
-                          <li key={i} className="flex justify-between gap-4 py-1.5">
-                            <span className="min-w-0">
-                              <span className="block">{b.tipo}</span>
-                              <span className="block truncate text-ink-3">{b.descricao}</span>
-                            </span>
-                            <span className="tnum shrink-0">{moeda(b.valor)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
+                  {p.carreira.length > 0 && (
+                    <div className="cartao p-5">
+                      <h3 className="mb-3 font-semibold">Mandatos registrados</h3>
+                      <MandatosRegistrados carreira={p.carreira} />
+                    </div>
                   )}
                 </div>
-              ) : (
-                <Vazio>Não encontramos candidaturas desta pessoa nas bases do TSE de 2018, 2022 e 2026.</Vazio>
-              )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <Vazio>Não encontramos candidaturas desta pessoa nos arquivos do TSE. Isso pode acontecer quando o nome ou a data de nascimento não batem entre as fontes.</Vazio>
+          )}
 
           {(p.comissoes.length > 0 || p.frentes.length > 0) && (
             <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -620,6 +595,42 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             </div>
           )}
         </Secao>
+
+        {campanhas.length > 0 && (
+          <Secao
+            id="campanhas"
+            titulo="Dinheiro das campanhas"
+            subtitulo="De onde veio o dinheiro de cada campanha e com quem foi gasto, segundo a prestação de contas entregue ao TSE."
+            origem={
+              <>
+                <p>
+                  Os valores vêm da prestação de contas que cada candidatura entrega à Justiça Eleitoral (receitas e despesas contratadas). Dinheiro público é a soma do Fundo
+                  Especial de Financiamento de Campanha (o fundo eleitoral) e do Fundo Partidário.
+                </p>
+                <p>Doar para campanha é legal dentro dos limites da lei. Uma doação não prova que houve favor em troca. Pessoas que doaram aparecem só pelo nome, sem CPF.</p>
+              </>
+            }
+          >
+            <div className="space-y-6">
+              <div className="cartao p-5 sm:p-6">
+                <DinheiroCampanha c={campanhas[0].campanha!} sexo={p.sexo} />
+              </div>
+              {campanhas.slice(1).map((e) => (
+                <details key={e.ano} className="cartao p-5">
+                  <summary className="flex flex-wrap items-center justify-between gap-2 font-semibold">
+                    <span>
+                      Campanha de {e.ano}: {e.cargo.toLowerCase()}
+                    </span>
+                    <span className="tnum text-ink-2">{moedaCurta(e.campanha!.receitas)}</span>
+                  </summary>
+                  <div className="mt-4">
+                    <DinheiroCampanha c={e.campanha!} sexo={p.sexo} />
+                  </div>
+                </details>
+              ))}
+            </div>
+          </Secao>
+        )}
 
         <Secao id="fontes" titulo="Contato, redes e fontes" subtitulo="Tudo o que aparece nesta página pode ser conferido nos links abaixo.">
           <div className="grid gap-6 lg:grid-cols-3">

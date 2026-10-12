@@ -403,6 +403,10 @@
     transform-origin: left center;
     animation: crescer-x 700ms var(--ease-saida) both;
   }
+  .crescer-y {
+    transform-origin: bottom center;
+    animation: crescer-y 700ms var(--ease-saida) both;
+  }
   .assento {
     transform-box: fill-box;
     transform-origin: center;
@@ -445,6 +449,14 @@
   }
   to {
     transform: scaleX(1);
+  }
+}
+@keyframes crescer-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
   }
 }
 @keyframes assento {

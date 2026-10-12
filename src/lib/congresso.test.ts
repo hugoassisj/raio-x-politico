@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { classificarAssuntos } from "./assuntos";
+import { buscarProblema, CARGOS } from "./cargos";
 import { listaNatural, resultadoDe, resumoEleicoes, trocasDePartido } from "./carreira";
 import { explicarEtapa } from "./linguagem";
 import { cadeirasPorVoto } from "./cadeiras";
@@ -221,5 +222,30 @@ describe("carreira", () => {
     expect(trocasDePartido(e)).toEqual([{ ano: 2018, de: "PMDB", para: "PP" }]);
     expect(resumoEleicoes(e)).toEqual({ disputadas: 3, vitorias: 2, primeiroAno: 2010, partidos: ["PMDB", "PP"] });
     expect(listaNatural(["A", "B", "C"])).toBe("A, B e C");
+  });
+});
+
+describe("quem resolve", () => {
+  it("finds the level of government for everyday problems", () => {
+    expect(buscarProblema("buraco")[0]).toMatchObject({ nivel: "municipio", executa: "Prefeito" });
+    expect(buscarProblema("Polícia")[0]).toMatchObject({ nivel: "estado" });
+    expect(buscarProblema("aposentadoria")[0]).toMatchObject({ nivel: "uniao" });
+    expect(buscarProblema("cirurgia")[0]?.problema).toBe("Hospital estadual");
+    expect(buscarProblema("x")).toEqual([]);
+  });
+  it("describes every office with its constitutional basis", () => {
+    expect(CARGOS.map((c) => c.id)).toEqual(["vereador", "prefeito", "deputado-estadual", "governador", "deputado-federal", "senador", "presidente"]);
+    for (const c of CARGOS) expect(c.artigo).toMatch(/^Constituição, arts?\. /);
+  });
+});
+
+describe("rótulos de voto", () => {
+  it("translates house codes into plain words", async () => {
+    const { rotuloVoto } = await import("./linguagem");
+    expect(rotuloVoto("Artigo 17")).toMatchObject({ rotulo: "Presidindo", tipo: "outro" });
+    expect(rotuloVoto("P-NRV").rotulo).toBe("Presente, não votou");
+    expect(rotuloVoto("LS")).toMatchObject({ rotulo: "Licença de saúde", tipo: "ausente" });
+    expect(rotuloVoto("")).toMatchObject({ rotulo: "Ausente" });
+    expect(rotuloVoto("Sim").tipo).toBe("sim");
   });
 });

@@ -2,13 +2,15 @@
 
 ## Em poucas palavras
 
-O Raio-X Político é um site gratuito e sem partido que mostra o que fazem senadores, deputados federais e deputados estaduais: se vão trabalhar, como votam, o que propõem, quanto gastam e o que dizem. Tudo em palavras simples, com o link do site oficial de onde cada número veio.
+O Raio-X Político é um site gratuito e sem partido que mostra o que fazem senadores, deputados federais e deputados estaduais: se vão trabalhar, como votam, o que propõem, quanto gastam e o que dizem. E também a vida pública inteira de cada um: todas as candidaturas desde 1994, os partidos por onde passou, os bens declarados em cada eleição e quem pagou cada campanha. Tudo em palavras simples, com o link do site oficial de onde cada número veio.
 
 Este documento explica **por que** o site é como é. Ele começa simples (o problema, para quem é, que perguntas responde, nossos princípios) e vai ficando técnico no final (cálculos, fontes, arquitetura). Toda mudança importante entra, com data, no [Registro de decisões](#registro-de-decisões), no fim.
 
 ## Visão
 
-Ser o lugar onde qualquer pessoa no Brasil entende, em poucos segundos, o que fazem as pessoas que ela elegeu: se aparecem para trabalhar, como votam, o que propõem, quanto gastam, para onde mandam dinheiro e o que dizem. Com tudo verificável na fonte oficial, sem opinião e sem partido.
+Ser o lugar onde qualquer pessoa no Brasil entende, em poucos segundos, o que fazem as pessoas que ela elegeu e quem elas são ao longo da vida pública: se aparecem para trabalhar, como votam, o que propõem, quanto gastam, para onde mandam dinheiro, quem financiou suas campanhas e o que dizem. Com tudo verificável na fonte oficial, sem opinião e sem partido.
+
+A ambição de longo prazo é cobrir **todas as pessoas que já disputaram uma eleição no Brasil**, de vereador a Presidente. Hoje o site acompanha os parlamentares em exercício e, para cada um deles, a vida pública completa. O caminho para chegar a todos está no [Roadmap](#roadmap).
 
 ## O problema
 
@@ -30,10 +32,13 @@ A lista fica em um só lugar do código, [`src/lib/perguntas.ts`](src/lib/pergun
 | Pergunta | Onde o site responde |
 |---|---|
 | Quem me representa? | Mapa da página inicial e página de cada estado |
-| Meu deputado vai trabalhar? | Perfil: presença nas sessões e votos registrados, ao lado dos colegas |
 | O que foi votado e o que muda para mim? | Votações agrupadas por projeto e por assunto, explicadas em palavras simples |
+| Quem resolve o problema da minha rua? | “Quem resolve isso?” na página Como funciona: cidade, estado ou país, e quem cobrar |
+| Meu deputado vai trabalhar? | Perfil: presença nas sessões e votos registrados, ao lado dos colegas |
+| Quem pagou a campanha? | Perfil, seção Dinheiro das campanhas: quanto arrecadou, quanto foi dinheiro público, quem mais doou e com quem mais gastou |
+| Que cargos já disputou e por quais partidos passou? | Perfil, seção Vida pública: todas as candidaturas desde 1994, com resultado, partido e bens declarados |
 | Como votaram os representantes do meu estado? | Em cada votação, depois de escolher o estado uma vez |
-| Quantos votos uma lei precisa para passar? | Cartão “Quantos votos precisava?” em cada votação e a página “Como funciona” |
+| Quantos votos uma lei precisa para passar? | Cartão “Quantos votos precisava?” em cada votação e a página Como funciona |
 | Quanto gastam da verba do mandato, e com o quê? | Página de gastos e cada perfil, com a nota fiscal de cada despesa |
 | Meu partido vota com o governo? Vota unido? | Página de partidos e de cada partido |
 | Para onde mandam dinheiro do orçamento? | Emendas no perfil |
@@ -51,6 +56,9 @@ A lista fica em um só lugar do código, [`src/lib/perguntas.ts`](src/lib/pergun
 7. **Profundidade em camadas.** Primeiro a resposta simples (frase e números grandes), depois a explicação ("Como calculamos"), depois a fonte e o dado bruto. Ninguém é obrigado a descer, todos podem.
 8. **Simples de verdade.** Escrevemos para quem lê pouco: frases curtas, palavras do dia a dia, nenhuma sigla sem explicação. Se uma pessoa sem estudo não entende uma tela, a tela está errada.
 9. **Acessível de verdade.** Funciona em celular simples e sem JavaScript nos fluxos principais, cores de votos validadas para daltonismo e sempre acompanhadas de texto, navegação por teclado, contraste adequado e modo escuro.
+10. **O mesmo padrão para todos.** As mesmas regras de coleta, cálculo, destaque e correção valem para qualquer pessoa, de qualquer partido. A neutralidade está no processo (código aberto e testado), não só nesta página.
+11. **Melhor faltar do que errar de pessoa.** Ligar o registro de uma pessoa a outra é o erro mais grave possível. Quando a identidade é duvidosa, a informação fica de fora e o limite é explicado.
+12. **Ligação não é acusação.** Uma doação, um fornecedor em comum ou um gasto fora do padrão são fatos para conferir, nunca prova de irregularidade. Toda relação mostra os registros que a sustentam, e a conclusão fica com quem lê.
 
 ## Design e experiência
 
@@ -61,13 +69,17 @@ Referências: a Política Nacional de Linguagem Simples (Lei 15.263/2025), as re
 1. *Quem me representa?* Busca ou mapa na primeira tela. O estado escolhido fica salvo só neste aparelho e passa a abrir as respostas sobre "os seus".
 2. *O que votaram?* As pessoas pensam em projetos, não em votações. A lista agrupa todas as votações de um projeto, mostra o assunto em palavras simples e o resultado do texto principal.
 3. *O que essa votação significa?* Cada votação começa pelo "do que se trata" em linguagem simples, depois o que foi decidido nesta etapa (com o que significava votar Sim e votar Não), quantos votos eram precisos e como votaram os representantes do seu estado. Plenário, partidos e a lista completa vêm depois.
-4. *Posso confiar?* O texto oficial fica sempre a um toque, junto da página oficial do projeto e do dado bruto.
+4. *Quem é essa pessoa, de verdade?* O perfil começa pelo resumo e pelos números do mandato, e desce para a vida pública inteira: cada candidatura desde 1994, cada troca de partido, os bens de cada eleição e o dinheiro de cada campanha.
+5. *Quem resolve o meu problema?* A pessoa digita o problema (buraco, polícia, aposentadoria) e descobre se é da cidade, do estado ou do país, e quem cobrar.
+6. *Posso confiar?* Todo número tem o mesmo cartão “Como sabemos disso?”: o que é, o período, como calculamos, o que o número não diz, a fonte oficial, quando os dados foram coletados e se estão completos, parciais ou indisponíveis. O texto oficial fica sempre a um toque.
 
 **Regras de escrita**
 
 - Frases curtas, ordem direta, voz ativa, palavras do dia a dia (Lei 15.263/2025).
 - Termos técnicos aparecem como estão no texto oficial, sublinhados; um toque explica o termo. O glossário é um só (`src/lib/linguagem.ts`) e alimenta as explicações e a página "Como funciona".
 - Votações sobre o andamento (pedidos de urgência, adiamento, retirada de pauta) são marcadas como tal, para ninguém ler um voto de procedimento como voto sobre o conteúdo.
+- Códigos das casas viram palavras: "Artigo 17" é "Presidindo" (quem preside a sessão da Câmara não vota), "P-NRV" é "Presente, não votou", "LS" é "Licença de saúde". Uma ausência justificada nunca aparece como falta comum.
+- Cobertura dita em voz alta: quando um dado não existe para uma casa (por exemplo, a presença nas assembleias), o cartão diz isso e por quê, em vez de mostrar um espaço vazio.
 
 **Tokens de design** (`src/app/globals.css`)
 
@@ -82,7 +94,7 @@ Referências: a Política Nacional de Linguagem Simples (Lei 15.263/2025), as re
 | O que é o Raio-X Político (`/sobre`) | O que o site faz, por que existe, que perguntas responde, o que ele não é e por que dá para confiar |
 | Página inicial (`/`) | Quem me representa (mapa do Brasil)? Como está dividido o Congresso hoje? O que foi votado e dito recentemente? |
 | Cada estado (`/estado/mg`) | Quem são os 3 senadores, os deputados federais e os estaduais do meu estado? |
-| Perfil de cada político (`/politico/...`) | O que essa pessoa faz: presença, votos, gastos, projetos, emendas, falas, carreira, patrimônio, redes e fontes |
+| Perfil de cada político (`/politico/...`) | O que essa pessoa faz: presença, votos, gastos, projetos, emendas e falas; a vida pública inteira (todas as candidaturas desde 1994, trocas de partido, bens de cada eleição); o dinheiro de cada campanha; redes e fontes |
 | Lista de políticos (`/politicos`) | Lista de todos, filtrável por casa, estado e partido, ordenável por qualquer critério |
 | Votações (`/votacoes`) | O que foi votado, agrupado por projeto e por assunto, em linguagem simples |
 | Cada votação (`/votacao/...`) | Do que se trata o projeto, o que foi decidido nesta etapa, quantos votos eram precisos, como votaram os representantes do seu estado, todas as votações do mesmo projeto, o plenário, os partidos e cada voto |
@@ -91,9 +103,9 @@ Referências: a Política Nacional de Linguagem Simples (Lei 15.263/2025), as re
 | Comparar (`/comparar`) | Até 4 pessoas lado a lado, incluindo votações em que divergiram |
 | Partidos (`/partidos`) | Tamanho de cada partido nas duas casas, se costuma votar com o governo e se vota unido |
 | Cada partido (`/partido/PL`) | Onde o partido senta no plenário, membros com foto, medianas comparadas com a casa e votações recentes |
-| Como funciona (`/como-funciona`) | Como uma ideia vira lei e quantos votos cada tipo de proposta precisa, desenhado no plenário |
+| Como funciona (`/como-funciona`) | Quem resolve cada problema do dia a dia, o que faz cada cargo (de vereador a Presidente), como uma ideia vira lei e quantos votos cada proposta precisa, desenhado no plenário |
 | Cruzamentos de dados (`/analises`) | Cruzamentos simples (gasto x presença, experiência x presença, governo x unidade), sempre dizendo que relação não é causa |
-| Sobre os dados (`/dados`) | Fontes, situação da última coleta, metodologia, limites e salários |
+| Sobre os dados (`/dados`) | Fontes, situação da última coleta, verificações feitas antes de publicar, arquivos oficiais usados com a impressão digital (SHA-256) de cada um, metodologia, limites e salários |
 
 ## Métricas
 
@@ -109,10 +121,13 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 | Vota com o governo | Câmara | Mesmo método, contra a orientação da liderança do Governo |
 | Gastos da cota | Todas com dados | Reembolsos dos últimos 12 meses completos; os dois meses mais recentes só entram quando atingem 80% da mediana dos 12 anteriores (lançamentos atrasados) |
 | Gastos para conferir | Todas com dados | Regras inspiradas na Operação Serenata de Amor: CNPJ/CPF inválido (fora códigos internos), refeição atípica, valor no 0,1% superior da categoria, mesmo documento fiscal reembolsado duas vezes, fornecedor com mais de 50% do gasto |
-| Projetos e "viraram lei" | Câmara, Senado | PL, PLP, PEC e PDL como autor ou coautor; situação "Transformado em Norma Jurídica" |
+| Projetos e "viraram lei" | Câmara, Senado | PL, PLP, PEC e PDL como autor ou coautor proponente em toda a carreira (Câmara: arquivos anuais oficiais de proposições e de autores desde 1988); situação "Transformado em Norma Jurídica" |
 | Emendas Pix | Câmara, Senado | Planos de ação de transferências especiais no Transferegov desde 2020 (ou todas as emendas pagas, com chave do Portal da Transparência) |
-| Patrimônio e votos | Todas | Declaração de bens e votos nominais do TSE |
-| Anos de mandato | Todas | Primeiro mandato encontrado no histórico da casa, mandatos externos declarados à Câmara e candidaturas eleitas no TSE |
+| Patrimônio e votos | Todas | Declaração de bens da candidatura mais recente (a Vida pública mostra todas desde 2006) e votos nominais do TSE em 2022 |
+| Anos de mandato | Todas | Primeiro mandato encontrado no histórico da casa, mandatos externos declarados à Câmara e candidaturas eleitas no TSE desde 1994 |
+| Dinheiro de campanha | Todas | Receitas e despesas contratadas da prestação de contas de cada candidatura (TSE, desde 2018). Dinheiro público = Fundo Especial de Financiamento de Campanha + Fundo Partidário. Doadores pessoas físicas aparecem só pelo nome |
+
+**Identidade entre fontes.** Uma pessoa é ligada a uma candidatura recente do TSE (2018, 2022 ou 2026) por data de nascimento, nome e, na Câmara, os dígitos visíveis do CPF. A partir daí seguimos o título de eleitor, que nunca muda, e depois o CPF completo, por todas as eleições desde 1994. Nos arquivos antigos sem título nem CPF, só aceitamos nome e data de nascimento idênticos. Um título ou CPF que aponta para duas pessoas é descartado, e uma pessoa cujas candidaturas recentes têm datas de nascimento diferentes não é seguida. Testes em [`pipeline/tests`](pipeline/tests) cobrem esses casos.
 
 ## Fontes de dados
 
@@ -122,7 +137,12 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 | Câmara, arquivos de cota (CEAP) | Todas as despesas reembolsadas | ZIP anual | Em uso, com a API por deputado como reserva |
 | Senado Federal, dados abertos | Senadores, mandatos, comissões, votações com votos de todos, proposições, pronunciamentos | API aberta | Em uso |
 | Senado, CEAPS | Despesas dos senadores | API aberta | Em uso |
-| TSE, dados abertos | Candidaturas 2018, 2022 e 2026, bens declarados, redes sociais declaradas (2022 e 2026), votos de 2022 | Arquivos ZIP | Em uso |
+| TSE, candidaturas (`consulta_cand`) | Todas as candidaturas de todos os cargos desde 1994, usadas para a vida pública de quem acompanhamos | Arquivos ZIP por eleição | Em uso (refeito toda semana) |
+| TSE, bens (`bem_candidato`) | Bens declarados em cada eleição desde 2006 | Arquivos ZIP por eleição | Em uso (refeito toda semana) |
+| TSE, prestação de contas (`prestacao_de_contas_eleitorais_candidatos`) | Receitas, doadores e despesas de cada campanha desde 2018 | Arquivos ZIP de vários gigabytes | Em uso (refeito toda semana) |
+| TSE, redes e votos | Redes sociais declaradas (2022 e 2026) e votos de 2022 por candidato | Arquivos ZIP | Em uso |
+| Câmara, arquivos de proposições e autores | Todos os projetos desde 1988, com situação atual e autores | JSON anual | Em uso |
+| Câmara e Senado, detalhes das matérias votadas | Ementa detalhada, explicação do Senado, temas, autores e texto completo | API aberta | Em uso |
 | Transferegov | Emendas Pix (transferências especiais) | API aberta (PostgREST) | Em uso |
 | Portal da Transparência | Todas as emendas parlamentares | API com chave gratuita | Pronto, liga com `PORTAL_TRANSPARENCIA_API_KEY` |
 | ALMG (MG) | Deputados em exercício e verbas indenizatórias | API aberta | Em uso |
@@ -149,6 +169,9 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 - **Snapshot em JSON no repositório:** cada atualização vira um commit, então qualquer número publicado pode ser auditado e comparado no tempo pelo histórico do git.
 - **Postgres opcional e complementar:** guarda o histórico que não cabe no snapshot (transcrições completas, resumos de IA de todos os períodos) e faz a busca textual em português. O schema está em [`src/db/schema.ts`](src/db/schema.ts), com tabelas de retrato (substituídas a cada execução) e tabelas de histórico (só acrescentam).
 - **Falha isolada:** se uma fonte cai, as outras continuam e a página `/dados` mostra o que falhou.
+- **Verificação antes de publicar** ([`pipeline/qualidade.ts`](pipeline/qualidade.ts)): número de parlamentares em exercício, identificadores únicos, Câmara e Senado respondendo, queda brusca no número de votações, datas no futuro, porcentagens impossíveis. Uma falha grave interrompe a publicação e a versão anterior continua no ar; o resultado de cada verificação aparece em `/dados`.
+- **Impressão digital dos arquivos:** cada arquivo oficial grande processado entra no `meta.json` com endereço, tamanho, data e SHA-256.
+- **Arquivos gigantes em fluxo:** os arquivos do TSE (alguns com vários gigabytes) são baixados direto para o disco e lidos linha a linha, guardando só as linhas das pessoas acompanhadas, e apagados depois do uso. Essas etapas são refeitas aos domingos (ou a pedido); nos outros dias, o resultado anterior é reaproveitado.
 
 ## IA
 
@@ -169,38 +192,62 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 
 ## Roadmap
 
-**Fase 1, fundação (feito):** pipeline com todas as fontes abertas, métricas, testes, banco, app completo, CI e coleta diária.
+O roadmap segue uma regra simples: **confiança antes de volume**. Uma informação a mais só entra quando a anterior pode ser conferida e entendida sem esforço.
 
-**Fase 2, dados reais em produção (agora):**
-- Primeira coleta completa no GitHub Actions e correção do que as fontes reais revelarem.
-- Deploy na Vercel, domínio, banco Postgres (Neon ou Supabase) e chaves opcionais (Portal da Transparência, YouTube, Anthropic).
-- Revisão manual de uma amostra de perfis contra os sites oficiais.
+**Fase 1, fundação (feito):** pipeline com as fontes abertas, métricas, testes, banco, app completo, CI e coleta diária.
 
-**Fase 3, alcance:**
-- Mais assembleias com dados abertos (Panóptico mapeou conectores para cerca de 20).
-- Página de cada município com as emendas recebidas.
-- Resumo semanal por e-mail ou WhatsApp: "o que seus representantes fizeram nesta semana".
-- Imagens de compartilhamento por perfil (cartões para redes sociais).
+**Fase 2, confiança e vida pública (feito em outubro de 2026):**
+- Verificação antes de publicar, impressão digital dos arquivos oficiais e cartão “Como sabemos disso?” com período, cálculo, limites, fonte, data e cobertura em todo número.
+- Vida pública completa de quem acompanhamos (todas as candidaturas desde 1994, bens desde 2006) e dinheiro das campanhas desde 2018.
+- Linguagem simples nas votações, guia “Quem resolve isso?” e “O que faz cada cargo”.
 
-**Fase 4, profundidade:**
-- Diz e faz em escala, temas por votação, linha do tempo de posições.
-- Doações de campanha (TSE) cruzadas com votos e fornecedores da cota.
-- Sanções (CEIS/CNEP) e quadro societário de fornecedores.
+**Fase 3, provar com gente e com dados reais (agora):**
+- Auditoria manual de uma amostra estratificada de perfis (Câmara, Senado e assembleias; estados com e sem dados; homônimos, trocas de partido, suplentes) contra os sites oficiais, com o relatório publicado.
+- Teste com pessoas que não acompanham política, com 5 tarefas: achar quem as representa, ver como alguém votou, entender o que o voto significava, conferir um gasto na fonte e comparar com outro parlamentar. Medir conclusão, tempo e dúvidas.
+- Histórico legível de correções: o que mudou, quando, por quê e em qual fonte, sem apagar a versão anterior.
+- Compartilhamento que preserva o contexto: links e imagens com a métrica, o período, a data e a fonte.
+- Deploy na Vercel, domínio e chaves opcionais (Anthropic, Portal da Transparência, YouTube, Postgres).
+
+**Fase 4, todo mundo que já se candidatou:**
+- Todas as pessoas que disputaram eleições desde 1994 (mais de um milhão), de vereador a Presidente, cada uma com a sua vida pública, bens e campanhas.
+- Arquitetura: as candidaturas vão para o Postgres com a identidade por título de eleitor; a página `/pessoa/...` é montada sob demanda a partir do banco, com o mesmo cartão de evidência; a busca nacional mostra quando há nomes parecidos (estado, ano de nascimento, cargo) para ninguém confundir duas pessoas.
+- Prefeitos e vereadores dos 5.570 municípios, começando pelo que o TSE já publica (candidaturas, bens, campanhas).
+- Emendas pelo arquivo completo da Controladoria-Geral da União (sem chave): área (saúde, educação), município de destino e quem recebeu; página de cada município com o dinheiro que chegou.
+- Mais assembleias com dados abertos (o projeto Panóptico mapeou conectores para cerca de 20).
+
+**Fase 5, conexões com evidência:**
+- Fornecedores: dados cadastrais e sócios das empresas (Receita Federal) para fornecedores da cota e das campanhas; sanções federais (CEIS/CNEP).
+- Relações documentadas, como “fornecedor da cota que também doou para a campanha”, sempre com os registros que as comprovam e sem sugerir favorecimento.
+- O que diz e o que faz: falas e votos sobre o mesmo tema, mostrando também quando a relação é ambígua.
+- “Pergunte aos dados” em linguagem natural, só depois das fases anteriores e sempre mostrando os dados usados, o período, o cálculo e quando não há evidência suficiente.
 - API pública e downloads em CSV.
+
+**O que decidimos não fazer:** nota ou selo de “bom político”, ranking de quem mais enriqueceu, IA dando veredito sobre irregularidades, raspagem de redes sociais e listas de palavras ofensivas para classificar discursos. Cada um desses itens transforma um fato em juízo e contraria os princípios 2, 5, 6 e 12.
+
+## Referências estudadas
+
+- **[Ficha do Político](https://github.com/ficha-do-politico/fichadopolitico)** (licença MIT): nota sobre o custo histórico dos bens, “dados coletados em” em cada seção, critérios públicos para escolher votações, guia de cargos com o que cada um pode e não pode fazer, a busca por problema do dia a dia e a publicação das próprias auditorias de dados. Adotamos as ideias; não copiamos código.
+- **[elosys](https://github.com/YuriRDev/elosys)** (sem licença declarada, então só ideias): identidade pelo título de eleitor antes do CPF, preferindo separar a juntar errado; arquivos do TSE de todas as eleições; prestação de contas de campanha; impressão digital (SHA-256) de cada arquivo oficial; alertas sempre acompanhados das evidências; a regra de não acusar.
+- **Análise de produto de outubro de 2026**: ficha de evidência reutilizável (“Como sabemos disso?”), estados de cobertura visíveis, verificação antes de publicar, contagem de “viraram lei” sem limite escondido, e indicadores de confiabilidade.
 
 ## Indicadores de sucesso do produto
 
-- Tempo até a primeira resposta útil (meta: menos de 10 segundos da página inicial até o perfil).
-- Proporção de visitas em celular que chegam a um perfil.
-- Erros de dados reportados e tempo para corrigir.
-- Fontes com status "ok" em cada coleta.
-- Cobertura: parlamentares com cada métrica disponível, por casa e estado.
+- **Tempo até a primeira resposta útil:** da página inicial a entender ao menos um número de quem a representa, em menos de 10 segundos.
+- **Taxa de sucesso das tarefas** no teste com pessoas que não acompanham política (as 5 tarefas da Fase 3).
+- **Taxa de verificação:** quem precisa conferir uma informação consegue chegar à fonte original.
+- **Cobertura verificável:** porcentagem dos números publicados com fonte, período, cálculo e data identificáveis (meta: todos).
+- **Erros críticos de identidade ou cálculo** encontrados nas auditorias por amostra (tolerância zero para casos já conhecidos) e tempo até a correção.
+- **Fontes em dia:** fontes com status "ok" e dentro do prazo de atualização em cada coleta.
+- **Uso no celular:** proporção de visitas em celular que chegam a um perfil ou a uma votação.
 
 ## Riscos e como lidamos
 
 | Risco | Mitigação |
 |---|---|
-| Dado errado atribuído a alguém (homônimos, mudanças de partido) | Ligações por data de nascimento e CPF parcial, testes automatizados, limites explicados, canal de correção |
+| Dado errado atribuído a alguém (homônimos, mudanças de partido) | Identidade pelo título de eleitor e CPF completo, chaves ambíguas descartadas, data de nascimento conferida, testes automatizados, limites explicados, canal de correção |
+| Uma relação (doação, fornecedor) lida como acusação | Linguagem factual, aviso de que ligação não é prova, registros de origem sempre visíveis |
+| Privacidade de quem doou para campanhas | Pessoas físicas aparecem só pelo nome, sem CPF; empresas e partidos com CNPJ, como publicado pelo TSE |
+| Coleta parcial publicada como se fosse completa | Verificação antes de publicar; falhas graves mantêm a versão anterior no ar |
 | Leitura enviesada | Linguagem neutra, nenhuma nota, comparação com pares, explicação de limites em todo cartão |
 | Erro da IA | Citações obrigatórias e validadas, rótulo de IA, link para a fonte em cada afirmação |
 | Instabilidade das APIs oficiais | Cache, novas tentativas, fontes isoladas, status público por fonte |
@@ -237,3 +284,11 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 | 2026-10-12 | Estado do visitante guardado só no aparelho (localStorage) | Personaliza sem cadastro e sem enviar dado pessoal a ninguém |
 | 2026-10-12 | Tokens de design em três camadas, com neutros azulados e cor só com significado | Hierarquia mais clara e uma interface que parece viva sem ficar barulhenta |
 | 2026-10-12 | README, PRODUCT.md e a página “O que é o Raio-X Político” escritos para qualquer pessoa, com a mesma lista de perguntas que o site responde | Quem chega ao site ou ao repositório precisa entender em segundos o que é, para quem é e o que dá para descobrir |
+| 2026-10-12 | Vida pública completa pelos arquivos do TSE desde 1994, seguindo o título de eleitor | “Entender a vida inteira de quem está na política”, com identidade segura: melhor faltar uma candidatura do que mostrar a de outra pessoa |
+| 2026-10-12 | Dinheiro das campanhas (TSE, desde 2018) com o dinheiro público em destaque e doadores pessoas físicas só pelo nome | Quem pagou a campanha é uma das perguntas mais comuns; o CPF de quem doou não acrescenta nada para o cidadão |
+| 2026-10-12 | Cartão “Como sabemos disso?” igual para todo número, com cobertura (completa, parcial, indisponível) | Uma única forma de conferir qualquer número; ausência de dado dita em voz alta, nunca como zero |
+| 2026-10-12 | Verificação antes de publicar, com bloqueio | Uma coleta quebrada nunca deve parecer uma atualização |
+| 2026-10-12 | Projetos contados em toda a carreira pelos arquivos anuais da Câmara | O limite anterior (100 projetos mais recentes) escondia parte da atuação e podia ser lido como total |
+| 2026-10-12 | Códigos de voto das casas traduzidos (Artigo 17, P-NRV, licenças) | Quem preside a sessão ou está de licença não pode parecer ausente sem motivo |
+| 2026-10-12 | Guia “Quem resolve isso?” e “O que faz cada cargo” | Muita gente cobra a pessoa errada; saber o nível de governo é o primeiro passo para entender política |
+| 2026-10-12 | Arquivos gigantes do TSE lidos em fluxo, apagados depois do uso e refeitos aos domingos | Cabe no runner gratuito do GitHub e mantém a atualização diária rápida |
