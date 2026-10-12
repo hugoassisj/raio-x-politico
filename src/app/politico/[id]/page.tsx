@@ -12,7 +12,7 @@ import { ListaVotos } from "@/components/ListaVotos";
 import { ResumoIA } from "@/components/ResumoIA";
 import { Barras, Container, Fonte, Origem, Secao, Vazio } from "@/components/ui";
 import { getExplicacoes, getFalas, getIA, getPolitico, getPoliticos, getVotacoes, urlDadoBruto } from "@/lib/data";
-import { data, idade, moeda, moedaCurta, numero, plural } from "@/lib/format";
+import { data, idade, moeda, moedaCurta, numero, pct, plural } from "@/lib/format";
 import { distribuicao, metrica, NOME_CASA } from "@/lib/metricas";
 import { fraseResumo } from "@/lib/resumo";
 import { nomeUf } from "@/lib/ufs";
@@ -25,6 +25,8 @@ import { urlCorrecao } from "@/lib/site";
 import { IconeRede } from "@/components/IconeRede";
 import { CoberturaPerfil } from "@/components/ComoSabemos";
 import { coberturaDoPerfil } from "@/lib/cobertura";
+import { chaveDestino } from "@/lib/emendas";
+import { CicloEmenda } from "@/components/CicloEmenda";
 import { documentoPublicavel, formatarCnpj } from "@/lib/cnpj";
 import { ListaProjetos, type ProjetoLinha } from "@/components/ListaProjetos";
 import { BensDeclarados, Campanhas, LinhaDaVida, MandatosRegistrados, ResumoVida } from "@/components/VidaPublica";
@@ -488,6 +490,12 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               </>
             }
           >
+            {p.emendas.ciclo && p.emendas.ciclo.empenhado + p.emendas.ciclo.pago > 0 && (
+              <div className="cartao mb-6 p-4 sm:p-5">
+                <h3 className="mb-3 font-semibold">Do indicado ao pago</h3>
+                <CicloEmenda ciclo={p.emendas.ciclo} />
+              </div>
+            )}
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="cartao rounded-xl p-4 sm:p-5">
                 <h3 className="mb-3 font-semibold">Por ano</h3>
@@ -495,7 +503,15 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               </div>
               <div className="cartao rounded-xl p-4 sm:p-5">
                 <h3 className="mb-3 font-semibold">Principais destinos</h3>
-                <Barras itens={p.emendas.destinos.slice(0, 8).map((d) => ({ rotulo: `${d.nome}${d.uf ? ` (${d.uf})` : ""}`, valor: d.valor }))} formato={moedaCurta} />
+                <Barras
+                  itens={p.emendas.destinos.slice(0, 8).map((d) => ({
+                    rotulo: `${d.nome}${d.uf ? ` (${d.uf})` : ""}`,
+                    valor: d.valor,
+                    detalhe: d.pago != null && d.valor ? `pago ${pct(d.pago / d.valor)}` : undefined,
+                    href: `/emendas?destino=${encodeURIComponent(chaveDestino(d))}`,
+                  }))}
+                  formato={moedaCurta}
+                />
               </div>
             </div>
           </Secao>

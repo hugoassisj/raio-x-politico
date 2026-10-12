@@ -84,6 +84,8 @@ export interface EmendaAgg {
   codigo?: string;
   total: number;
   porAno: Map<number, number>;
-  destinos: Map<string, { nome: string; uf?: string; valor: number }>;
+  destinos: Map<string, { nome: string; uf?: string; cnpj?: string; valor: number; empenhado?: number; pago?: number }>;
   fonte: string;
+  /** Indicated, reserved (empenho) and paid, when the source publishes those steps */
+  ciclo?: { indicado: number; empenhado: number; pago: number };
 }

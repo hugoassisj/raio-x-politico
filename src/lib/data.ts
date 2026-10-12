@@ -5,6 +5,7 @@ import { cache } from "react";
 import { normalizarCnpj } from "./cnpj";
 import { REPO_URL } from "./site";
 import type {
+  DestinoEmenda,
   EmpresaDetalhe,
   EmpresaResumo,
   Presidencia,
@@ -50,6 +51,7 @@ export const getMaterias = cache(async () => new Map(((await ler<MateriaVotada[]
 export const getExplicacoes = cache(async () => new Map(Object.entries((await ler<Record<string, ExplicacaoIA>>("explicacoes.json")) ?? {})));
 export const getGastosGerais = cache(() => ler<GastosGerais>("gastos.json"));
 export const getPresidencia = cache(() => ler<Presidencia>("presidencia.json"));
+export const getDestinosEmendas = cache(async () => (await ler<DestinoEmenda[]>("emendas.json")) ?? []);
 export const getEmpresas = cache(async () => (await ler<EmpresaResumo[]>("empresas.json")) ?? []);
 /** One company by CNPJ, read from its group file (see pipeline/empresas.ts) */
 export const getEmpresa = cache(async (cnpj: string) => {

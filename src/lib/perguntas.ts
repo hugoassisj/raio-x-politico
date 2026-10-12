@@ -96,8 +96,8 @@ export const PERGUNTAS: Pergunta[] = [
   },
   {
     pergunta: "Para onde mandam dinheiro do orçamento?",
-    resposta: "As emendas que cada parlamentar indicou para cidades e estados, com valores e destinos.",
-    href: "/politicos?casa=camara&ordem=emendas&dir=desc",
+    resposta: "As emendas de cada parlamentar e de cada cidade: quanto foi indicado, quanto foi reservado e quanto já foi pago.",
+    href: "/emendas",
     icone: "HandCoins",
   },
   {

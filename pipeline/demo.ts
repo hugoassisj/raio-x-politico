@@ -267,9 +267,18 @@ export function gerarDemo(saida = path.resolve("data-demo"), hoje = new Date()) 
         [2025, total * 0.45],
         [2026, total * 0.55],
       ]),
-      destinos: new Map([["x", { nome: `Município de ${pick(SOBRENOMES)}`, uf: p.uf, valor: total * 0.6 }]]),
+      destinos: new Map(
+        [0, 1].map((k) => {
+          const valor = total * (k ? 0.4 : 0.6);
+          const empenhado = valor * between(0.5, 1);
+          return [String(k), { nome: `Município de ${pick(SOBRENOMES)}`, uf: p.uf, valor, empenhado, pago: empenhado * between(0.2, 1) }];
+        }),
+      ),
       fonte: "Dados fictícios",
     });
+    const a = emendas.get(p.nome.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""))!;
+    const ds = [...a.destinos.values()];
+    a.ciclo = { indicado: total, empenhado: ds.reduce((x, d) => x + (d.empenhado ?? 0), 0), pago: ds.reduce((x, d) => x + (d.pago ?? 0), 0) };
   }
 
   const falas: Fala[] = [];

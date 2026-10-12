@@ -42,7 +42,7 @@ A lista fica em um só lugar do código, [`src/lib/perguntas.ts`](src/lib/pergun
 | Quanto gastam da verba do mandato, e com o quê? | Página de gastos e cada perfil, com a nota fiscal de cada despesa |
 | Quem a eleição colocou na Presidência? | Página da Presidência: todas as eleições para Presidente desde 1994, a vida pública de quem disputou e os atos que o Executivo mandou ao Congresso |
 | Meu partido vota com o governo? Vota unido? | Página de partidos e de cada partido |
-| Para onde mandam dinheiro do orçamento? | Emendas no perfil |
+| Para onde mandam dinheiro do orçamento? | Emendas no perfil, do indicado ao pago, e a página Emendas por cidade |
 | Que empresas recebem dinheiro ligado a cada político? | Páginas de empresas (por CNPJ) e o Mapa de relações, com a prova de cada ligação |
 | O que andam dizendo? | Página de falas, com busca por tema |
 | Como um político se compara com outro? | Comparador de até 4 pessoas |
@@ -98,6 +98,7 @@ Referências: a Política Nacional de Linguagem Simples (Lei 15.263/2025), as re
 | Cada estado (`/estado/mg`) | Quem são os 3 senadores, os deputados federais e os estaduais do meu estado? |
 | Perfil de cada político (`/politico/...`) | O que essa pessoa faz: presença, votos, gastos, projetos, emendas e falas; a vida pública inteira (todas as candidaturas desde 1994, trocas de partido, bens de cada eleição); o dinheiro de cada campanha; redes e fontes |
 | Presidência (`/presidencia`) | Quem a última eleição colocou no cargo, todas as eleições para Presidente desde 1994, a vida pública de cada candidato (`/presidencia/...` para quem não tem perfil no site) e as medidas provisórias e projetos que o Executivo mandou à Câmara |
+| Emendas por cidade (`/emendas`) | Cada prefeitura ou governo estadual que recebeu Emendas Pix, quem mandou, quanto foi indicado, reservado e pago |
 | Empresas (`/empresas` e `/empresa/...`) | Empresas e entidades pagas com a cota parlamentar ou ligadas a campanhas, sempre pelo CNPJ válido; quem pagou, quanto, quando, e a nota fiscal mais recente |
 | Mapa de relações (`/relacoes`) | Pessoas, empresas, partidos e cidades ligados só por registros oficiais; tocar mostra a prova de cada ligação, “Mostrar as ligações” vai mais longe; também em forma de lista |
 | Lista de políticos (`/politicos`) | Lista de todos, filtrável por casa, estado e partido, ordenável por qualquer critério |
@@ -148,7 +149,7 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 | TSE, redes e votos | Redes sociais declaradas (2022 e 2026) e votos de 2022 por candidato | Arquivos ZIP | Em uso |
 | Câmara, arquivos de proposições e autores | Todos os projetos desde 1988, com situação atual, primeiro autor e coautores; medidas provisórias e projetos do Poder Executivo | JSON anual | Em uso |
 | Câmara e Senado, detalhes das matérias votadas | Ementa detalhada, explicação do Senado, temas, autores e texto completo | API aberta | Em uso |
-| Transferegov | Emendas Pix (transferências especiais) | API aberta (PostgREST) | Em uso |
+| Transferegov | Emendas Pix (transferências especiais): plano de ação, empenho, documento hábil e ordem bancária, para seguir do indicado ao pago | API aberta (PostgREST) | Em uso |
 | Portal da Transparência | Todas as emendas parlamentares | API com chave gratuita | Pronto, liga com `PORTAL_TRANSPARENCIA_API_KEY` |
 | ALMG (MG) | Deputados em exercício e verbas indenizatórias | API aberta | Em uso |
 | ALESP (SP) | Deputados e despesas de gabinete | XML aberto | Em uso |
@@ -305,3 +306,5 @@ O roadmap segue uma regra simples: **confiança antes de volume**. Uma informaç
 | 2026-10-12 | Projetos separados entre primeiro autor e coautor | Assinar um projeto de outra pessoa é diferente de escrevê-lo; os dois contam, mas não do mesmo jeito |
 | 2026-10-12 | Empresas ligadas só pelo CNPJ válido, nunca pelo nome; CPF de pessoa nunca publicado, nem dentro do nome de microempreendedor | Ligação errada entre uma empresa e um político é uma acusação injusta; nome parecido não prova nada |
 | 2026-10-12 | Mapa de relações com prova em cada ligação e a mesma informação em lista | Um grafo bonito sem prova vira boato; a lista garante acesso para quem usa leitor de tela ou teclado |
+| 2026-10-12 | Emendas mostradas em três etapas (indicado, reservado, pago) e por cidade | Indicar dinheiro não é o mesmo que ele chegar; a cidade quer saber o que de fato foi pago |
+| 2026-10-12 | Autor de emenda com o mesmo nome de dois políticos não é ligado a nenhum | A fonte só publica o nome do autor; na dúvida, melhor faltar do que atribuir a outra pessoa |

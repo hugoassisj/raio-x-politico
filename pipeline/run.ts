@@ -148,7 +148,7 @@ async function main() {
     "https://api.transferegov.gestao.gov.br/transferenciasespeciais/",
     () => coletarEmendasPix(2020),
     (e) => e.registros,
-    { agg: new Map<string, EmendaAgg>(), registros: 0 },
+    { agg: new Map<string, EmendaAgg>(), registros: 0, avisos: [] as string[] },
   );
   let emendas = emendasPix.agg;
   if (process.env.PORTAL_TRANSPARENCIA_API_KEY) {

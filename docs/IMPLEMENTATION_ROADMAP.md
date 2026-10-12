@@ -110,8 +110,8 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 
 | ID | Situação | P | O que é | Critérios de aceite | Depende de |
 |---|---|---|---|---|---|
-| EMD-01 | NOT_STARTED | P1 | Ciclo da emenda | Indicação, empenho, liquidação e pagamento separados, com fonte de cada etapa. | |
-| EMD-02 | NOT_STARTED | P2 | Caminho pelo município | Ver todas as emendas que chegaram a uma cidade. | EMD-01 |
+| EMD-01 | IMPLEMENTED | P1 | Ciclo da emenda | Indicação, empenho, liquidação e pagamento separados, com fonte de cada etapa. | |
+| EMD-02 | IMPLEMENTED | P2 | Caminho pelo município | Ver todas as emendas que chegaram a uma cidade. | EMD-01 |
 | CNPJ-01 | VERIFIED | P1 | CNPJ normalizado | Função pura com dígitos verificadores e testes. | |
 | CNPJ-02 | IMPLEMENTED | P2 | Página da empresa | Gastos, doações e emendas ligados a um CNPJ, sem contar duas vezes. | CNPJ-01 |
 | CNPJ-03 | VERIFIED | P2 | Ligação certa ou possível | Ligações confirmadas (mesmo CNPJ) separadas das possíveis (mesmo nome). | CNPJ-01 |
@@ -166,6 +166,8 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | CNPJ-02 | Pipeline `pipeline/empresas.ts` (`montarEmpresas`): junta cota parlamentar (Câmara, Senado, assembleias) e contas de campanha completas por CNPJ (`registrosComCnpj` em `tse-contas.ts`, sem o corte dos 10 maiores), sem contar duas vezes (registros iguais de pessoa, ano e papel somados uma vez). Publica `empresas.json` e `empresas/{2 primeiros caracteres}.json`. Páginas `/empresas` (busca por nome, CNPJ inteiro ou pedaço, filtro por tipo de ligação, paginação comum) e `/empresa/[cnpj]`. Testes “companies by CNPJ” em `pipeline/tests/core.test.ts`. Conferido com dados fictícios. Falta: dados reais (próxima coleta completa). |
 | CNPJ-03 | Só CNPJ válido e igual cria ligação; nome nunca liga. Testes: `montarEmpresas` ignora CPF e CNPJ inválido; `conferir` em `src/lib/grafo.ts` não confirma ligação sem prova nem com CNPJ inválido (“never confirms a link without evidence or with an invalid CNPJ”). Nomes de MEI publicados sem o CPF (`limparNomeEmpresa`, testado). “Ligações possíveis” por nome não são mostradas: decisão para não induzir acusação. |
 | GRAFO-01 | `/relacoes` com `MapaRelacoes` (d3-force 3.0.0, licença ISC, posição inicial determinística): tipos de nó (pessoa, empresa, partido, destino de emenda) com formas diferentes, ligações com cor e tracejado por tipo, filtros por tipo, painel lateral com provas, “Mostrar as ligações” busca em `/api/relacoes`, busca por nome ou CNPJ, visão em lista (tabela com prova de cada ligação), nós focáveis por Tab e escolhidos com Enter, rótulos só nos itens principais quando o mapa está cheio, no máximo 40 ligações por item no mapa (todas na lista). Testes em `src/lib/grafo.test.ts`. Conferido no navegador com dados fictícios: 7 nós no início, 47 depois de abrir uma empresa, 275 linhas na lista, 4 sugestões na busca, sem erros no console. Falta: dados reais e conferência com leitor de tela. |
+| EMD-01 | `pipeline/sources/emendas.ts`: plano de ação, empenho (`empenho_especial`), documento hábil (`documento_habil_especial`) e ordem bancária (`ordem_pagamento_ordem_bancaria_especial`) do Transferegov, ligados pelos ids que a própria fonte publica (`cicloPorPlano`); cancelados e estornados ficam fora; só conta como pago o documento com ordem bancária emitida. Se essas tabelas falharem, fica só o indicado, com aviso. Portal da Transparência (com chave) usa empenhado e pago publicados. Perfil mostra “Do indicado ao pago” (`CicloEmenda`) e o pago de cada destino. Testes: “Emendas Pix lifecycle” (contrato, inclusive falha) em `pipeline/tests/fontes.test.ts`. Conferido com dados fictícios. Falta: dados reais (nomes das tabelas e colunas conferidos na documentação OpenAPI do Transferegov em 2026-10-12). Liquidação não é mostrada à parte: a fonte não separa liquidação de pagamento nas transferências especiais. |
+| EMD-02 | Índice de destinos (`destinosEmendas` em `pipeline/build.ts`, `emendas.json`), um por governo recebedor (CNPJ quando publicado, senão nome e estado: `chaveDestino` em `src/lib/emendas.ts`, usada pelo pipeline e pelos links). Página `/emendas` com busca por cidade, filtro por estado, soma das etapas, paginação comum e a página de cada destino com quem mandou. Teste “indexes each place with every author” (mesmo CNPJ com dois nomes vira um lugar). Correção de identidade: autor de emenda com nome igual ao de dois políticos não é ligado a nenhum (`vincularAutores`, testado). |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças
@@ -198,6 +200,7 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 
 ## 8. Registro de progresso
 
+- **2026-10-12 (10):** emendas do indicado ao pago (EMD-01) e por cidade (EMD-02).
 - **2026-10-12 (9):** empresas por CNPJ (CNPJ-02/03) e mapa de relações (GRAFO-01). Fornecedores e doadores com CNPJ viram links para a página da empresa. Pergunta nova sobre empresas. `npm audit` aponta 9 vulnerabilidades em dependências de desenvolvimento já existentes (registrar em SEG-01).
 - **2026-10-12 (8):** CNPJ-01 e correção de privacidade (PRIV-01).
 - **2026-10-12 (7):** cobertura por seção no perfil (PERF-01). Achado: nomes de deputados estaduais vindos do TSE aparecem em maiúsculas (ex.: “PABLO BREGENSE”); registrar e corrigir na coleta das assembleias.

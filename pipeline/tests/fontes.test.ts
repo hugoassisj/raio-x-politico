@@ -549,6 +549,79 @@ describe("TSE lifelong history", () => {
   });
 });
 
+describe("Emendas Pix lifecycle", () => {
+  it("follows each plan to its reserve and its paid bank orders, ignoring cancelled steps", async () => {
+    mockFetch([
+      [
+        /plano_acao_especial/,
+        [
+          {
+            id_plano_acao: 1,
+            ano_emenda_parlamentar_plano_acao: 2025,
+            nome_parlamentar_emenda_plano_acao: "FULANA DE TAL",
+            valor_investimento_plano_acao: 800,
+            valor_custeio_plano_acao: 200,
+            nome_beneficiario_plano_acao: "Município de Exemplo",
+            uf_beneficiario_plano_acao: "MG",
+            cnpj_beneficiario_plano_acao: "11.222.333/0001-81",
+          },
+          {
+            id_plano_acao: 2,
+            ano_emenda_parlamentar_plano_acao: 2026,
+            nome_parlamentar_emenda_plano_acao: "FULANA DE TAL",
+            valor_custeio_plano_acao: 500,
+            nome_beneficiario_plano_acao: "Outro",
+            uf_beneficiario_plano_acao: "SP",
+          },
+        ],
+      ],
+      [
+        /empenho_especial/,
+        [
+          { id_empenho: 10, id_plano_acao: 1, valor_empenho: 1000, descricao_situacao_empenho: "Emitido" },
+          { id_empenho: 11, id_plano_acao: 2, valor_empenho: 500, descricao_situacao_empenho: "Cancelado" },
+        ],
+      ],
+      [
+        /documento_habil_especial/,
+        [
+          { id_dh: 100, id_empenho: 10, valor_dh: 600 },
+          // Payment document without an issued bank order: not paid yet
+          { id_dh: 101, id_empenho: 10, valor_dh: 400 },
+        ],
+      ],
+      [
+        /ordem_pagamento_ordem_bancaria_especial/,
+        [
+          { id_op_ob: 1, id_dh: 100, data_emissao_ob: "2025-06-01" },
+          { id_op_ob: 2, id_dh: 101, data_emissao_ob: null },
+        ],
+      ],
+    ]);
+    const { coletarEmendasPix } = await import("../sources/emendas");
+    const r = await coletarEmendasPix(2025);
+    const a = r.agg.get("fulana de tal")!;
+    expect(a.ciclo).toEqual({ indicado: 1500, empenhado: 1000, pago: 600 });
+    const mg = [...a.destinos.values()].find((d) => d.uf === "MG")!;
+    expect(mg).toMatchObject({ valor: 1000, empenhado: 1000, pago: 600, cnpj: "11222333000181" });
+    expect(r.avisos).toEqual([]);
+  });
+
+  it("keeps the indicated amounts when the lifecycle tables fail", async () => {
+    mockFetch([
+      [
+        /plano_acao_especial/,
+        [{ id_plano_acao: 1, ano_emenda_parlamentar_plano_acao: 2024, nome_parlamentar_emenda_plano_acao: "X", valor_custeio_plano_acao: 10, nome_beneficiario_plano_acao: "Y" }],
+      ],
+    ]);
+    const { coletarEmendasPix } = await import("../sources/emendas");
+    // Another starting year, so no answer cached by the previous test is reused
+    const r = await coletarEmendasPix(2024);
+    expect(r.agg.get("x")?.ciclo).toEqual({ indicado: 10, empenhado: 0, pago: 0 });
+    expect(r.avisos[0]).toMatch(/indisponíveis/);
+  });
+});
+
 describe("TSE Presidency", () => {
   const pres = (o: Record<string, string>) => ({
     SQ_CANDIDATO: "",

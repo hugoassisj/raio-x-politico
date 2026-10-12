@@ -1,5 +1,6 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { documentoPublicavel } from "../src/lib/cnpj";
+import { chaveDestino } from "../src/lib/emendas";
 import path from "node:path";
 import {
   DATA_VERSION,
@@ -9,6 +10,7 @@ import {
   type Fala,
   type CampanhaFinancas,
   type Presidencia,
+  type DestinoEmenda,
   type EmpresaDetalhe,
   type EmpresaResumo,
   type Mandato,
@@ -49,6 +51,8 @@ export interface BuildInput {
 }
 
 export interface BuildResult {
+  /** Every place that received amendments from the people followed, with each author */
+  destinosEmendas?: DestinoEmenda[];
   detalhes: PoliticoDetalhe[];
   resumos: PoliticoResumo[];
   votacoes: VotacaoDetalhe[];
@@ -182,7 +186,32 @@ const nomeProprioMunicipio = (s: string) => (s === s.toUpperCase() ? nomeProprio
 
 // ------------------------------------------------------------ emendas
 
-function vincularEmendas(p: PoliticoParcial, agg: Map<string, EmendaAgg>): Emendas | undefined {
+/** Adds one author's amounts to a destination of the index of places. */
+function somarDestino(m: Map<string, DestinoEmenda>, d: { nome: string; uf?: string; cnpj?: string; valor: number; empenhado?: number; pago?: number }, p: PoliticoParcial) {
+  const cnpj = documentoPublicavel(d.cnpj);
+  const chave = chaveDestino(d);
+  const x = m.get(chave) ?? { chave, nome: d.nome, uf: d.uf, cnpj, indicado: 0, empenhado: 0, pago: 0, autores: [] };
+  x.indicado += d.valor;
+  x.empenhado += d.empenhado ?? 0;
+  x.pago += d.pago ?? 0;
+  x.autores.push({ pid: p.id, nome: p.nome, partido: p.partido, indicado: d.valor, empenhado: d.empenhado ?? 0, pago: d.pago ?? 0 });
+  m.set(chave, x);
+}
+
+/**
+ * Amendment authors are published by name only. When one author record matches two people (two
+ * politicians with the same name), it is linked to neither: better missing than attributed to the
+ * wrong person.
+ */
+export function vincularAutores(politicos: PoliticoParcial[], agg: Map<string, EmendaAgg>): Map<string, EmendaAgg> {
+  const achados = politicos.map((p) => [p.id, acharEmendas(p, agg)] as const).filter((x): x is readonly [string, EmendaAgg] => !!x[1]);
+  const usos = new Map<EmendaAgg, number>();
+  for (const [, a] of achados) usos.set(a, (usos.get(a) ?? 0) + 1);
+  return new Map(achados.filter(([, a]) => usos.get(a) === 1));
+}
+
+/** The amendments author record of one politician: exact name first, then a very close one. */
+function acharEmendas(p: PoliticoParcial, agg: Map<string, EmendaAgg>): EmendaAgg | undefined {
   if (p.casa === "assembleia") return undefined;
   const keys = [p.nome, p.nomeCivil].filter(Boolean).map((n) => norm(n));
   let a: EmendaAgg | undefined;
@@ -194,6 +223,10 @@ function vincularEmendas(p: PoliticoParcial, agg: Map<string, EmendaAgg>): Emend
       if (s > best && s >= 0.92) [a, best] = [v, s];
     }
   }
+  return a;
+}
+
+function vincularEmendas(a: EmendaAgg | undefined): Emendas | undefined {
   if (!a) return undefined;
   return {
     total: round(a.total, 2)!,
@@ -201,8 +234,9 @@ function vincularEmendas(p: PoliticoParcial, agg: Map<string, EmendaAgg>): Emend
     destinos: [...a.destinos.values()]
       .sort((x, y) => y.valor - x.valor)
       .slice(0, 15)
-      .map((d) => ({ ...d, valor: round(d.valor, 2)! })),
+      .map((d) => ({ ...d, valor: round(d.valor, 2)!, empenhado: round(d.empenhado, 2), pago: round(d.pago, 2) })),
     fonte: a.fonte,
+    ciclo: a.ciclo && { indicado: round(a.ciclo.indicado, 2)!, empenhado: round(a.ciclo.empenhado, 2)!, pago: round(a.ciclo.pago, 2)! },
   };
 }
 
@@ -265,6 +299,8 @@ export function montar(inp: BuildInput): BuildResult {
   const falasPorPid = groupBy(inp.falas, (f) => f.pid);
   const redesTodas: RedeSocial[] = [];
 
+  const destinos = new Map<string, DestinoEmenda>();
+  const emendasDe = vincularAutores(inp.politicos, inp.emendas);
   const detalhes: PoliticoDetalhe[] = inp.politicos.map((p) => {
     const cands = juntarCandidaturas(vincularTSE(p, porNasc, porUf), inp.historico?.get(p.id) ?? []);
     const eleicoes: EleicaoTSE[] = cands.map((c) => eleicaoDe(c, inp.contas));
@@ -288,7 +324,9 @@ export function montar(inp: BuildInput): BuildResult {
     const vm = v.metricas.get(p.id) ?? {};
     const pr = presenca.get(p.id);
     const g = gastosPorCasa.get(p.casa)?.get(p.id);
-    const emendas = vincularEmendas(p, inp.emendas);
+    const agg = emendasDe.get(p.id);
+    const emendas = vincularEmendas(agg);
+    if (agg) for (const d of agg.destinos.values()) somarDestino(destinos, d, p);
     const falas = falasPorPid.get(p.id) ?? [];
 
     const m: Metricas = {
@@ -354,7 +392,18 @@ export function montar(inp: BuildInput): BuildResult {
   }
 
   const resumos = detalhes.map(resumoDe);
-  return { detalhes, resumos, votacoes: inp.votacoes, redes: redesTodas, gastosGerais: gastosGerais(inp.despesas, detalhes, hoje) };
+  const destinosEmendas = [...destinos.values()]
+    .map((d) => ({
+      ...d,
+      indicado: round(d.indicado, 2)!,
+      empenhado: round(d.empenhado, 2)!,
+      pago: round(d.pago, 2)!,
+      autores: d.autores
+        .map((a) => ({ ...a, indicado: round(a.indicado, 2)!, empenhado: round(a.empenhado, 2)!, pago: round(a.pago, 2)! }))
+        .sort((a, b) => b.indicado - a.indicado || a.pid.localeCompare(b.pid)),
+    }))
+    .sort((a, b) => b.indicado - a.indicado || a.chave.localeCompare(b.chave));
+  return { detalhes, resumos, votacoes: inp.votacoes, redes: redesTodas, gastosGerais: gastosGerais(inp.despesas, detalhes, hoje), destinosEmendas };
 }
 
 /** National overview over the same 12-month window used for individual spending. */
@@ -543,6 +592,7 @@ export async function publicar(out: string, r: BuildResult, falas: Fala[], o: Pu
   files["falas-recentes.json"] = todas.slice(0, 300).map((f) => ({ ...f, texto: f.texto.slice(0, 600) }));
   if (r.gastosGerais) files["gastos.json"] = r.gastosGerais;
   if (o.presidencia?.pessoas.length || o.presidencia?.atos.length) files["presidencia.json"] = o.presidencia;
+  if (r.destinosEmendas?.length) files["emendas.json"] = r.destinosEmendas;
   if (o.empresas) {
     files["empresas.json"] = o.empresas.indice;
     for (const [b, conteudo] of o.empresas.baldes) files[`empresas/${b}.json`] = conteudo;

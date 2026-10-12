@@ -163,8 +163,11 @@ export interface CampanhaFinancas {
 export interface Emendas {
   total: number;
   porAno: { ano: number; valor: number }[];
-  destinos: { nome: string; uf?: string; valor: number }[];
+  /** valor = indicated; empenhado and pago when the source publishes those steps */
+  destinos: { nome: string; uf?: string; cnpj?: string; valor: number; empenhado?: number; pago?: number }[];
   fonte: string;
+  /** Money at each step: indicated by the parliamentarian, reserved (empenho), paid (bank order issued) */
+  ciclo?: { indicado: number; empenhado: number; pago: number };
 }
 
 export interface PoliticoDetalhe extends PoliticoResumo {
@@ -455,4 +458,17 @@ export interface EmpresaDetalhe {
     registros: { pid: string; nome: string; papel: "doador" | "fornecedor"; ano: number; valor: number }[];
     fonte: string;
   };
+}
+
+/** A place that received amendments (municipality or state government), with who sent them. */
+export interface DestinoEmenda {
+  /** CNPJ of the receiving government when published, otherwise "nome|uf" */
+  chave: string;
+  nome: string;
+  uf?: string;
+  cnpj?: string;
+  indicado: number;
+  empenhado: number;
+  pago: number;
+  autores: { pid: string; nome: string; partido: string; indicado: number; empenhado: number; pago: number }[];
 }

@@ -440,3 +440,58 @@ describe("companies by CNPJ", () => {
     expect(e.campanhas?.registros).toEqual([{ pid: "dep-2", nome: "Bia", papel: "fornecedor", ano: 2022, valor: 520 }]);
   });
 });
+
+describe("amendment destinations", () => {
+  it("indexes each place with every author and the money at each step", async () => {
+    const { montar } = await import("../build");
+    const agg = (nome: string, destinos: [string, string | undefined, string | undefined, number, number, number][]) => ({
+      nome,
+      total: destinos.reduce((s, d) => s + d[3], 0),
+      porAno: new Map([[2025, destinos.reduce((s, d) => s + d[3], 0)]]),
+      destinos: new Map(destinos.map(([n, uf, cnpj, valor, empenhado, pago]) => [`${n}|${uf}`, { nome: n, uf, cnpj, valor, empenhado, pago }])),
+      fonte: "Transferegov - Transferências Especiais",
+      ciclo: { indicado: 0, empenhado: 0, pago: 0 },
+    });
+    const r = montar({
+      hoje: new Date("2026-10-12"),
+      politicos: [dep("dep-1", "PL", { nome: "Ana Lima" }), dep("dep-2", "PT", { nome: "Bia Reis" })],
+      votacoes: [],
+      despesas: [],
+      sessoes: [],
+      tse: [],
+      tseRedes: new Map(),
+      emendas: new Map([
+        ["ana lima", agg("Ana Lima", [["Campinas", "SP", "11.222.333/0001-81", 100, 80, 50]])],
+        [
+          "bia reis",
+          agg("Bia Reis", [
+            ["Prefeitura de Campinas", "SP", "11222333000181", 40, 40, 0],
+            ["Lugar Sem CNPJ", "MG", undefined, 5, 0, 0],
+          ]),
+        ],
+      ]),
+      falas: [],
+    });
+    expect(r.destinosEmendas?.map((d) => [d.chave, d.indicado, d.empenhado, d.pago, d.autores.map((a) => a.pid)])).toEqual([
+      // Same receiving government (same CNPJ) under two spellings becomes one place
+      ["11222333000181", 140, 120, 50, ["dep-1", "dep-2"]],
+      ["lugar sem cnpj|MG", 5, 0, 0, ["dep-2"]],
+    ]);
+  });
+});
+
+describe("amendment authors", () => {
+  it("links an author name to nobody when two politicians share it", async () => {
+    const { vincularAutores } = await import("../build");
+    const a = { nome: "Ana Lima", total: 1, porAno: new Map(), destinos: new Map(), fonte: "x" };
+    const b = { nome: "Bia Reis", total: 1, porAno: new Map(), destinos: new Map(), fonte: "x" };
+    const m = vincularAutores(
+      [dep("dep-1", "PL", { nome: "Ana Lima" }), dep("sen-1", "PT", { casa: "senado", nome: "Ana Lima" }), dep("dep-2", "PT", { nome: "Bia Reis" })],
+      new Map([
+        ["ana lima", a],
+        ["bia reis", b],
+      ]),
+    );
+    expect([...m.keys()]).toEqual(["dep-2"]);
+  });
+});
