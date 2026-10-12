@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GraficoMensal } from "@/components/GraficoMensal";
+import { TabelaFornecedores } from "@/components/TabelaFornecedores";
 import { LinhaPolitico } from "@/components/Listas";
 import { Barras, Container, Origem, Secao, Vazio } from "@/components/ui";
-import { getGastosGerais, getPoliticos } from "@/lib/data";
+import { getEmpresa, getGastosGerais, getPoliticos } from "@/lib/data";
+import { ORDENS_FORNECEDOR, lerOrdemFornecedores, linhasFornecedores, ordenarFornecedores, proximaOrdem, urlFornecedores, type OrdemFornecedor } from "@/lib/fornecedores";
 import { mesAno, moeda, moedaCurta, numero } from "@/lib/format";
 import { metrica, NOME_CASA } from "@/lib/metricas";
 import { explicarCategoria } from "@/lib/linguagem";
-import { documentoPublicavel, formatarCnpj } from "@/lib/cnpj";
+import { documentoPublicavel } from "@/lib/cnpj";
 
 export const metadata: Metadata = {
   title: "Gastos com a cota parlamentar",
@@ -22,7 +24,8 @@ const REGRAS: Record<string, string> = {
   valor_atipico: "Valor atípico",
 };
 
-export default async function Gastos() {
+export default async function Gastos({ searchParams }: PageProps<"/gastos">) {
+  const ordem = lerOrdemFornecedores(await searchParams);
   const [g, pols] = await Promise.all([getGastosGerais(), getPoliticos()]);
   if (!g) {
     return (
@@ -37,6 +40,10 @@ export default async function Gastos() {
   const total = g.porCasa.reduce((s, c) => s + c.total, 0);
   const maiores = pols.filter((p) => p.m.gasto12m != null && p.emExercicio).sort((a, b) => b.m.gasto12m! - a.m.gasto12m!);
   const comAlertas = pols.filter((p) => (p.m.alertas ?? 0) > 0).sort((a, b) => b.m.alertas! - a.m.alertas!);
+  // Each supplier's own file adds who pays it, campaign links and the main category
+  const empresas = new Map(await Promise.all(g.fornecedores.map(async (f) => [documentoPublicavel(f.doc) ?? "", await getEmpresa(f.doc ?? "")] as const)));
+  const fornecedores = ordenarFornecedores(linhasFornecedores(g.fornecedores, total, empresas, new Map(pols.map((p) => [p.id, p])), documentoPublicavel), ordem);
+  const hrefOrdem = Object.fromEntries(ORDENS_FORNECEDOR.map((c) => [c, urlFornecedores("/gastos", proximaOrdem(ordem, c), "#fornecedores")])) as Record<OrdemFornecedor, string>;
 
   return (
     <Container className="py-10">
@@ -98,34 +105,12 @@ export default async function Gastos() {
         </div>
       </Secao>
 
-      <Secao titulo="Fornecedores que mais receberam" subtitulo="Empresas e pessoas pagas com a cota, somando todos os parlamentares.">
-        <div className="tabela-caixa" tabIndex={0} role="region" aria-label="Tabela; use as setas para rolar">
-          <table className="tabela">
-            <thead>
-              <tr>
-                <th>Fornecedor</th>
-                <th data-num="">Parlamentares</th>
-                <th data-num="">Pagamentos</th>
-                <th data-num="">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {g.fornecedores.slice(0, 25).map((f) => (
-                <tr key={(f.doc ?? "") + f.nome}>
-                  <td>
-                    <span className="block font-semibold">{f.nome || "Sem nome"}</span>
-                    {documentoPublicavel(f.doc) && <span className="tnum block text-ink-3">CNPJ {formatarCnpj(f.doc!)}</span>}
-                  </td>
-                  <td data-num="">{numero(f.parlamentares)}</td>
-                  <td data-num="">{numero(f.n)}</td>
-                  <td data-num="" className="font-semibold">
-                    {moedaCurta(f.valor)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <Secao
+        id="fornecedores"
+        titulo="Fornecedores que mais receberam"
+        subtitulo={`Os ${numero(fornecedores.length)} fornecedores com maior soma na cota, juntando todos os parlamentares. Toque no título de uma coluna para ordenar, escolha mais colunas em “Colunas” e toque no fornecedor para ver quem pagou, para quê e cada nota fiscal.`}
+      >
+        <TabelaFornecedores linhas={fornecedores} ordem={ordem} hrefOrdem={hrefOrdem} csv={urlFornecedores("/api/fornecedores", ordem)} />
       </Secao>
 
       <Secao

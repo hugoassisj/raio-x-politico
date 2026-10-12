@@ -48,6 +48,8 @@ const nextConfig: NextConfig = {
     "/relacoes": SNAPSHOT,
     "/api/relacoes": SNAPSHOT,
     "/api/politicos": SNAPSHOT,
+    "/api/fornecedores": SNAPSHOT,
+    "/gastos": SNAPSHOT,
     "/eleicoes": SNAPSHOT,
     "/emendas": SNAPSHOT,
   },
