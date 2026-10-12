@@ -97,7 +97,7 @@ export function Pill({ children, href, ativo }: { children: ReactNode; href?: st
 }
 
 export function Container({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`mx-auto w-full max-w-[1180px] px-4 sm:px-6 ${className}`}>{children}</div>;
+  return <div className={`mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-10 ${className}`}>{children}</div>;
 }
 
 /** Horizontal bars with direct labels: the default way to compare a handful of values. */

@@ -78,37 +78,35 @@ export default async function Empresas({ searchParams }: PageProps<"/empresas">)
       {lista.length === 0 ? (
         <Vazio>{todas.length ? "Nenhuma empresa com esses filtros." : "Os dados de empresas chegam na próxima coleta completa."}</Vazio>
       ) : (
-        <div className="cartao mt-3 overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="tabela-caixa mt-3" tabIndex={0} role="region" aria-label="Tabela; use as setas para rolar">
+          <table className="tabela">
             <caption className="sr-only">Empresas ligadas por CNPJ</caption>
             <thead>
-              <tr className="border-b border-line text-left text-ink-3">
-                <th scope="col" className="px-4 py-3 font-normal">
-                  Empresa
-                </th>
-                <th scope="col" className="px-4 py-3 text-right font-normal">
+              <tr>
+                <th scope="col">Empresa</th>
+                <th data-num="" scope="col">
                   Cota parlamentar
                 </th>
-                <th scope="col" className="px-4 py-3 text-right font-normal">
+                <th data-num="" scope="col">
                   Campanhas
                 </th>
-                <th scope="col" className="px-4 py-3 text-right font-normal">
+                <th data-num="" scope="col">
                   Pessoas ligadas
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody>
               {pg.itens.map((e) => (
                 <tr key={e.cnpj}>
-                  <td className="px-4 py-3">
+                  <td>
                     <Link href={`/empresa/${e.cnpj}`} className="font-semibold hover:underline">
                       {e.nome}
                     </Link>
                     <span className="tnum block text-xs text-ink-3">CNPJ {formatarCnpj(e.cnpj)}</span>
                   </td>
-                  <td className="tnum px-4 py-3 text-right">{e.cota ? moedaCurta(e.cota) : "não"}</td>
-                  <td className="tnum px-4 py-3 text-right">{e.campanhas ? moedaCurta(e.campanhas) : "não"}</td>
-                  <td className="tnum px-4 py-3 text-right">{e.pessoas}</td>
+                  <td data-num="">{e.cota ? moedaCurta(e.cota) : "não"}</td>
+                  <td data-num="">{e.campanhas ? moedaCurta(e.campanhas) : "não"}</td>
+                  <td data-num="">{e.pessoas}</td>
                 </tr>
               ))}
             </tbody>

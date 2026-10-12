@@ -318,44 +318,36 @@ function Forma({ tipo, ativo, raiz }: { tipo: No["tipo"]; ativo: boolean; raiz: 
 function ListaLigacoes({ ligacoes, porId, aoEscolher }: { ligacoes: Ligacao[]; porId: Map<string, No>; aoEscolher: (id: string) => void }) {
   const ordenadas = [...ligacoes].sort((a, b) => a.tipo.localeCompare(b.tipo) || (b.valor ?? 0) - (a.valor ?? 0) || a.id.localeCompare(b.id));
   return (
-    <div className="cartao overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="tabela-caixa" tabIndex={0} role="region" aria-label="Tabela; use as setas para rolar">
+      <table className="tabela">
         <caption className="sr-only">Todas as ligações, com a prova de cada uma</caption>
         <thead>
-          <tr className="border-b border-line text-left text-ink-3">
-            <th scope="col" className="px-3 py-2 font-normal">
-              De
-            </th>
-            <th scope="col" className="px-3 py-2 font-normal">
-              Ligação
-            </th>
-            <th scope="col" className="px-3 py-2 font-normal">
-              Para
-            </th>
-            <th scope="col" className="px-3 py-2 text-right font-normal">
+          <tr>
+            <th scope="col">De</th>
+            <th scope="col">Ligação</th>
+            <th scope="col">Para</th>
+            <th data-num="" scope="col">
               Valor
             </th>
-            <th scope="col" className="px-3 py-2 font-normal">
-              Prova
-            </th>
+            <th scope="col">Prova</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">
+        <tbody>
           {ordenadas.map((l) => (
             <tr key={l.id + l.rotulo}>
-              <td className="px-3 py-2">
+              <td>
                 <button type="button" onClick={() => aoEscolher(l.de)} className="text-left font-semibold hover:underline">
                   {porId.get(l.de)?.rotulo}
                 </button>
               </td>
-              <td className="px-3 py-2">{l.rotulo}</td>
-              <td className="px-3 py-2">
+              <td>{l.rotulo}</td>
+              <td>
                 <button type="button" onClick={() => aoEscolher(l.para)} className="text-left font-semibold hover:underline">
                   {porId.get(l.para)?.rotulo}
                 </button>
               </td>
-              <td className="tnum px-3 py-2 text-right">{l.valor ? moedaCurta(l.valor) : ""}</td>
-              <td className="px-3 py-2 text-xs text-ink-3">{l.evidencias.map((e) => `${e.texto} (${e.fonte})`).join("; ")}</td>
+              <td data-num="">{l.valor ? moedaCurta(l.valor) : ""}</td>
+              <td className="text-xs text-ink-3">{l.evidencias.map((e) => `${e.texto} (${e.fonte})`).join("; ")}</td>
             </tr>
           ))}
         </tbody>

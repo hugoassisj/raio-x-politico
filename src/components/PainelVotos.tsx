@@ -458,32 +458,22 @@ function Detalhes({ linhas }: { linhas: LinhaVoto[] }) {
           </li>
         ))}
       </ul>
-      <div className="cartao hidden overflow-x-auto sm:block">
-        <table className="w-full text-sm">
+      <div className="tabela-caixa hidden sm:block" tabIndex={0} role="region" aria-label="Tabela; use as setas para rolar">
+        <table className="tabela">
           <caption className="sr-only">Voto de cada pessoa</caption>
           <thead>
-            <tr className="border-b border-line text-left text-ink-3">
-              <th scope="col" className="px-4 py-3 font-normal">
-                Pessoa
-              </th>
-              <th scope="col" className="px-4 py-3 font-normal">
-                Partido na votação
-              </th>
-              <th scope="col" className="px-4 py-3 font-normal">
-                Estado
-              </th>
-              <th scope="col" className="px-4 py-3 font-normal">
-                Voto
-              </th>
-              <th scope="col" className="px-4 py-3 font-normal">
-                Código na fonte
-              </th>
+            <tr>
+              <th scope="col">Pessoa</th>
+              <th scope="col">Partido na votação</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Voto</th>
+              <th scope="col">Código na fonte</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-line">
+          <tbody>
             {linhas.map((l) => (
               <tr key={l.pid}>
-                <td className="px-4 py-2">
+                <td>
                   <span className="flex items-center gap-3">
                     <Avatar src={l.foto} nome={l.nome} size={32} />
                     <span className="min-w-0">
@@ -491,17 +481,15 @@ function Detalhes({ linhas }: { linhas: LinhaVoto[] }) {
                     </span>
                   </span>
                 </td>
-                <td className="px-4 py-2">
+                <td>
                   <Partido l={l} />
                 </td>
-                <td className="px-4 py-2">{l.uf}</td>
-                <td className="px-4 py-2">
+                <td>{l.uf}</td>
+                <td>
                   <Voto l={l} grande />
                   <span className="mt-1 block max-w-72 text-xs text-ink-3">{l.explicacao}</span>
                 </td>
-                <td className="px-4 py-2 font-mono text-xs text-ink-2">
-                  {l.original === l.rotulo ? <span className="font-sans text-ink-3">igual ao voto</span> : l.original || "nenhum"}
-                </td>
+                <td className="font-mono text-xs text-ink-2">{l.original === l.rotulo ? <span className="font-sans text-ink-3">igual ao voto</span> : l.original || "nenhum"}</td>
               </tr>
             ))}
           </tbody>

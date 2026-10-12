@@ -99,26 +99,28 @@ export default async function Gastos() {
       </Secao>
 
       <Secao titulo="Fornecedores que mais receberam" subtitulo="Empresas e pessoas pagas com a cota, somando todos os parlamentares.">
-        <div className="overflow-x-auto cartao rounded-xl">
-          <table className="w-full text-sm">
+        <div className="tabela-caixa" tabIndex={0} role="region" aria-label="Tabela; use as setas para rolar">
+          <table className="tabela">
             <thead>
-              <tr className="border-b border-line text-left text-ink-3">
-                <th className="px-4 py-2.5 font-normal">Fornecedor</th>
-                <th className="px-4 py-2.5 text-right font-normal">Parlamentares</th>
-                <th className="px-4 py-2.5 text-right font-normal">Pagamentos</th>
-                <th className="px-4 py-2.5 text-right font-normal">Total</th>
+              <tr>
+                <th>Fornecedor</th>
+                <th data-num="">Parlamentares</th>
+                <th data-num="">Pagamentos</th>
+                <th data-num="">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody>
               {g.fornecedores.slice(0, 25).map((f) => (
                 <tr key={(f.doc ?? "") + f.nome}>
-                  <td className="px-4 py-2.5">
+                  <td>
                     <span className="block font-semibold">{f.nome || "Sem nome"}</span>
                     {documentoPublicavel(f.doc) && <span className="tnum block text-ink-3">CNPJ {formatarCnpj(f.doc!)}</span>}
                   </td>
-                  <td className="tnum px-4 py-2.5 text-right">{numero(f.parlamentares)}</td>
-                  <td className="tnum px-4 py-2.5 text-right">{numero(f.n)}</td>
-                  <td className="tnum px-4 py-2.5 text-right font-semibold">{moedaCurta(f.valor)}</td>
+                  <td data-num="">{numero(f.parlamentares)}</td>
+                  <td data-num="">{numero(f.n)}</td>
+                  <td data-num="" className="font-semibold">
+                    {moedaCurta(f.valor)}
+                  </td>
                 </tr>
               ))}
             </tbody>

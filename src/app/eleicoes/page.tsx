@@ -105,41 +105,33 @@ export default async function Eleicoes({ searchParams }: PageProps<"/eleicoes">)
               <Vazio>Nenhuma candidatura com esses filtros.</Vazio>
             </div>
           ) : (
-            <div className="cartao mt-3 overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="tabela-caixa mt-3" tabIndex={0} role="region" aria-label="Tabela; use as setas para rolar">
+              <table className="tabela">
                 <caption className="sr-only">Candidaturas da eleição de {ano}</caption>
                 <thead>
-                  <tr className="border-b border-line text-left text-ink-3">
-                    <th scope="col" className="px-4 py-3 font-normal">
-                      Pessoa
-                    </th>
-                    <th scope="col" className="px-4 py-3 font-normal">
-                      Cargo disputado
-                    </th>
-                    <th scope="col" className="px-4 py-3 font-normal">
-                      Partido em {ano}
-                    </th>
-                    <th scope="col" className="px-4 py-3 font-normal">
-                      Resultado
-                    </th>
+                  <tr>
+                    <th scope="col">Pessoa</th>
+                    <th scope="col">Cargo disputado</th>
+                    <th scope="col">Partido em {ano}</th>
+                    <th scope="col">Resultado</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody>
                   {pg.itens.map((c, i) => (
                     <tr key={`${c.href}-${c.cargo}-${i}`}>
-                      <td className="px-4 py-2.5">
+                      <td>
                         <Link href={c.href} className="font-semibold hover:underline">
                           {c.nome}
                         </Link>
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td>
                         {c.cargo}
                         <span className="block text-xs text-ink-3">{c.municipio ? `${c.municipio} (${c.uf})` : c.uf === "BR" ? "Brasil" : nomeUf(c.uf)}</span>
                       </td>
-                      <td className="px-4 py-2.5">
+                      <td>
                         <SiglaPartido sigla={c.partido} />
                       </td>
-                      <td className="px-4 py-2.5">{rotuloResultado(c.resultado, c.sexo)}</td>
+                      <td>{rotuloResultado(c.resultado, c.sexo)}</td>
                     </tr>
                   ))}
                 </tbody>

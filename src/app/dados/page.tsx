@@ -101,25 +101,25 @@ export default async function Dados() {
 
       <Secao titulo="Fontes consultadas" subtitulo={meta ? `Situação de cada fonte na última atualização, em ${dataHora(meta.geradoEm)}.` : "Os dados ainda não foram coletados."}>
         {meta && (
-          <div className="overflow-x-auto cartao rounded-xl">
-            <table className="w-full text-sm">
+          <div className="tabela-caixa" tabIndex={0} role="region" aria-label="Tabela; use as setas para rolar">
+            <table className="tabela">
               <thead>
-                <tr className="border-b border-line text-left text-ink-3">
-                  <th className="px-4 py-2.5 font-normal">Fonte</th>
-                  <th className="px-4 py-2.5 font-normal">Situação</th>
-                  <th className="px-4 py-2.5 text-right font-normal">Registros</th>
-                  <th className="px-4 py-2.5 font-normal">Observação</th>
+                <tr>
+                  <th>Fonte</th>
+                  <th>Situação</th>
+                  <th data-num="">Registros</th>
+                  <th>Observação</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody>
                 {meta.fontes.map((f) => (
                   <tr key={f.id}>
-                    <td className="px-4 py-2.5">{f.url ? <Fonte href={f.url}>{f.nome}</Fonte> : f.nome}</td>
-                    <td className="px-4 py-2.5">
+                    <td>{f.url ? <Fonte href={f.url}>{f.nome}</Fonte> : f.nome}</td>
+                    <td>
                       <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${STATUS[f.status].cls}`}>{STATUS[f.status].rotulo}</span>
                     </td>
-                    <td className="tnum px-4 py-2.5 text-right">{numero(f.registros)}</td>
-                    <td className="max-w-md px-4 py-2.5 text-ink-3">{f.erro}</td>
+                    <td data-num="">{numero(f.registros)}</td>
+                    <td className="max-w-md text-ink-3">{f.erro}</td>
                   </tr>
                 ))}
               </tbody>
@@ -157,25 +157,25 @@ export default async function Dados() {
         >
           <details className="cartao rounded-xl p-4">
             <summary className="font-semibold">Ver os {meta.arquivos.length} arquivos</summary>
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="tabela-caixa mt-3" tabIndex={0} role="region" aria-label="Tabela; use as setas para rolar">
+              <table className="tabela">
                 <thead className="text-left text-ink-3">
                   <tr>
-                    <th className="py-1.5 pr-3 font-normal">Arquivo</th>
-                    <th className="py-1.5 pr-3 text-right font-normal">Tamanho</th>
-                    <th className="py-1.5 font-normal">SHA-256</th>
+                    <th>Arquivo</th>
+                    <th data-num="">Tamanho</th>
+                    <th>SHA-256</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody>
                   {meta.arquivos.map((a) => (
                     <tr key={a.url}>
-                      <td className="py-1.5 pr-3">
+                      <td>
                         <a href={a.url} className="link break-all">
                           {a.url.replace(/^https?:\/\//, "")}
                         </a>
                       </td>
-                      <td className="tnum py-1.5 pr-3 text-right">{numero(Math.round(a.bytes / 1e6))} MB</td>
-                      <td className="py-1.5 font-mono text-xs break-all text-ink-3">{a.sha256}</td>
+                      <td data-num="">{numero(Math.round(a.bytes / 1e6))} MB</td>
+                      <td className="font-mono text-xs break-all text-ink-3">{a.sha256}</td>
                     </tr>
                   ))}
                 </tbody>

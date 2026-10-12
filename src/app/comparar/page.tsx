@@ -56,13 +56,13 @@ export default async function Comparar({ searchParams }: PageProps<"/comparar">)
           Comece adicionando alguém pelo nome. Dica: no perfil de qualquer político há um botão &ldquo;Comparar com outro&rdquo;.
         </p>
       ) : (
-        <div className="mt-8 overflow-x-auto cartao rounded-xl">
-          <table className="w-full min-w-[640px] text-sm">
+        <div className="tabela-caixa mt-8" tabIndex={0} role="region" aria-label="Tabela; use as setas para rolar">
+          <table className="tabela min-w-[640px]">
             <thead>
               <tr className="border-b border-line">
-                <th className="w-48 px-4 py-4" />
+                <th className="w-48" />
                 {pessoas.map((p) => (
-                  <th key={p.id} className="px-4 py-4 text-left align-top font-normal">
+                  <th key={p.id} className="text-left align-top">
                     <div className="flex items-start gap-3">
                       <Avatar src={p.foto} nome={p.nome} size={48} />
                       <div className="min-w-0">
@@ -81,18 +81,18 @@ export default async function Comparar({ searchParams }: PageProps<"/comparar">)
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody>
               {linhas.map((m) => {
                 const vals = pessoas.map((p) => p.m[m.chave]);
                 // shares are drawn on a fixed 0-100% scale; amounts relative to the largest in the row
                 const max = PERCENTUAIS.includes(m.chave) ? 1 : Math.max(...vals.map((v) => v ?? 0), 1e-9);
                 return (
                   <tr key={m.chave}>
-                    <th scope="row" className="px-4 py-3 text-left font-normal text-ink-2">
+                    <th scope="row" className="text-left text-ink-2">
                       {m.titulo}
                     </th>
                     {vals.map((v, i) => (
-                      <td key={pessoas[i].id} className="px-4 py-3">
+                      <td key={pessoas[i].id}>
                         <span className="figure block text-lg font-semibold">{m.formato(v)}</span>
                         {v != null && (
                           <span className="mt-1 block h-1.5 rounded-full bg-surface-2">
@@ -105,11 +105,11 @@ export default async function Comparar({ searchParams }: PageProps<"/comparar">)
                 );
               })}
               <tr>
-                <th scope="row" className="px-4 py-3 text-left font-normal text-ink-2">
+                <th scope="row" className="text-left text-ink-2">
                   Mandatos desde
                 </th>
                 {pessoas.map((p) => (
-                  <td key={p.id} className="figure px-4 py-3 text-lg font-semibold">
+                  <td key={p.id} className="figure text-lg font-semibold">
                     {p.inicioPolitica ?? VAZIO}
                   </td>
                 ))}
@@ -126,19 +126,19 @@ export default async function Comparar({ searchParams }: PageProps<"/comparar">)
             {comuns.length} votações nominais em comum. Em {divergentes.length} delas, uma parte votou Sim e outra votou Não.
           </p>
           {divergentes.length > 0 && (
-            <div className="mt-4 overflow-x-auto cartao rounded-xl">
-              <table className="w-full min-w-[640px] text-sm">
-                <tbody className="divide-y divide-line">
+            <div className="tabela-caixa mt-4" tabIndex={0} role="region" aria-label="Tabela; use as setas para rolar">
+              <table className="tabela min-w-[640px]">
+                <tbody>
                   {divergentes.slice(0, 30).map((c) => (
                     <tr key={c.v.votacaoId}>
-                      <td className="w-1/2 px-4 py-3">
+                      <td className="w-1/2">
                         <Link href={`/votacao/${c.v.votacaoId}`} className="font-semibold hover:underline">
                           {c.v.titulo}
                         </Link>
                         <span className="block line-clamp-1 text-ink-3">{c.v.descricao}</span>
                       </td>
                       {c.votos.map((v, i) => (
-                        <td key={i} className="px-4 py-3 font-semibold">
+                        <td key={i} className="font-semibold">
                           {v}
                         </td>
                       ))}

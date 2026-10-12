@@ -325,6 +325,126 @@
   }
 
   /* Card: resting on the page; when it is a link it lifts slightly on hover */
+  /*
+   * Data tables. One recipe for every table in the site: a scroll box that keeps the header row
+   * visible, a clear header (darker band, semibold, never wrapping), numbers aligned right in both
+   * header and cells, and sortable headers whose whole cell is the control.
+   */
+  .tabela-caixa {
+    overflow: auto;
+    max-height: min(78vh, 60rem);
+    border: 1px solid var(--line);
+    border-radius: 0.875rem;
+    background: var(--surface);
+    box-shadow: var(--shadow-1);
+  }
+  .tabela {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.9rem;
+  }
+  .tabela thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--surface-2);
+    color: var(--ink-2);
+    font-weight: 600;
+    font-size: 0.82rem;
+    letter-spacing: 0.01em;
+    line-height: 1.25;
+    text-align: left;
+    vertical-align: bottom;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--line-strong);
+  }
+  .tabela thead th[data-num] {
+    text-align: right;
+    min-width: 6.5rem;
+  }
+  /* The first column (usually the name) stays in view while scrolling sideways */
+  .tabela thead th:first-child,
+  .tabela tbody td:first-child,
+  .tabela tbody th:first-child {
+    position: sticky;
+    left: 0;
+    background: var(--surface);
+    box-shadow: 1px 0 0 var(--line);
+  }
+  .tabela tbody td:first-child,
+  .tabela tbody th:first-child {
+    z-index: 1;
+  }
+  .tabela thead th:first-child {
+    z-index: 3;
+    background: var(--surface-2);
+  }
+  .tabela td[data-ordenado] {
+    background: color-mix(in oklch, var(--accent-soft) 40%, var(--surface));
+    font-weight: 600;
+  }
+  .tabela abbr {
+    text-decoration: none;
+  }
+  .tabela thead th[aria-sort] {
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+  }
+  .tabela tbody td {
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+  .tabela tbody th {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  .tabela tbody tr:last-child td,
+  .tabela tbody tr:last-child th {
+    border-bottom: 0;
+  }
+  .tabela tbody tr:hover td,
+  .tabela tbody tr:hover th {
+    background: var(--surface-2);
+  }
+  .tabela td[data-num] {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  /* Sortable header: the whole cell is the link, with the arrow on the outer side */
+  .tabela .ordenar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: -0.75rem -1rem;
+    padding: 0.75rem 1rem;
+    color: inherit;
+    transition: background var(--dur-1) ease;
+  }
+  .tabela th[data-num] .ordenar {
+    justify-content: flex-end;
+  }
+  .tabela .ordenar:hover {
+    background: var(--surface-3);
+    color: var(--ink);
+  }
+  .tabela .ordenar svg {
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+  .tabela th[aria-sort] .ordenar svg {
+    opacity: 1;
+  }
+  .tabela .ordenar:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: -3px;
+  }
+
   .cartao {
     background: var(--surface);
     border: 1px solid var(--line);
