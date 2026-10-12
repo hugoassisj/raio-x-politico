@@ -140,6 +140,22 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | REF-02 | VERIFIED | P1 | Ficha do Político (fichadopolitico.com.br) | Astro, licença MIT, nenhum código copiado. Adotado: vida pública inteira e contas de campanha. Adaptado: lista de votos fácil de filtrar (aqui com contagens clicáveis e estado na URL). Rejeitado: qualquer nota ou selo de “ficha limpa” feito por nós; só mostramos o que a fonte oficial diz. Detalhes em PRODUCT.md. |
 | REF-03 | VERIFIED | P1 | Licenças de reuso | Nenhum código de terceiros copiado; dados só de fontes oficiais com termos de uso abertos. |
 
+### 4.9 Itens da especificação que ainda faltavam no rastreador
+
+| ID | Situação | P | O que é | Critérios de aceite | Depende de |
+|---|---|---|---|---|---|
+| HIST-01 | NOT_STARTED | P1 | Visões por eleição | Escolher uma eleição (ano e cargo) e ver quem disputou, quem foi eleito e por qual partido, com a data respeitada em tudo o que aparece | DADOS-01 |
+| HIST-02 | NOT_STARTED | P2 | Reprodutibilidade | Cada publicação guarda versão dos dados e manifesto; dá para baixar o retrato de uma data | |
+| CARD-01 | NOT_STARTED | P1 | Cartões e listas de políticos mais ricos | Lista de políticos com foto, partido, estado, cargo, principais números e cobertura de dados, sem ranking | TAB-01 |
+| LAY-01 | NOT_STARTED | P2 | Layout mais largo e navegação revista | Páginas de dados usam a largura da tela; menu com Presidência, Empresas, Emendas e Mapa de relações também no celular | |
+| CNPJ-04 | NOT_STARTED | P2 | Dados cadastrais da Receita | Situação cadastral, atividade principal e data de abertura a partir dos dados abertos do CNPJ da Receita Federal, com data do arquivo | CNPJ-02 |
+| VOT-16 | NOT_STARTED | P2 | Sessões do Congresso e vetos | Votações em sessão conjunta e de vetos, pela API do Congresso Nacional | |
+| CORR-01 | NOT_STARTED | P1 | Registro público de correções | Página com cada correção feita: o que estava errado, o que mudou, quando e a fonte | PROV-03 |
+| IAF-01 | BLOCKED | P2 | Recursos de IA | Perguntas em linguagem simples sobre os dados, sempre com citação. Bloqueio: sem chave de IA no ambiente | IA-01 |
+| PERFM-01 | NOT_STARTED | P2 | Desempenho | Medir tamanho das páginas e do JavaScript, tempo de carga no celular; listas grandes paginadas no servidor | |
+| SEG-01 | NOT_STARTED | P2 | Segurança | Cabeçalhos de segurança (CSP e outros), revisão do `npm audit` (9 avisos em dependências de desenvolvimento), entradas validadas nas rotas de API | |
+| CHAVE-01 | BLOCKED | P1 | Chave do Portal da Transparência | A pessoa enviou uma chave; ela deve ficar só no segredo `PORTAL_TRANSPARENCIA_API_KEY` do GitHub, nunca no código. Esperando autorização para gravar o segredo | |
+
 ### 4.8 Provas de cada item conferido
 
 | ID | Prova |
