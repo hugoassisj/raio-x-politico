@@ -139,7 +139,7 @@ export default async function Home() {
                 Ver todos <ArrowRight size={18} aria-hidden />
               </Link>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {projetos.slice(0, 6).map((p, i) => (
                 <CartaoProjeto key={p.chave} p={p} i={i} />
               ))}

@@ -127,7 +127,7 @@ export default async function Partido({ params }: PageProps<"/partido/[sigla]">)
               titulo={`${sigla} comparado com toda a ${casa === "camara" ? "Câmara" : "o Senado"}`}
               subtitulo="Valores típicos (medianas): metade do grupo está acima, metade abaixo."
             >
-              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {linhas.map((k) => {
                   const d = metrica(k);
                   const a = doPartido!.medianas[k]!;

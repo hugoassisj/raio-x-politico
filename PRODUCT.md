@@ -308,3 +308,4 @@ O roadmap segue uma regra simples: **confiança antes de volume**. Uma informaç
 | 2026-10-12 | Mapa de relações com prova em cada ligação e a mesma informação em lista | Um grafo bonito sem prova vira boato; a lista garante acesso para quem usa leitor de tela ou teclado |
 | 2026-10-12 | Emendas mostradas em três etapas (indicado, reservado, pago) e por cidade | Indicar dinheiro não é o mesmo que ele chegar; a cidade quer saber o que de fato foi pago |
 | 2026-10-12 | Autor de emenda com o mesmo nome de dois políticos não é ligado a nenhum | A fonte só publica o nome do autor; na dúvida, melhor faltar do que atribuir a outra pessoa |
+| 2026-10-12 | Uma receita única para todas as tabelas e páginas de até 1440 px | Tabelas são onde as pessoas comparam; cabeçalho legível, fixo e com ordenação clara é o mínimo. Telas largas eram desperdiçadas |

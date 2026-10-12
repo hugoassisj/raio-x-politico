@@ -227,7 +227,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             Cada cartão mostra onde esta pessoa fica entre todos os colegas. Toque em &ldquo;Como sabemos disso?&rdquo; para ver o período, o cálculo, a fonte oficial e o que o
             número não diz.
           </p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {defs.map((d, i) => (
               <TileMetrica
                 key={d.chave}

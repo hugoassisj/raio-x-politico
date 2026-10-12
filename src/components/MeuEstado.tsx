@@ -152,7 +152,7 @@ function Linha({ v }: { v: VotoPessoa }) {
 
 function Grade({ lista }: { lista: VotoPessoa[] }) {
   return (
-    <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {lista.map((v, i) => (
         <li key={v.pid} className="surgir" style={{ "--i": i } as React.CSSProperties}>
           {v.conhecido ? (

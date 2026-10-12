@@ -163,7 +163,7 @@ export default async function Votacoes({ searchParams }: PageProps<"/votacoes">)
         </p>
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {ver === "projetos"
           ? projetos.slice((pg - 1) * POR_PAGINA, pg * POR_PAGINA).map((p, i) => <CartaoProjeto key={p.chave} p={p} i={i} />)
           : votacoes

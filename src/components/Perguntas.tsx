@@ -7,7 +7,7 @@ import { IconePergunta } from "./Icone";
 /** The questions the site answers, each one a door into the page that answers it. */
 export function GradePerguntas({ limite, comResposta = false }: { limite?: number; comResposta?: boolean }) {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {PERGUNTAS.slice(0, limite).map((q, i) => (
         <li key={q.pergunta} className="surgir" style={{ "--i": i } as CSSProperties}>
           <Link href={q.href} className="cartao group flex h-full items-start gap-3 p-4">

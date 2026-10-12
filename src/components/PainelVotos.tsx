@@ -420,7 +420,7 @@ function Partido({ l }: { l: LinhaVoto }) {
 
 function Grade({ linhas }: { linhas: LinhaVoto[] }) {
   return (
-    <ul className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {linhas.map((l) => (
         <li key={l.pid} className="flex items-center gap-3 border-b border-line py-2">
           <Avatar src={l.foto} nome={l.nome} size={32} />

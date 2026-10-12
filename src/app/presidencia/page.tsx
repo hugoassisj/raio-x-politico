@@ -152,7 +152,7 @@ export default async function Presidencia() {
               titulo="A vida pública de quem disputou"
               subtitulo="Toque em um nome para ver todas as eleições que a pessoa disputou, para qualquer cargo, os bens declarados e o dinheiro das campanhas."
             >
-              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {pessoas.map((x) => (
                   <li key={x.id}>
                     <Link href={hrefPessoa(x.id)} className="cartao flex items-center justify-between gap-3 p-3 hover:border-line-strong">
