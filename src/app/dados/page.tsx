@@ -4,6 +4,7 @@ import { Container, Fonte, Secao } from "@/components/ui";
 import { getMeta } from "@/lib/data";
 import { dataHora, moeda, numero } from "@/lib/format";
 import { METRICAS } from "@/lib/metricas";
+import { REPO_URL, urlCorrecao } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Fontes, metodologia e limites",
@@ -19,7 +20,7 @@ const STATUS: Record<string, { rotulo: string; cls: string }> = {
 
 export default async function Dados() {
   const meta = await getMeta();
-  const repo = process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/hugoassisj/raio-x-politico";
+  const repo = REPO_URL;
   return (
     <Container className="py-10">
       <h1 className="display text-4xl font-extrabold sm:text-5xl">Sobre os dados</h1>
@@ -201,7 +202,7 @@ export default async function Dados() {
           <a href={repo} className="botao-sec">
             Ver o código
           </a>
-          <a href={`${repo}/issues/new`} className="botao-sec">
+          <a href={urlCorrecao()} className="botao-sec">
             Reportar um erro
           </a>
         </div>

@@ -2,9 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { AvisoDemo, Cabecalho, Rodape } from "@/components/Moldura";
 import { BarraInferior } from "@/components/BarraInferior";
 import { SCRIPT_TEMA } from "@/lib/tema";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://raio-x-politico.vercel.app";
+const SITE = SITE_URL;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),

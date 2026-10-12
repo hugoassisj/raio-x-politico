@@ -1,8 +1,9 @@
+import { SITE_URL } from "@/lib/site";
 import type { MetadataRoute } from "next";
 import { getPoliticos, getVotacoes } from "@/lib/data";
 import { ESTADOS } from "@/lib/ufs";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://raio-x-politico.vercel.app";
+const SITE = SITE_URL;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [pols, vots] = await Promise.all([getPoliticos(), getVotacoes()]);

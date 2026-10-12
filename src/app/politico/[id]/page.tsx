@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { CartoesResumo, TileMetrica, metricasDaCasa } from "@/components/Boletim";
-import { MapPin } from "lucide-react";
+import { AtSign, FileSearch, Info, Landmark, Mail, MapPin } from "lucide-react";
 import { nomePartido } from "@/lib/partidos";
 import { resumoRapido } from "@/lib/resumo";
 import { GraficoMensal } from "@/components/GraficoMensal";
@@ -20,6 +20,9 @@ import { encurtar, explicarCategoria, explicarEtapa } from "@/lib/linguagem";
 import { partesDescricao } from "@/lib/format";
 import type { VotoLinha } from "@/components/ListaVotos";
 import { votouDiferente } from "@/lib/votos";
+import { NOME_REDE, separarRedes } from "@/lib/redes";
+import { urlCorrecao } from "@/lib/site";
+import { IconeRede } from "@/components/IconeRede";
 import { CurvaPatrimonio, DinheiroCampanha, LinhaDaVida, MandatosRegistrados, ResumoVida } from "@/components/VidaPublica";
 
 export const dynamicParams = false;
@@ -37,20 +40,6 @@ export async function generateMetadata({ params }: PageProps<"/politico/[id]">):
     description: fraseResumo(p) || `${cargoDe(p)} ${p.partido}-${p.uf}: presença, votos, gastos e projetos com dados oficiais.`,
   };
 }
-
-const PLATAFORMA: Record<string, string> = {
-  x: "X (Twitter)",
-  instagram: "Instagram",
-  tiktok: "TikTok",
-  youtube: "YouTube",
-  facebook: "Facebook",
-  threads: "Threads",
-  bluesky: "Bluesky",
-  kwai: "Kwai",
-  linkedin: "LinkedIn",
-  telegram: "Telegram",
-  site: "Site",
-};
 
 const REGRA: Record<string, string> = {
   documento_invalido: "Documento inválido",
@@ -86,6 +75,13 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
   const campanhas = [...p.eleicoes].filter((e) => e.campanha).sort((a, b) => b.ano - a.ano);
   const ultimaComBens = [...p.eleicoes].filter((e) => e.bens?.length).sort((a, b) => b.ano - a.ano)[0];
   const defs = metricasDaCasa(p.casa);
+  const redes = separarRedes(p.redes);
+  const paginaNaCasa = p.casa === "camara" ? "Página na Câmara dos Deputados" : p.casa === "senado" ? "Página no Senado Federal" : "Página na Assembleia Legislativa";
+  // The three most recent candidacies with a public page at the TSE
+  const candidaturasTSE = [...p.eleicoes]
+    .filter((e) => e.url)
+    .sort((a, b) => b.ano - a.ano)
+    .slice(0, 3);
   const contraPartido = p.votos.filter((v) => votouDiferente(v.voto, v.orientacaoPartido)).length;
 
   const refs: Record<string, { url: string; rotulo: string }> = {};
@@ -637,14 +633,17 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
           </Secao>
         )}
 
-        <Secao id="fontes" titulo="Contato, redes e fontes" subtitulo="Tudo o que aparece nesta página pode ser conferido nos links abaixo.">
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="cartao rounded-xl p-4 sm:p-5">
-              <h3 className="mb-3 font-semibold">Contato oficial</h3>
-              <dl className="space-y-2 text-sm">
+        <Secao id="fontes" titulo="Contato, redes e fontes" subtitulo="Como falar com o gabinete, onde a pessoa publica e de onde vem cada informação desta página.">
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="cartao p-4 sm:p-5">
+              <h3 className="flex items-center gap-2 font-semibold">
+                <Mail className="h-4 w-4 text-accent-ink" aria-hidden />
+                Contato
+              </h3>
+              <dl className="mt-3 space-y-2 text-sm">
                 {p.perfil.email && (
                   <div>
-                    <dt className="text-ink-3">E-mail</dt>
+                    <dt className="text-ink-3">E-mail do gabinete</dt>
                     <dd>
                       <a href={`mailto:${p.perfil.email}`} className="link break-all">
                         {p.perfil.email}
@@ -655,7 +654,11 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                 {p.perfil.telefone && (
                   <div>
                     <dt className="text-ink-3">Telefone</dt>
-                    <dd>{p.perfil.telefone}</dd>
+                    <dd>
+                      <a href={`tel:${p.perfil.telefone.replace(/[^\d+]/g, "")}`} className="link">
+                        {p.perfil.telefone}
+                      </a>
+                    </dd>
                   </div>
                 )}
                 {p.perfil.gabinete && (
@@ -664,40 +667,118 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                     <dd>{p.perfil.gabinete}</dd>
                   </div>
                 )}
-                {!p.perfil.email && !p.perfil.telefone && <dd className="text-ink-3">Contato não publicado nas fontes consultadas.</dd>}
               </dl>
+              {!p.perfil.email && !p.perfil.telefone && !p.perfil.gabinete && <p className="mt-3 text-sm text-ink-3">A fonte oficial não publica contato para esta pessoa.</p>}
             </div>
-            <div className="cartao rounded-xl p-4 sm:p-5">
-              <h3 className="mb-3 font-semibold">Redes sociais</h3>
-              {p.redes.length ? (
-                <ul className="space-y-2 text-sm">
-                  {p.redes.map((r) => (
-                    <li key={r.url}>
-                      <a href={r.url} target="_blank" rel="noopener noreferrer nofollow" className="link font-semibold">
-                        {PLATAFORMA[r.plataforma]}
-                        {r.handle ? `: @${r.handle}` : ""}
-                      </a>
-                      <span className="block text-xs text-ink-3">Informado por: {r.fonte}</span>
+
+            <div className="cartao p-4 sm:p-5">
+              <h3 className="flex items-center gap-2 font-semibold">
+                <AtSign className="h-4 w-4 text-accent-ink" aria-hidden />
+                Redes sociais
+              </h3>
+              {redes.sociais.length ? (
+                <ul className="mt-3 space-y-2.5 text-sm">
+                  {redes.sociais.map((r) => (
+                    <li key={r.url} className="flex items-start gap-2.5">
+                      <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-ink">
+                        <IconeRede plataforma={r.plataforma} />
+                      </span>
+                      <span className="min-w-0">
+                        <a href={r.url} target="_blank" rel="noopener noreferrer nofollow" className="link block truncate font-semibold">
+                          {NOME_REDE[r.plataforma]}
+                          {r.handle ? ` @${r.handle}` : ""}
+                          <span className="sr-only"> (abre em nova aba)</span>
+                        </a>
+                        <span className="block text-xs text-ink-3">
+                          Informado por{" "}
+                          <a href={r.fonteUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                            {r.fonte}
+                          </a>
+                        </span>
+                      </span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <Vazio>Nenhuma rede social declarada nas fontes oficiais.</Vazio>
+                <p className="mt-3 text-sm text-ink-3">Nenhuma rede social informada à Casa ou ao TSE.</p>
               )}
             </div>
-            <div className="cartao rounded-xl p-4 sm:p-5">
-              <h3 className="mb-3 font-semibold">Fontes desta página</h3>
-              <ul className="space-y-2">
-                {p.fontes.map((f) => (
-                  <li key={f.url + f.nome}>
-                    <Fonte href={f.url}>{f.nome}</Fonte>
+
+            <div className="cartao p-4 sm:p-5">
+              <h3 className="flex items-center gap-2 font-semibold">
+                <Landmark className="h-4 w-4 text-accent-ink" aria-hidden />
+                Sites oficiais e institucionais
+              </h3>
+              <ul className="mt-3 space-y-2 text-sm">
+                {p.perfil.paginaOficial && (
+                  <li>
+                    <Fonte href={p.perfil.paginaOficial}>{paginaNaCasa}</Fonte>
+                  </li>
+                )}
+                {candidaturasTSE.map((e) => (
+                  <li key={e.url}>
+                    <Fonte href={e.url!}>
+                      Candidatura de {e.ano} no TSE ({e.cargo})
+                    </Fonte>
                   </li>
                 ))}
+                {redes.sites.map((r) => (
+                  <li key={r.url}>
+                    <Fonte href={r.url}>Site informado: {r.url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</Fonte>
+                    <span className="block text-xs text-ink-3">Informado por {r.fonte}</span>
+                  </li>
+                ))}
+              </ul>
+              {!p.perfil.paginaOficial && !candidaturasTSE.length && !redes.sites.length && <p className="mt-3 text-sm text-ink-3">Nenhum site oficial encontrado.</p>}
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div className="cartao p-4 sm:p-5">
+              <h3 className="flex items-center gap-2 font-semibold">
+                <FileSearch className="h-4 w-4 text-accent-ink" aria-hidden />
+                Fontes e transparência
+              </h3>
+              <p className="mt-1 text-sm text-ink-3">De onde vêm os dados desta página.</p>
+              <ul className="mt-3 space-y-2">
+                {p.fontes
+                  .filter((f) => f.url !== p.perfil.paginaOficial && f.nome !== "Página oficial")
+                  .map((f) => (
+                    <li key={f.url + f.nome}>
+                      <Fonte href={f.url}>{f.nome}</Fonte>
+                    </li>
+                  ))}
                 <li>
-                  <Fonte href={urlDadoBruto(`politicos/${p.id}.json`)}>Dados brutos desta página (JSON)</Fonte>
+                  <Fonte href={urlDadoBruto(`politicos/${p.id}.json`)}>Todos os dados desta página, em um arquivo (JSON)</Fonte>
                 </li>
               </ul>
-              <p className="mt-3 text-xs text-ink-3">Atualizado em {data(p.atualizadoEm.slice(0, 10))}.</p>
+            </div>
+            <div className="cartao p-4 sm:p-5">
+              <h3 className="flex items-center gap-2 font-semibold">
+                <Info className="h-4 w-4 text-accent-ink" aria-hidden />
+                Sobre os dados
+              </h3>
+              <ul className="mt-3 space-y-2 text-sm text-ink-2">
+                <li>Atualizado em {data(p.atualizadoEm.slice(0, 10))}, com os dados que as fontes oficiais tinham publicado até então.</li>
+                <li>
+                  Nenhum número é nota ou juízo.{" "}
+                  <Link href="/como-funciona" className="link">
+                    Como funciona
+                  </Link>{" "}
+                  explica cada termo, e{" "}
+                  <Link href="/dados" className="link">
+                    a página de dados
+                  </Link>{" "}
+                  mostra a situação de cada fonte.
+                </li>
+                <li>
+                  Viu algo errado?{" "}
+                  <a href={urlCorrecao(`/politico/${p.id}`)} target="_blank" rel="noopener noreferrer" className="link">
+                    Avise para corrigirmos
+                  </a>
+                  .
+                </li>
+              </ul>
             </div>
           </div>
         </Secao>

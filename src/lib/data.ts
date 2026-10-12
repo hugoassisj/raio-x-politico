@@ -2,6 +2,7 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { cache } from "react";
+import { REPO_URL } from "./site";
 import type {
   Agregado,
   ExplicacaoIA,
@@ -51,6 +52,6 @@ export const getIA = cache(async (id: string) => (seguro(id) ? ((await ler<IAArq
 
 /** Public URL of a raw snapshot file in the repository, for "see the raw data" links. */
 export function urlDadoBruto(rel: string) {
-  const repo = process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/hugoassisj/raio-x-politico";
+  const repo = REPO_URL;
   return `${repo}/blob/main/data/${rel}`;
 }

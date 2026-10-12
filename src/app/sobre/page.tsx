@@ -6,6 +6,7 @@ import { GradePerguntas } from "@/components/Perguntas";
 import { Container } from "@/components/ui";
 import { getMeta, getPoliticos } from "@/lib/data";
 import { numero } from "@/lib/format";
+import { REPO_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "O que é o Raio-X Político",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
     "Um site gratuito e apartidário que mostra, em palavras simples, o que fazem senadores, deputados federais e deputados estaduais, com a fonte oficial de cada número.",
 };
 
-const REPO = process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/hugoassisj/raio-x-politico";
+const REPO = REPO_URL;
 
 export default async function Sobre() {
   const [pols, meta] = await Promise.all([getPoliticos(), getMeta()]);

@@ -5,6 +5,7 @@ import { dataCurtaHora, dataHora } from "@/lib/format";
 import { Busca } from "./Busca";
 import { NavPrincipal } from "./NavPrincipal";
 import { Container } from "./ui";
+import { REPO_URL, urlCorrecao } from "@/lib/site";
 
 const NAV = [
   { href: "/politicos", rotulo: "Políticos" },
@@ -72,7 +73,7 @@ export async function Cabecalho() {
 
 export async function Rodape() {
   const meta = await getMeta();
-  const repo = process.env.NEXT_PUBLIC_REPO_URL ?? "https://github.com/hugoassisj/raio-x-politico";
+  const repo = REPO_URL;
   return (
     <footer className="mt-20 border-t border-line bg-surface pb-20 lg:pb-0">
       <Container className="grid gap-8 py-10 text-sm text-ink-2 md:grid-cols-[1.4fr_1fr_1fr]">
@@ -115,7 +116,7 @@ export async function Rodape() {
               </a>
             </li>
             <li>
-              <a href={`${repo}/issues/new`} className="hover:text-ink hover:underline">
+              <a href={urlCorrecao()} className="hover:text-ink hover:underline">
                 Encontrou um erro? Avise
               </a>
             </li>
