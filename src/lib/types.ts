@@ -83,6 +83,8 @@ export interface VotoItem {
   orientacaoPartido?: string;
   orientacaoGoverno?: string;
   resultado?: string;
+  /** What was opened for voting (see VotacaoResumo.objeto) */
+  objeto?: string;
 }
 
 export interface Proposicao {

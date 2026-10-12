@@ -8,6 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { sanitizar, validarCitacoes } from "../ai";
+import { validarExplicacao } from "../explicar";
 
 beforeAll(async () => {
   process.env.PIPELINE_CACHE_DIR = await mkdtemp(path.join(os.tmpdir(), "raio-x-cache-"));
@@ -375,5 +376,35 @@ describe("AI guardrails", () => {
     expect(r.temas.map((t) => t.tema)).toEqual(["Saúde"]);
     expect(r.contradicoes).toHaveLength(1);
     expect(r.mudancas).toHaveLength(0);
+  });
+});
+
+describe("Plain-language explanation guardrails", () => {
+  const m = {
+    id: "cam-1",
+    casa: "camara" as const,
+    sigla: "PL 1/2026",
+    ementa: "Altera a Lei nº 9.605, de 12 de fevereiro de 1998, para aumentar a pena de quem maltrata cães e gatos.",
+    url: "https://www.camara.leg.br",
+  };
+  const ok = {
+    resumo: "Aumenta a pena para quem maltrata cães e gatos.",
+    mudancas: ["A lei de crimes ambientais (Lei 9.605) fica mais dura."],
+    trechos: ["aumentar a pena de quem maltrata cães e gatos"],
+  };
+
+  it("accepts an explanation grounded on verbatim excerpts", () => {
+    const r = validarExplicacao(ok, m, "modelo");
+    expect(r).toMatchObject({ materia: "cam-1", resumo: ok.resumo, trechos: ok.trechos, modelo: "modelo" });
+  });
+  it("rejects excerpts that are not in the official text", () => {
+    expect(validarExplicacao({ ...ok, trechos: ["pena de dez anos para quem maltrata"] }, m, "x")).toEqual({ erro: "nenhum trecho copiado dos textos oficiais" });
+  });
+  it("rejects numbers that the official text does not contain", () => {
+    expect(validarExplicacao({ ...ok, resumo: "A pena passa a ser de 5 anos." }, m, "x")).toMatchObject({ erro: expect.stringContaining("5") });
+  });
+  it("rejects value judgements and removes em dashes", () => {
+    expect(validarExplicacao({ ...ok, resumo: "Uma mudança absurda na lei." }, m, "x")).toEqual({ erro: "palavra de juízo de valor" });
+    expect(validarExplicacao({ ...ok, resumo: "Aumenta a pena — para quem maltrata." }, m, "x")).toMatchObject({ resumo: "Aumenta a pena, para quem maltrata." });
   });
 });

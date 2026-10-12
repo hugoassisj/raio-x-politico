@@ -16,7 +16,8 @@
     "db:migrate": "drizzle-kit migrate",
     "demo": "tsx pipeline/demo.ts",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "pipeline:explicar": "tsx pipeline/explicar.ts"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",

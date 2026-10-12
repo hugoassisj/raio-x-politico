@@ -55,6 +55,10 @@ jobs:
       - name: Coletar dados públicos
         run: npm run pipeline -- ${{ inputs.only && format('--only={0}', inputs.only) || '' }} --dias=${{ inputs.dias || '365' }}
 
+      - name: Explicações em linguagem simples (IA)
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        run: npm run pipeline:explicar
+
       - name: Resumos de IA
         if: ${{ env.ANTHROPIC_API_KEY != '' }}
         run: npm run pipeline:ai

@@ -131,6 +131,7 @@ export function calcularVotos(vs: VotacaoDetalhe[], pols: PoliticoParcial[], pre
         orientacaoPartido: oriP,
         orientacaoGoverno: oriG,
         resultado: v.resultado,
+        objeto: v.objeto,
       });
       votos.set(p.id, l);
     }
