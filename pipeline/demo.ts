@@ -10,6 +10,7 @@ import path from "node:path";
 import type { Fala, VotacaoDetalhe } from "../src/lib/types";
 import { montar, publicar } from "./build";
 import { montarPresidencia } from "./presidencia";
+import { montarEmpresas } from "./empresas";
 import type { CandidatoTSE, Despesa, EmendaAgg, PoliticoParcial, Sessao } from "./model";
 import { UFS, addDays, ymd } from "./lib/util";
 
@@ -225,20 +226,29 @@ export function gerarDemo(saida = path.resolve("data-demo"), hoje = new Date()) 
     sessoes.push({ id: `sen-${data}`, data, presentes: politicos.filter((p) => p.casa === "senado" && rnd() < 0.85).map((p) => p.id), justificadas: [] });
   }
 
+  const FORNECEDORES: [string, string][] = [
+    ["Gráfica Exemplo Ltda", "12345678000195"],
+    ["Auto Posto Central", "22334455000186"],
+    ["Companhia Aérea Fictícia", "33445566000186"],
+    ["Locadora Modelo", "44556677000186"],
+    ["Restaurante Demonstração", "55667788000186"],
+  ];
   const despesas: Despesa[] = [];
   for (const p of politicos) {
     const intensidade = between(0.4, 1.4);
     for (let m = 0; m < 20; m++) {
       const dt = addDays(hoje, -m * 30 - 20);
       for (let k = 0; k < 6; k++) {
-        const doc = rnd() < 0.01 ? "11222333000182" : "11222333000181";
+        // Fictional suppliers with valid check digits (1% with a wrong one, to exercise the alert)
+        const f = Math.floor(rnd() * FORNECEDORES.length);
+        const doc = rnd() < 0.01 ? "11222333000182" : FORNECEDORES[f][1];
         despesas.push({
           pid: p.id,
           ano: dt.getUTCFullYear(),
           mes: dt.getUTCMonth() + 1,
           data: ymd(dt),
           categoria: pick(CATEGORIAS),
-          fornecedor: pick(["Gráfica Exemplo Ltda", "Auto Posto Central", "Companhia Aérea Fictícia", "Locadora Modelo", "Restaurante Demonstração"]),
+          fornecedor: FORNECEDORES[f][0],
           doc,
           valor: Math.round(between(150, 7000) * intensidade * 100) / 100,
           docId: `${p.id}-${m}-${k}`,
@@ -324,9 +334,19 @@ export function gerarDemo(saida = path.resolve("data-demo"), hoje = new Date()) 
     })),
   });
 
+  const datas = despesas.map((d) => d.data!).sort();
+  const empresas = montarEmpresas({
+    despesas,
+    campanhas: [],
+    donoCandidatura: new Map(),
+    nomes: new Map(r.detalhes.map((d) => [d.id, d.nome])),
+    periodoCota: { inicio: datas[0], fim: datas[datas.length - 1] },
+  });
+
   return publicar(saida, r, falas, {
     demo: true,
     presidencia,
+    empresas,
     hoje,
     fontes: [{ id: "demo", nome: "Dados fictícios de demonstração", url: "", status: "ok", registros: politicos.length, duracaoMs: 0 }],
     totais: { deputadosFederais: 140, senadores: 40, deputadosEstaduais: 90, despesas: despesas.length, candidaturasTSE: tse.length },

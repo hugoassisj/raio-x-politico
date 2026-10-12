@@ -113,9 +113,9 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | EMD-01 | NOT_STARTED | P1 | Ciclo da emenda | Indicação, empenho, liquidação e pagamento separados, com fonte de cada etapa. | |
 | EMD-02 | NOT_STARTED | P2 | Caminho pelo município | Ver todas as emendas que chegaram a uma cidade. | EMD-01 |
 | CNPJ-01 | VERIFIED | P1 | CNPJ normalizado | Função pura com dígitos verificadores e testes. | |
-| CNPJ-02 | NOT_STARTED | P2 | Página da empresa | Gastos, doações e emendas ligados a um CNPJ, sem contar duas vezes. | CNPJ-01 |
-| CNPJ-03 | NOT_STARTED | P2 | Ligação certa ou possível | Ligações confirmadas (mesmo CNPJ) separadas das possíveis (mesmo nome). | CNPJ-01 |
-| GRAFO-01 | NOT_STARTED | P2 | Grafo de relações | Grafo interativo real com tipos de ligação e prova de cada uma, busca, expandir um nó, filtros, painel lateral, visão em lista e uso pelo teclado. Teste: ligação sem prova não sai como confirmada. | CNPJ-03 |
+| CNPJ-02 | IMPLEMENTED | P2 | Página da empresa | Gastos, doações e emendas ligados a um CNPJ, sem contar duas vezes. | CNPJ-01 |
+| CNPJ-03 | VERIFIED | P2 | Ligação certa ou possível | Ligações confirmadas (mesmo CNPJ) separadas das possíveis (mesmo nome). | CNPJ-01 |
+| GRAFO-01 | IMPLEMENTED | P2 | Grafo de relações | Grafo interativo real com tipos de ligação e prova de cada uma, busca, expandir um nó, filtros, painel lateral, visão em lista e uso pelo teclado. Teste: ligação sem prova não sai como confirmada. | CNPJ-03 |
 
 ### 4.6 Confiança, acessibilidade e operação
 
@@ -163,6 +163,9 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | PERF-01 | `coberturaDoPerfil` (`src/lib/cobertura.ts`, testes em `src/lib/cobertura.test.ts`) e o cartão “O que encontramos sobre…” no resumo de cada perfil, com quatro estados (completo, parcial, sem dados, não se aplica) e o motivo de cada lacuna, reaproveitando os motivos de `metricas.ts`. Conferido em `dep-104552` e `est-ac-10001601427`. |
 | CNPJ-01 | `src/lib/cnpj.ts` (normaliza, confere os dígitos, formata, aceita o CNPJ alfanumérico da IN RFB 2.229/2024 em vigor desde julho de 2026) com testes em `src/lib/cnpj.test.ts`, inclusive o exemplo oficial `12.ABC.345/01DE-35`. Usado pelo pipeline em gastos e contas de campanha. |
 | PRIV-01 | Achado na auditoria: CPFs de fornecedores pessoas físicas da cota parlamentar eram publicados (167 em 4.976 fornecedores de 600 perfis). Corrigido: `documentoPublicavel` só deixa passar CNPJ válido, no pipeline (`metrics.ts`, `build.ts`, `tse-contas.ts`) e na tela (perfil e `/gastos`); o alerta de dígito inválido não mostra mais o CPF. Os arquivos atuais saem limpos na próxima coleta. |
+| CNPJ-02 | Pipeline `pipeline/empresas.ts` (`montarEmpresas`): junta cota parlamentar (Câmara, Senado, assembleias) e contas de campanha completas por CNPJ (`registrosComCnpj` em `tse-contas.ts`, sem o corte dos 10 maiores), sem contar duas vezes (registros iguais de pessoa, ano e papel somados uma vez). Publica `empresas.json` e `empresas/{2 primeiros caracteres}.json`. Páginas `/empresas` (busca por nome, CNPJ inteiro ou pedaço, filtro por tipo de ligação, paginação comum) e `/empresa/[cnpj]`. Testes “companies by CNPJ” em `pipeline/tests/core.test.ts`. Conferido com dados fictícios. Falta: dados reais (próxima coleta completa). |
+| CNPJ-03 | Só CNPJ válido e igual cria ligação; nome nunca liga. Testes: `montarEmpresas` ignora CPF e CNPJ inválido; `conferir` em `src/lib/grafo.ts` não confirma ligação sem prova nem com CNPJ inválido (“never confirms a link without evidence or with an invalid CNPJ”). Nomes de MEI publicados sem o CPF (`limparNomeEmpresa`, testado). “Ligações possíveis” por nome não são mostradas: decisão para não induzir acusação. |
+| GRAFO-01 | `/relacoes` com `MapaRelacoes` (d3-force 3.0.0, licença ISC, posição inicial determinística): tipos de nó (pessoa, empresa, partido, destino de emenda) com formas diferentes, ligações com cor e tracejado por tipo, filtros por tipo, painel lateral com provas, “Mostrar as ligações” busca em `/api/relacoes`, busca por nome ou CNPJ, visão em lista (tabela com prova de cada ligação), nós focáveis por Tab e escolhidos com Enter, rótulos só nos itens principais quando o mapa está cheio, no máximo 40 ligações por item no mapa (todas na lista). Testes em `src/lib/grafo.test.ts`. Conferido no navegador com dados fictícios: 7 nós no início, 47 depois de abrir uma empresa, 275 linhas na lista, 4 sugestões na busca, sem erros no console. Falta: dados reais e conferência com leitor de tela. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças
@@ -195,6 +198,7 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 
 ## 8. Registro de progresso
 
+- **2026-10-12 (9):** empresas por CNPJ (CNPJ-02/03) e mapa de relações (GRAFO-01). Fornecedores e doadores com CNPJ viram links para a página da empresa. Pergunta nova sobre empresas. `npm audit` aponta 9 vulnerabilidades em dependências de desenvolvimento já existentes (registrar em SEG-01).
 - **2026-10-12 (8):** CNPJ-01 e correção de privacidade (PRIV-01).
 - **2026-10-12 (7):** cobertura por seção no perfil (PERF-01). Achado: nomes de deputados estaduais vindos do TSE aparecem em maiúsculas (ex.: “PABLO BREGENSE”); registrar e corrigir na coleta das assembleias.
 - **2026-10-12 (6):** identidade de partido sem cor (PART-02); cores ficam bloqueadas (PART-01).

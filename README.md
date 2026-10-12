@@ -28,6 +28,7 @@ O Raio-X Político junta esses dados todos os dias, traduz para o português do 
 | Quem a eleição colocou na Presidência? | Todas as eleições para Presidente desde 1994, a vida pública de quem disputou e o que o governo mandou ao Congresso. |
 | Meu partido vota com o governo? Vota unido? | Cada partido no plenário, quantas vezes vota junto com o governo e o quanto seus membros votam iguais. |
 | Para onde mandam dinheiro do orçamento? | As emendas que cada parlamentar indicou para cidades e estados. |
+| Que empresas recebem dinheiro ligado a cada político? | Empresas pagas com a cota e ligadas às campanhas, sempre pelo CNPJ, num mapa de relações com a prova de cada ligação. |
 | O que andam dizendo? | Discursos oficiais com busca por tema e link para o registro original. |
 | Como um político se compara com outro? | Até 4 pessoas lado a lado, incluindo as votações em que discordaram. |
 

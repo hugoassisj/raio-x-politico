@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { ArrowRight, Repeat2 } from "lucide-react";
+import { documentoPublicavel, formatarCnpj } from "@/lib/cnpj";
 import type { CSSProperties } from "react";
 import { listaNatural, resumoEleicoes, rotuloResultado, trocasDePartido } from "@/lib/carreira";
 import { moeda, moedaCurta, numero, pct } from "@/lib/format";
@@ -198,7 +200,7 @@ export function DinheiroCampanha({ c, sexo }: { c: CampanhaFinancas; sexo?: stri
             {c.doadores.map((d) => (
               <li key={`${d.nome}-${d.cnpj ?? ""}`} className="flex items-baseline justify-between gap-3 py-1.5 text-sm">
                 <span className="min-w-0">
-                  <span className="block truncate capitalize">{d.nome.toLowerCase()}</span>
+                  <NomeEmpresa nome={d.nome} cnpj={d.cnpj} />
                   <span className="block text-xs text-ink-3">{d.origem}</span>
                 </span>
                 <span className="tnum shrink-0 font-semibold">{moedaCurta(d.valor)}</span>
@@ -213,8 +215,8 @@ export function DinheiroCampanha({ c, sexo }: { c: CampanhaFinancas; sexo?: stri
             {c.fornecedores.map((f) => (
               <li key={`${f.nome}-${f.cnpj ?? ""}`} className="flex items-baseline justify-between gap-3 py-1.5 text-sm">
                 <span className="min-w-0">
-                  <span className="block truncate capitalize">{f.nome.toLowerCase()}</span>
-                  {f.cnpj && <span className="block text-xs text-ink-3 tnum">CNPJ {f.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}</span>}
+                  <NomeEmpresa nome={f.nome} cnpj={f.cnpj} />
+                  {f.cnpj && <span className="block text-xs text-ink-3 tnum">CNPJ {formatarCnpj(f.cnpj)}</span>}
                 </span>
                 <span className="tnum shrink-0 font-semibold">{moedaCurta(f.valor)}</span>
               </li>
@@ -300,5 +302,18 @@ export function Campanhas({ eleicoes, sexo }: { eleicoes: EleicaoTSE[]; sexo?: s
         </details>
       ))}
     </div>
+  );
+}
+
+/** A donor or supplier name; with a valid CNPJ it opens the company page. People are never linked. */
+function NomeEmpresa({ nome, cnpj }: { nome: string; cnpj?: string }) {
+  const c = documentoPublicavel(cnpj);
+  const texto = <span className="block truncate capitalize">{nome.toLowerCase()}</span>;
+  return c ? (
+    <Link href={`/empresa/${c}`} className="hover:underline">
+      {texto}
+    </Link>
+  ) : (
+    texto
   );
 }

@@ -43,6 +43,7 @@ A lista fica em um só lugar do código, [`src/lib/perguntas.ts`](src/lib/pergun
 | Quem a eleição colocou na Presidência? | Página da Presidência: todas as eleições para Presidente desde 1994, a vida pública de quem disputou e os atos que o Executivo mandou ao Congresso |
 | Meu partido vota com o governo? Vota unido? | Página de partidos e de cada partido |
 | Para onde mandam dinheiro do orçamento? | Emendas no perfil |
+| Que empresas recebem dinheiro ligado a cada político? | Páginas de empresas (por CNPJ) e o Mapa de relações, com a prova de cada ligação |
 | O que andam dizendo? | Página de falas, com busca por tema |
 | Como um político se compara com outro? | Comparador de até 4 pessoas |
 
@@ -97,6 +98,8 @@ Referências: a Política Nacional de Linguagem Simples (Lei 15.263/2025), as re
 | Cada estado (`/estado/mg`) | Quem são os 3 senadores, os deputados federais e os estaduais do meu estado? |
 | Perfil de cada político (`/politico/...`) | O que essa pessoa faz: presença, votos, gastos, projetos, emendas e falas; a vida pública inteira (todas as candidaturas desde 1994, trocas de partido, bens de cada eleição); o dinheiro de cada campanha; redes e fontes |
 | Presidência (`/presidencia`) | Quem a última eleição colocou no cargo, todas as eleições para Presidente desde 1994, a vida pública de cada candidato (`/presidencia/...` para quem não tem perfil no site) e as medidas provisórias e projetos que o Executivo mandou à Câmara |
+| Empresas (`/empresas` e `/empresa/...`) | Empresas e entidades pagas com a cota parlamentar ou ligadas a campanhas, sempre pelo CNPJ válido; quem pagou, quanto, quando, e a nota fiscal mais recente |
+| Mapa de relações (`/relacoes`) | Pessoas, empresas, partidos e cidades ligados só por registros oficiais; tocar mostra a prova de cada ligação, “Mostrar as ligações” vai mais longe; também em forma de lista |
 | Lista de políticos (`/politicos`) | Lista de todos, filtrável por casa, estado e partido, ordenável por qualquer critério |
 | Votações (`/votacoes`) | O que foi votado, agrupado por projeto e por assunto, em linguagem simples |
 | Cada votação (`/votacao/...`) | Do que se trata o projeto, o que foi decidido nesta etapa, como o projeto está agora (sem dizer que virou lei antes da hora), quantos votos eram precisos, como votaram os representantes do seu estado, todas as votações do mesmo projeto, e “Quem votou como”: totais que filtram a lista e acendem as cadeiras do plenário, grupos que dá para esconder, busca, partido, estado, visão por partido, tudo guardado no endereço da página |
@@ -300,3 +303,5 @@ O roadmap segue uma regra simples: **confiança antes de volume**. Uma informaç
 | 2026-10-12 | Plano de implementação em `docs/IMPLEMENTATION_ROADMAP.md` | Um registro único do que falta, do que foi feito e de como foi conferido |
 | 2026-10-12 | Página da Presidência feita só com resultados do TSE e atos registrados na Câmara | Responde quem a eleição colocou no cargo sem inventar a lista de quem governou: impeachments e substituições não estão nesses arquivos, e a página diz isso |
 | 2026-10-12 | Projetos separados entre primeiro autor e coautor | Assinar um projeto de outra pessoa é diferente de escrevê-lo; os dois contam, mas não do mesmo jeito |
+| 2026-10-12 | Empresas ligadas só pelo CNPJ válido, nunca pelo nome; CPF de pessoa nunca publicado, nem dentro do nome de microempreendedor | Ligação errada entre uma empresa e um político é uma acusação injusta; nome parecido não prova nada |
+| 2026-10-12 | Mapa de relações com prova em cada ligação e a mesma informação em lista | Um grafo bonito sem prova vira boato; a lista garante acesso para quem usa leitor de tela ou teclado |

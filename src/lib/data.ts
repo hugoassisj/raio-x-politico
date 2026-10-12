@@ -2,8 +2,11 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { cache } from "react";
+import { normalizarCnpj } from "./cnpj";
 import { REPO_URL } from "./site";
 import type {
+  EmpresaDetalhe,
+  EmpresaResumo,
   Presidencia,
   Agregado,
   ExplicacaoIA,
@@ -47,6 +50,13 @@ export const getMaterias = cache(async () => new Map(((await ler<MateriaVotada[]
 export const getExplicacoes = cache(async () => new Map(Object.entries((await ler<Record<string, ExplicacaoIA>>("explicacoes.json")) ?? {})));
 export const getGastosGerais = cache(() => ler<GastosGerais>("gastos.json"));
 export const getPresidencia = cache(() => ler<Presidencia>("presidencia.json"));
+export const getEmpresas = cache(async () => (await ler<EmpresaResumo[]>("empresas.json")) ?? []);
+/** One company by CNPJ, read from its group file (see pipeline/empresas.ts) */
+export const getEmpresa = cache(async (cnpj: string) => {
+  const c = normalizarCnpj(cnpj);
+  if (!c) return undefined;
+  return (await ler<Record<string, EmpresaDetalhe>>(`empresas/${c.slice(0, 2)}.json`))?.[c];
+});
 export const getPolitico = cache((id: string) => (seguro(id) ? ler<PoliticoDetalhe>(`politicos/${id}.json`) : Promise.resolve(undefined)));
 export const getVotacao = cache((id: string) => (seguro(id) ? ler<VotacaoDetalhe>(`votacoes/${id}.json`) : Promise.resolve(undefined)));
 export const getFalas = cache(async (id: string) => (seguro(id) ? ((await ler<FalasArquivo>(`falas/${id}.json`))?.falas ?? []) : []));

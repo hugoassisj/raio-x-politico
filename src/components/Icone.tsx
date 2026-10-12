@@ -1,4 +1,5 @@
 import {
+  Network,
   Briefcase,
   GitCompare,
   History,
@@ -86,6 +87,7 @@ const PERGUNTA: Record<string, LucideIcon> = {
   PiggyBank,
   Wrench,
   Building2,
+  Network,
 };
 
 /** Icon of a question the site answers (see src/lib/perguntas.ts). */

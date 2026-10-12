@@ -387,3 +387,56 @@ describe("lifelong candidacies", () => {
     expect(chavesDaPessoa("p", [c({ titulo: "1", nascimento: "1970-01-01" }), c({ titulo: "2", nascimento: "1980-01-01" })]).titulos).toEqual([]);
   });
 });
+
+describe("companies by CNPJ", () => {
+  it("removes the owner's CPF from micro-entrepreneur names", async () => {
+    const { limparNomeEmpresa } = await import("../empresas");
+    expect(limparNomeEmpresa("MARIA DA SILVA 12345678909")).toBe("MARIA DA SILVA");
+    expect(limparNomeEmpresa("JOSE 123.456.789-09 - ME")).toBe("JOSE - ME");
+    expect(limparNomeEmpresa("GRAFICA BOA LTDA")).toBe("GRAFICA BOA LTDA");
+  });
+
+  it("links only valid CNPJs, never people, and adds campaigns without double counting", async () => {
+    const { montarEmpresas, balde } = await import("../empresas");
+    const d = (pid: string, doc: string, valor: number, data: string, fornecedor = "GRAFICA BOA LTDA") => ({
+      pid,
+      ano: 2026,
+      mes: Number(data.slice(5, 7)),
+      data,
+      categoria: "Divulgação",
+      fornecedor,
+      doc,
+      valor,
+    });
+    const r = montarEmpresas({
+      despesas: [
+        d("dep-1", "11.222.333/0001-81", 100, "2026-02-01"),
+        d("dep-1", "11222333000181", 50, "2026-05-01", "GRAFICA BOA"),
+        d("dep-2", "11222333000181", 30, "2026-03-01"),
+        // A person (CPF) and an invalid CNPJ are never companies
+        d("dep-1", "12345678909", 999, "2026-03-01", "JOAO"),
+        d("dep-1", "11222333000182", 999, "2026-03-01", "ERRADA"),
+      ],
+      campanhas: [
+        { cnpj: "11222333000181", nome: "GRAFICA BOA LTDA", papel: "fornecedor", ano: 2022, sq: "9", valor: 500 },
+        { cnpj: "11222333000181", nome: "GRAFICA BOA LTDA", papel: "fornecedor", ano: 2022, sq: "9", valor: 20 },
+        // A campaign of someone not followed is not linked
+        { cnpj: "11222333000181", nome: "GRAFICA BOA LTDA", papel: "fornecedor", ano: 2022, sq: "404", valor: 7 },
+      ],
+      donoCandidatura: new Map([["2022:9", "dep-2"]]),
+      nomes: new Map([
+        ["dep-1", "Ana"],
+        ["dep-2", "Bia"],
+      ]),
+      periodoCota: { inicio: "2025-01-01", fim: "2026-09-30" },
+    });
+    expect(r.indice).toEqual([{ cnpj: "11222333000181", nome: "GRAFICA BOA LTDA", cota: 180, campanhas: 520, pessoas: 2 }]);
+    const e = r.baldes.get(balde("11222333000181"))!["11222333000181"];
+    expect(e.nomes).toEqual(["GRAFICA BOA"]);
+    expect(e.cota?.porPessoa.map((x) => [x.pid, x.valor, x.n, x.primeira, x.ultima])).toEqual([
+      ["dep-1", 150, 2, "2026-02-01", "2026-05-01"],
+      ["dep-2", 30, 1, "2026-03-01", "2026-03-01"],
+    ]);
+    expect(e.campanhas?.registros).toEqual([{ pid: "dep-2", nome: "Bia", papel: "fornecedor", ano: 2022, valor: 520 }]);
+  });
+});

@@ -422,3 +422,37 @@ export interface Presidencia {
   atosPorAno: { ano: number; medidasProvisorias: number; projetos: number }[];
   fontes: { nome: string; url: string }[];
 }
+
+/** One company (or party, or association) identified by a valid CNPJ, for lists and search. */
+export interface EmpresaResumo {
+  cnpj: string;
+  nome: string;
+  /** Paid with the parliamentary quota in the period of the files */
+  cota: number;
+  /** Given to or paid by campaigns of people the site follows */
+  campanhas: number;
+  /** How many different people it is linked to */
+  pessoas: number;
+}
+
+/**
+ * Everything linked to one CNPJ. Only an exact CNPJ match creates a link; similar names never do,
+ * so every link here is confirmed by the official record shown next to it.
+ */
+export interface EmpresaDetalhe {
+  cnpj: string;
+  nome: string;
+  /** Other spellings of the name found in the records */
+  nomes: string[];
+  cota?: {
+    total: number;
+    n: number;
+    periodo: { inicio: string; fim: string };
+    porPessoa: { pid: string; nome: string; valor: number; n: number; primeira?: string; ultima?: string; exemplo?: string }[];
+    fonte: string;
+  };
+  campanhas?: {
+    registros: { pid: string; nome: string; papel: "doador" | "fornecedor"; ano: number; valor: number }[];
+    fonte: string;
+  };
+}

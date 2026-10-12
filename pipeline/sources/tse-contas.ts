@@ -96,8 +96,11 @@ export const novoAcumulador = (): Acumulador => ({ receitas: 0, porOrigem: new M
  * Campaign finance of the given candidacies, keyed by `${ano}:${sq}`. Years whose file is missing
  * or in another layout are reported and skipped.
  */
-export async function coletarContasCampanha(alvos: Map<number, Set<string>>): Promise<{ contas: Map<string, CampanhaFinancas>; arquivos: string[]; avisos: string[] }> {
+export async function coletarContasCampanha(
+  alvos: Map<number, Set<string>>,
+): Promise<{ contas: Map<string, CampanhaFinancas>; cnpjs: RegistroCampanhaCnpj[]; arquivos: string[]; avisos: string[] }> {
   const contas = new Map<string, CampanhaFinancas>();
+  const cnpjs: RegistroCampanhaCnpj[] = [];
   const arquivos: string[] = [];
   const avisos: string[] = [];
   for (const [ano, sqs] of [...alvos].sort((a, b) => a[0] - b[0])) {
@@ -123,7 +126,10 @@ export async function coletarContasCampanha(alvos: Map<number, Set<string>>): Pr
         },
         { arquivo: (n) => /^(receitas_candidatos|despesas_contratadas_candidatos)_\d{4}_[A-Z]{2}\.csv$/i.test(base(n)) },
       );
-      for (const [sq, a] of acc) contas.set(`${ano}:${sq}`, finalizar(a, ano));
+      for (const [sq, a] of acc) {
+        contas.set(`${ano}:${sq}`, finalizar(a, ano));
+        cnpjs.push(...registrosComCnpj(a, ano, sq));
+      }
       // Gigabytes each: freed right away (the weekly run downloads them again)
       await rm(caminho, { force: true });
       log.info(`Contas de campanha ${ano}: ${acc.size} de ${sqs.size} candidaturas`);
@@ -131,7 +137,25 @@ export async function coletarContasCampanha(alvos: Map<number, Set<string>>): Pr
       avisos.push(`Contas de campanha ${ano}: ${(e as Error).message}`);
     }
   }
-  return { contas, arquivos, avisos };
+  return { contas, cnpjs, arquivos, avisos };
+}
+
+/** Every company or party (valid CNPJ) that gave money to or was paid by one campaign, in full. */
+export interface RegistroCampanhaCnpj {
+  cnpj: string;
+  nome: string;
+  papel: "doador" | "fornecedor";
+  ano: number;
+  sq: string;
+  valor: number;
+}
+
+export function registrosComCnpj(a: Acumulador, ano: number, sq: string): RegistroCampanhaCnpj[] {
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  return [
+    ...[...a.doadores.values()].filter((d) => d.cnpj).map((d) => ({ cnpj: d.cnpj!, nome: d.nome, papel: "doador" as const, ano, sq, valor: r2(d.valor) })),
+    ...[...a.fornecedores.values()].filter((f) => f.cnpj).map((f) => ({ cnpj: f.cnpj!, nome: f.nome, papel: "fornecedor" as const, ano, sq, valor: r2(f.valor) })),
+  ];
 }
 
 const base = (n: string) => n.split("/").pop() ?? n;

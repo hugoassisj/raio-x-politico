@@ -188,6 +188,9 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               <Link href={`/comparar?ids=${p.id}`} className="botao-sec">
                 Comparar com outro
               </Link>
+              <Link href={`/relacoes?no=p:${p.id}`} className="botao-sec">
+                Mapa de relações
+              </Link>
               {p.perfil.paginaOficial && <Fonte href={p.perfil.paginaOficial}>Página oficial</Fonte>}
             </div>
           </div>
@@ -357,13 +360,12 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               <div className="cartao rounded-xl p-4 sm:p-5">
                 <h3 className="mb-3 font-semibold">Fornecedores que mais receberam</h3>
                 <Barras
-                  itens={p.gastos.topFornecedores
-                    .slice(0, 6)
-                    .map((f) => ({
-                      rotulo: f.nome || "Sem nome",
-                      valor: f.valor,
-                      detalhe: `${f.n} ${f.n === 1 ? "pagamento" : "pagamentos"}${documentoPublicavel(f.doc) ? ` · CNPJ ${formatarCnpj(f.doc!)}` : ""}`,
-                    }))}
+                  itens={p.gastos.topFornecedores.slice(0, 6).map((f) => ({
+                    rotulo: f.nome || "Sem nome",
+                    valor: f.valor,
+                    detalhe: `${f.n} ${f.n === 1 ? "pagamento" : "pagamentos"}${documentoPublicavel(f.doc) ? ` · CNPJ ${formatarCnpj(f.doc!)}` : ""}`,
+                    href: documentoPublicavel(f.doc) ? `/empresa/${documentoPublicavel(f.doc)}` : undefined,
+                  }))}
                   formato={moedaCurta}
                 />
               </div>

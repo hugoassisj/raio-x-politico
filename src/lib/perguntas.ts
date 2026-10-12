@@ -23,7 +23,8 @@ export interface Pergunta {
     | "History"
     | "PiggyBank"
     | "Wrench"
-    | "Building2";
+    | "Building2"
+    | "Network";
 }
 
 export const PERGUNTAS: Pergunta[] = [
@@ -98,6 +99,12 @@ export const PERGUNTAS: Pergunta[] = [
     resposta: "As emendas que cada parlamentar indicou para cidades e estados, com valores e destinos.",
     href: "/politicos?casa=camara&ordem=emendas&dir=desc",
     icone: "HandCoins",
+  },
+  {
+    pergunta: "Que empresas recebem dinheiro ligado a cada político?",
+    resposta: "Empresas pagas com a cota e ligadas às campanhas, sempre pelo CNPJ, num mapa de relações com a prova de cada ligação.",
+    href: "/relacoes",
+    icone: "Network",
   },
   {
     pergunta: "O que andam dizendo?",

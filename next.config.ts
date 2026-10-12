@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
     "/votacoes": SNAPSHOT,
     "/falas": SNAPSHOT,
     "/comparar": SNAPSHOT,
+    "/empresas": SNAPSHOT,
+    "/empresa/[cnpj]": SNAPSHOT,
+    "/relacoes": SNAPSHOT,
+    "/api/relacoes": SNAPSHOT,
   },
   images: {
     remotePatterns: [

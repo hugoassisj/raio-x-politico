@@ -9,6 +9,8 @@ import {
   type Fala,
   type CampanhaFinancas,
   type Presidencia,
+  type EmpresaDetalhe,
+  type EmpresaResumo,
   type Mandato,
   type MateriaVotada,
   type Metricas,
@@ -513,6 +515,8 @@ export interface PublicarOpts {
   qualidade?: Meta["qualidade"];
   /** Presidency page; written only when the stage produced it */
   presidencia?: Presidencia;
+  /** Companies linked by CNPJ (index and detail files grouped by prefix) */
+  empresas?: { indice: EmpresaResumo[]; baldes: Map<string, Record<string, EmpresaDetalhe>> };
   fontes: FonteStatus[];
   totais: Record<string, number>;
   hoje: Date;
@@ -520,7 +524,7 @@ export interface PublicarOpts {
 
 /** Write the public snapshot: one file per politician/vote plus compact indexes for list pages. */
 export async function publicar(out: string, r: BuildResult, falas: Fala[], o: PublicarOpts) {
-  for (const sub of ["politicos", "votacoes", "falas"]) await limparDir(path.join(out, sub));
+  for (const sub of ["politicos", "votacoes", "falas", ...(o.empresas ? ["empresas"] : [])]) await limparDir(path.join(out, sub));
 
   const todas = [...falas].sort((a, b) => b.data.localeCompare(a.data));
   const porPid = groupBy(todas, (f) => f.pid);
@@ -539,6 +543,10 @@ export async function publicar(out: string, r: BuildResult, falas: Fala[], o: Pu
   files["falas-recentes.json"] = todas.slice(0, 300).map((f) => ({ ...f, texto: f.texto.slice(0, 600) }));
   if (r.gastosGerais) files["gastos.json"] = r.gastosGerais;
   if (o.presidencia?.pessoas.length || o.presidencia?.atos.length) files["presidencia.json"] = o.presidencia;
+  if (o.empresas) {
+    files["empresas.json"] = o.empresas.indice;
+    for (const [b, conteudo] of o.empresas.baldes) files[`empresas/${b}.json`] = conteudo;
+  }
   files["agregados.json"] = {
     porCasa: agregar(resumos, (x) => x.casa),
     porPartido: agregar(resumos, (x) => `${x.casa}|${x.partido}`),

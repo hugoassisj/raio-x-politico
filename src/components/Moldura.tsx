@@ -20,6 +20,8 @@ const NAV = [
 const NAV_EXTRA = [
   { href: "/sobre", rotulo: "O que é o Raio-X Político" },
   { href: "/comparar", rotulo: "Comparar políticos" },
+  { href: "/relacoes", rotulo: "Mapa de relações" },
+  { href: "/empresas", rotulo: "Empresas" },
   { href: "/analises", rotulo: "Cruzamentos de dados" },
   { href: "/dados", rotulo: "Sobre os dados" },
 ];

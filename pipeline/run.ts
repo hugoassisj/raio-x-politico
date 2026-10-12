@@ -28,7 +28,8 @@ import { coletarConectoresSociais } from "./sources/social-connectors";
 import { coletarTSE } from "./sources/tse";
 import { agruparPresidenciaveis, coletarCandidaturasPresidente, coletarHistoricoTSE } from "./sources/tse-historico";
 import { montarPresidencia } from "./presidencia";
-import { ANOS_CONTAS, coletarContasCampanha } from "./sources/tse-contas";
+import { montarEmpresas } from "./empresas";
+import { ANOS_CONTAS, coletarContasCampanha, type RegistroCampanhaCnpj } from "./sources/tse-contas";
 import { baixarFotos, baixarFotosTSE } from "./fotos";
 
 const args = Object.fromEntries(
@@ -212,7 +213,7 @@ async function main() {
     "https://dadosabertos.tse.jus.br/dataset/?groups=prestacao-de-contas",
     () => coletarContasCampanha(alvosContas),
     (c) => c.contas.size,
-    { contas: new Map<string, CampanhaFinancas>(), arquivos: [] as string[], avisos: [] as string[] },
+    { contas: new Map<string, CampanhaFinancas>(), cnpjs: [] as RegistroCampanhaCnpj[], arquivos: [] as string[], avisos: [] as string[] },
   );
 
   const discursos = await etapa(
@@ -331,9 +332,25 @@ async function main() {
     if (ant && !presidencia.pessoas.length) Object.assign(presidencia, { pessoas: ant.pessoas, eleicoes: ant.eleicoes });
     if (ant && !presidencia.atos.length) Object.assign(presidencia, { atos: ant.atos, atosPorAno: ant.atosPorAno });
   }
+  // Companies linked by CNPJ to the quota and to the campaigns of the people followed
+  const donoCandidatura = new Map<string, string>();
+  for (const pid of new Set([...ancoras.keys(), ...historico.porPessoa.keys()]))
+    for (const c of juntarCandidaturas(ancoras.get(pid) ?? [], historico.porPessoa.get(pid) ?? [])) donoCandidatura.set(`${c.ano}:${c.sq}`, pid);
+  const todasDespesas = [...camara.despesas, ...senado.despesas, ...assembleias.despesas];
+  const datasCota = todasDespesas.map((d) => d.data ?? `${d.ano}-${String(d.mes).padStart(2, "0")}-01`).sort();
+  const empresas = montarEmpresas({
+    despesas: todasDespesas,
+    campanhas: contas.cnpjs ?? [],
+    donoCandidatura,
+    nomes: new Map([...r.detalhes.map((d) => [d.id, d.nome] as [string, string]), ...presidencia.pessoas.map((x) => [x.id, x.nomeUrna] as [string, string])]),
+    periodoCota: { inicio: datasCota[0] ?? "", fim: datasCota[datasCota.length - 1] ?? "" },
+  });
+  log.info(`Empresas ligadas por CNPJ: ${empresas.indice.length}`);
+
   await publicar(OUT, r, todasFalas, {
     demo: false,
     presidencia,
+    empresas,
     materias: materias.materias,
     arquivos: [...manifesto.values()].sort((a, b) => a.url.localeCompare(b.url)),
     qualidade,
