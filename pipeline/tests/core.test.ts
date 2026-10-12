@@ -495,3 +495,17 @@ describe("amendment authors", () => {
     expect([...m.keys()]).toEqual(["dep-2"]);
   });
 });
+
+describe("election index", () => {
+  it("keeps the party of each election and reads the result from the status when missing", async () => {
+    const { indiceDeCandidaturas } = await import("../build");
+    const d = { id: "dep-1", nome: "Ana", sexo: "F", eleicoes: [{ ano: 2018, cargo: "Deputado federal", uf: "SP", partido: "PPS", situacao: "ELEITO POR QP" }] } as never;
+    const p = {
+      pessoas: [{ id: "pres-x", nome: "Xis", nomeUrna: "Xis", candidaturas: [{ ano: 2022, cargo: "Presidente", uf: "BR", partido: "AAA", resultado: "nao-eleito" }] }],
+    } as never;
+    expect(indiceDeCandidaturas([d], p)).toEqual([
+      { ano: 2022, cargo: "Presidente", uf: "BR", municipio: undefined, href: "/presidencia/pres-x", nome: "Xis", partido: "AAA", resultado: "nao-eleito", sexo: undefined },
+      { ano: 2018, cargo: "Deputado federal", uf: "SP", municipio: undefined, href: "/politico/dep-1", nome: "Ana", partido: "PPS", resultado: "eleito", sexo: "F" },
+    ]);
+  });
+});

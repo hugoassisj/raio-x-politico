@@ -10,6 +10,7 @@ import {
   type Fala,
   type CampanhaFinancas,
   type Presidencia,
+  type CandidaturaIndice,
   type DestinoEmenda,
   type EmpresaDetalhe,
   type EmpresaResumo,
@@ -571,6 +572,29 @@ export interface PublicarOpts {
   hoje: Date;
 }
 
+/**
+ * Every candidacy of the people followed and of everyone who ran for President, for the election
+ * views. The party is the one registered in that election, never today's.
+ */
+export function indiceDeCandidaturas(detalhes: PoliticoDetalhe[], presidencia?: Presidencia): CandidaturaIndice[] {
+  const linha = (e: EleicaoTSE, href: string, nome: string, sexo?: "F" | "M"): CandidaturaIndice => ({
+    sexo,
+    ano: e.ano,
+    cargo: e.cargo,
+    uf: e.uf,
+    municipio: e.municipio,
+    href,
+    nome,
+    partido: e.partido,
+    resultado: e.resultado ?? resultadoDe(e.situacao),
+  });
+  const vistos = new Set(detalhes.map((d) => d.id));
+  return [
+    ...detalhes.flatMap((d) => d.eleicoes.map((e) => linha(e, `/politico/${d.id}`, d.nome, d.sexo))),
+    ...(presidencia?.pessoas ?? []).filter((x) => !vistos.has(x.id)).flatMap((x) => x.candidaturas.map((e) => linha(e, `/presidencia/${x.id}`, x.nomeUrna))),
+  ].sort((a, b) => b.ano - a.ano || a.cargo.localeCompare(b.cargo) || a.uf.localeCompare(b.uf) || a.nome.localeCompare(b.nome, "pt-BR") || a.href.localeCompare(b.href));
+}
+
 /** Write the public snapshot: one file per politician/vote plus compact indexes for list pages. */
 export async function publicar(out: string, r: BuildResult, falas: Fala[], o: PublicarOpts) {
   for (const sub of ["politicos", "votacoes", "falas", ...(o.empresas ? ["empresas"] : [])]) await limparDir(path.join(out, sub));
@@ -593,6 +617,7 @@ export async function publicar(out: string, r: BuildResult, falas: Fala[], o: Pu
   if (r.gastosGerais) files["gastos.json"] = r.gastosGerais;
   if (o.presidencia?.pessoas.length || o.presidencia?.atos.length) files["presidencia.json"] = o.presidencia;
   if (r.destinosEmendas?.length) files["emendas.json"] = r.destinosEmendas;
+  files["eleicoes.json"] = indiceDeCandidaturas(r.detalhes, o.presidencia);
   if (o.empresas) {
     files["empresas.json"] = o.empresas.indice;
     for (const [b, conteudo] of o.empresas.baldes) files[`empresas/${b}.json`] = conteudo;

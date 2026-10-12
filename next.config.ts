@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
     "/relacoes": SNAPSHOT,
     "/api/relacoes": SNAPSHOT,
     "/api/politicos": SNAPSHOT,
+    "/eleicoes": SNAPSHOT,
+    "/emendas": SNAPSHOT,
   },
   images: {
     remotePatterns: [

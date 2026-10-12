@@ -144,7 +144,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 
 | ID | Situação | P | O que é | Critérios de aceite | Depende de |
 |---|---|---|---|---|---|
-| HIST-01 | NOT_STARTED | P1 | Visões por eleição | Escolher uma eleição (ano e cargo) e ver quem disputou, quem foi eleito e por qual partido, com a data respeitada em tudo o que aparece | DADOS-01 |
+| HIST-01 | IMPLEMENTED | P1 | Visões por eleição | Escolher uma eleição (ano e cargo) e ver quem disputou, quem foi eleito e por qual partido, com a data respeitada em tudo o que aparece | DADOS-01 |
 | HIST-02 | NOT_STARTED | P2 | Reprodutibilidade | Cada publicação guarda versão dos dados e manifesto; dá para baixar o retrato de uma data | |
 | CARD-01 | IMPLEMENTED | P1 | Cartões e listas de políticos mais ricos | Lista de políticos com foto, partido, estado, cargo, principais números e cobertura de dados, sem ranking | TAB-01 |
 | LAY-01 | NOT_STARTED | P2 | Layout mais largo e navegação revista | Páginas de dados usam a largura da tela; menu com Presidência, Empresas, Emendas e Mapa de relações também no celular | |
@@ -192,6 +192,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | PAG-02 | `Paginacao` comum em votos da votação, votos do perfil, projetos do perfil, catálogo de votações, políticos, falas, empresas e emendas. Nenhuma paginação própria restante (`grep` por “Próxima” só acha o componente comum). |
 | CARD-01 | Lista de políticos com busca por nome, foto, cargo, partido com nome completo, estado e todas as métricas disponíveis como colunas opcionais. Falta: cobertura de dados na própria lista. |
 | PART-04 | `filiacoesNoTempo` em `src/lib/carreira.ts` junta os pontos em que um registro mostra o partido (candidaturas do TSE, partido gravado em cada voto, cadastro atual) e forma trechos; entre registros nada é suposto (teste “joins records with the same party and never fills gaps”). O pipeline agora grava o partido de cada voto no perfil (`VotoItem.partido`). Cartão “Partido ao longo do tempo” na vida pública. Falta: dados reais com o partido por voto (próxima coleta). |
+| HIST-01 | `eleicoes.json` (`indiceDeCandidaturas` em `pipeline/build.ts`, testado) e página `/eleicoes`: escolher o ano, filtrar por cargo, estado, nome e resultado (contagens clicáveis), partido **daquela** eleição, resultado no gênero da pessoa, paginação comum. Diz com clareza que mostra só as pessoas acompanhadas e quem disputou a Presidência. Conferido com um índice gerado localmente a partir dos perfis publicados (2018, deputado federal, SP: 52 candidaturas, 40 eleitos, partidos de 2018 como PPS e DEM). O arquivo real sai na próxima coleta. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças

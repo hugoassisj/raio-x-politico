@@ -23,6 +23,7 @@ const NAV_EXTRA = [
   { href: "/relacoes", rotulo: "Mapa de relações" },
   { href: "/empresas", rotulo: "Empresas" },
   { href: "/emendas", rotulo: "Emendas por cidade" },
+  { href: "/eleicoes", rotulo: "Eleições desde 1994" },
   { href: "/analises", rotulo: "Cruzamentos de dados" },
   { href: "/dados", rotulo: "Sobre os dados" },
 ];

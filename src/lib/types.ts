@@ -474,3 +474,18 @@ export interface DestinoEmenda {
   pago: number;
   autores: { pid: string; nome: string; partido: string; indicado: number; empenhado: number; pago: number }[];
 }
+
+/** One candidacy of a person the site follows (or who ran for President), for the election views. */
+export interface CandidaturaIndice {
+  ano: number;
+  cargo: string;
+  uf: string;
+  municipio?: string;
+  /** Profile on the site: "/politico/…" or "/presidencia/…" */
+  href: string;
+  nome: string;
+  /** Party in that election, as registered with the TSE */
+  partido?: string;
+  resultado?: EleicaoTSE["resultado"];
+  sexo?: "F" | "M";
+}
