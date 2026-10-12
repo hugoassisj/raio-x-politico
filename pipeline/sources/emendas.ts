@@ -147,6 +147,13 @@ export async function coletarEmendasPix(anoInicial: number): Promise<{ agg: Map<
   return { agg, registros: planos.length, avisos };
 }
 
+/** "CAMPINAS (SP)" -> ["CAMPINAS", "SP"]; "Nacional" or a whole state stay as published. */
+export function localidade(v: string | undefined): [string, string | undefined] {
+  const t = (v ?? "").trim();
+  const m = t.match(/^(.*?)\s*\(([A-Z]{2})\)$/);
+  return m ? [m[1], m[2]] : [t || "Não informado", undefined];
+}
+
 /** All parliamentary amendments from Portal da Transparência (requires free API key). */
 export async function coletarEmendasPortal(anos: number[], chave: string): Promise<{ agg: Map<string, EmendaAgg>; registros: number }> {
   const agg = new Map<string, EmendaAgg>();
@@ -166,8 +173,7 @@ export async function coletarEmendasPortal(anos: number[], chave: string): Promi
           r.codigoEmenda,
           Number(r.ano) || ano,
           { indicado: num(r.valorEmpenhado), empenhado: num(r.valorEmpenhado), pago: num(r.valorPago) + num(r.valorRestoPago) },
-          r.localidadeDoGasto ?? "Não informado",
-          undefined,
+          ...localidade(r.localidadeDoGasto),
           "Portal da Transparência - Emendas",
         );
       }

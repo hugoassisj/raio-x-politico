@@ -585,6 +585,38 @@ describe("Assembleias collector", () => {
   });
 });
 
+describe("Portal da Transparência amendments", () => {
+  it("reads the published steps and the place of each amendment", async () => {
+    mockFetch([
+      [
+        /api-de-dados\/emendas\?ano=2026&pagina=1/,
+        [
+          {
+            codigoEmenda: "1",
+            ano: 2026,
+            nomeAutor: "FULANA DE TAL",
+            localidadeDoGasto: "CAMPINAS (SP)",
+            valorEmpenhado: "1.000,00",
+            valorLiquidado: "800,00",
+            valorPago: "500,00",
+            valorRestoPago: "100,00",
+          },
+          { codigoEmenda: "2", ano: 2026, nomeAutor: "FULANA DE TAL", localidadeDoGasto: "Nacional", valorEmpenhado: "50,00", valorPago: "0,00" },
+        ],
+      ],
+    ]);
+    const { coletarEmendasPortal, localidade } = await import("../sources/emendas");
+    const r = await coletarEmendasPortal([2026], "chave-de-teste");
+    const a = r.agg.get("fulana de tal")!;
+    expect(a.ciclo).toEqual({ indicado: 1050, empenhado: 1050, pago: 600 });
+    expect([...a.destinos.values()].map((d) => [d.nome, d.uf])).toEqual([
+      ["CAMPINAS", "SP"],
+      ["Nacional", undefined],
+    ]);
+    expect(localidade(undefined)).toEqual(["Não informado", undefined]);
+  });
+});
+
 describe("Emendas Pix lifecycle", () => {
   it("follows each plan to its reserve and its paid bank orders, ignoring cancelled steps", async () => {
     mockFetch([
