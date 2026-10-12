@@ -16,7 +16,7 @@ import type { CampanhaFinancas, Fala, FonteStatus, MateriaVotada, Meta, Presiden
 import { ancorasTSE, chavesDaPessoa, juntarCandidaturas, montar, publicar } from "./build";
 import { manifesto, stats } from "./lib/http";
 import { exigirQualidade, verificarQualidade } from "./qualidade";
-import { log } from "./lib/log";
+import { etapaAtual, log } from "./lib/log";
 import type { CandidatoTSE, EmendaAgg, SourceOutput } from "./model";
 import { coletarAssembleias } from "./sources/assembleias";
 import { coletarCamara } from "./sources/camara";
@@ -373,7 +373,23 @@ async function main() {
   if (falhou.length) log.warn(`Fontes com falha: ${falhou.map((f) => f.nome).join(", ")}`);
 }
 
-main().catch((e) => {
-  log.error(e);
-  process.exit(1);
+/*
+ * Node ends quietly, with success, when it is left waiting for something that will never come
+ * (a stream that stopped, for example). That must never look like a finished update.
+ */
+let terminou = false;
+process.on("beforeExit", () => {
+  if (terminou) return;
+  log.error(`O programa parou sem terminar, durante: ${etapaAtual}`);
+  process.exitCode = 1;
+  terminou = true;
 });
+
+main()
+  .then(() => {
+    terminou = true;
+  })
+  .catch((e) => {
+    log.error(e);
+    process.exit(1);
+  });

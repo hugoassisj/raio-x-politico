@@ -15,6 +15,9 @@ const anotar = (tipo: "error" | "warning", a: unknown[]) => {
   console.log(`::${tipo}::${texto}`);
 };
 
+/** Name of the step running now, reported if the program stops without finishing */
+export let etapaAtual = "início";
+
 export const log = {
   info: (...a: unknown[]) => console.log(ts(), ...a),
   warn: (...a: unknown[]) => console.warn(ts(), "⚠", ...a),
@@ -27,5 +30,8 @@ export const log = {
     console.error(ts(), "✖", ...a);
     anotar("error", a);
   },
-  step: (name: string) => console.log(`\n${ts()} ▶ ${name}`),
+  step: (name: string) => {
+    etapaAtual = name;
+    console.log(`\n${ts()} ▶ ${name}`);
+  },
 };
