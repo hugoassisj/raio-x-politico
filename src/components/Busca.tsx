@@ -92,7 +92,7 @@ export function Busca({ grande = false, autoFocus = false }: { grande?: boolean;
           autoComplete="off"
           autoFocus={autoFocus}
           value={q}
-          placeholder={grande ? "Digite um nome, partido ou estado" : "Buscar político"}
+          placeholder={grande ? "Digite um nome, partido ou estado" : "Buscar"}
           onChange={(e) => {
             setQ(e.target.value);
             setAtivo(0);

@@ -84,7 +84,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | PAG-01 | VERIFIED | P0 | Paginação comum | Uma função pura (`src/lib/paginacao.ts`) e um componente (`Paginacao`); página na URL; volta à página 1 quando um filtro muda; ordem estável. | |
 | PAG-02 | VERIFIED | P1 | Paginação nas listas | Políticos, votações, falas e lista de votos usam PAG-01. | PAG-01 |
 | TAB-01 | VERIFIED | P2 | Primitivos de tabela | Avaliar TanStack Table para `/politicos` e gastos: ordenar, esconder colunas, redimensionar, exportar CSV, preferências salvas. Decidir com base em peso e acessibilidade. | PAG-01 |
-| NAV-01 | IN_PROGRESS | P2 | Navegação | Presidente e empresas na navegação quando existirem; revisar menu do celular. | PRES-01 |
+| NAV-01 | VERIFIED | P2 | Navegação | Presidente e empresas na navegação quando existirem; revisar menu do celular. | PRES-01 |
 | DS-01 | VERIFIED | P1 | Tokens e movimento | Tokens em três camadas e animações contidas já existem. Falta conferir contraste AA de todos os pares no tema escuro. | |
 
 ### 4.3 Partidos
@@ -147,7 +147,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | HIST-01 | IMPLEMENTED | P1 | Visões por eleição | Escolher uma eleição (ano e cargo) e ver quem disputou, quem foi eleito e por qual partido, com a data respeitada em tudo o que aparece | DADOS-01 |
 | HIST-02 | NOT_STARTED | P2 | Reprodutibilidade | Cada publicação guarda versão dos dados e manifesto; dá para baixar o retrato de uma data | |
 | CARD-01 | IMPLEMENTED | P1 | Cartões e listas de políticos mais ricos | Lista de políticos com foto, partido, estado, cargo, principais números e cobertura de dados, sem ranking | TAB-01 |
-| LAY-01 | NOT_STARTED | P2 | Layout mais largo e navegação revista | Páginas de dados usam a largura da tela; menu com Presidência, Empresas, Emendas e Mapa de relações também no celular | |
+| LAY-01 | IN_PROGRESS | P2 | Layout mais largo e navegação revista | Páginas de dados usam a largura da tela; menu com Presidência, Empresas, Emendas e Mapa de relações também no celular | |
 | CNPJ-04 | NOT_STARTED | P2 | Dados cadastrais da Receita | Situação cadastral, atividade principal e data de abertura a partir dos dados abertos do CNPJ da Receita Federal, com data do arquivo | CNPJ-02 |
 | VOT-16 | NOT_STARTED | P2 | Sessões do Congresso e vetos | Votações em sessão conjunta e de vetos, pela API do Congresso Nacional | |
 | CORR-01 | VERIFIED | P1 | Registro público de correções | Página com cada correção feita: o que estava errado, o que mudou, quando e a fonte | PROV-03 |
@@ -194,6 +194,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | PART-04 | `filiacoesNoTempo` em `src/lib/carreira.ts` junta os pontos em que um registro mostra o partido (candidaturas do TSE, partido gravado em cada voto, cadastro atual) e forma trechos; entre registros nada é suposto (teste “joins records with the same party and never fills gaps”). O pipeline agora grava o partido de cada voto no perfil (`VotoItem.partido`). Cartão “Partido ao longo do tempo” na vida pública. Falta: dados reais com o partido por voto (próxima coleta). |
 | HIST-01 | `eleicoes.json` (`indiceDeCandidaturas` em `pipeline/build.ts`, testado) e página `/eleicoes`: escolher o ano, filtrar por cargo, estado, nome e resultado (contagens clicáveis), partido **daquela** eleição, resultado no gênero da pessoa, paginação comum. Diz com clareza que mostra só as pessoas acompanhadas e quem disputou a Presidência. Conferido com um índice gerado localmente a partir dos perfis publicados (2018, deputado federal, SP: 52 candidaturas, 40 eleitos, partidos de 2018 como PPS e DEM). O arquivo real sai na próxima coleta. |
 | CORR-01 | `src/lib/correcoes.ts` e página `/correcoes` (no rodapé), com as 6 correções reais feitas em 2026-10-12, botão para avisar um erro (formulário com a página preenchida) e link para o histórico público. Regra nova no AGENTS.md: toda correção do que o site mostrou entra no registro. |
+| NAV-01 | Presidência no menu principal; no celular, barra com Início, Votações, Presidência e “Mais”, que abre todas as seções agrupadas (Quem são, Dinheiro, Entender), fecha com Esc, com toque fora ou ao navegar; rodapé lista Mapa de relações, Empresas, Emendas por cidade, Eleições e Correções. Conferido a 390 px. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças
