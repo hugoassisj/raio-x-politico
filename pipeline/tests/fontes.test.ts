@@ -549,6 +549,42 @@ describe("TSE lifelong history", () => {
   });
 });
 
+describe("Assembleias collector", () => {
+  it("keeps one entry per person when an assembly lists someone twice", async () => {
+    const cand = (sq: string, nome: string, situacao: string) => ({
+      ano: 2022,
+      sq,
+      nome,
+      nomeUrna: nome,
+      uf: "AC",
+      cargo: "DEPUTADO ESTADUAL",
+      codCargo: 7,
+      partido: "PL",
+      numero: "1",
+      situacao,
+    });
+    const { SAPL_HOSTS, coletarAssembleias } = await import("../sources/assembleias");
+    mockFetch([
+      [
+        new RegExp(SAPL_HOSTS.AC.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+        {
+          results: [
+            { id: 1, nome_parlamentar: "PABLO EXEMPLO", ativo: true },
+            // Same person again (for example, another term in the assembly system)
+            { id: 2, nome_parlamentar: "Pablo Exemplo", ativo: true },
+            { id: 3, nome_parlamentar: "Rosa Teste", ativo: true },
+          ],
+        },
+      ],
+    ]);
+    const r = await coletarAssembleias([cand("10", "PABLO EXEMPLO", "ELEITO POR QP"), cand("11", "ROSA TESTE", "SUPLENTE")], []);
+    const ac = r.politicos.filter((p) => p.uf === "AC");
+    expect(ac.map((p) => p.id).sort()).toEqual(["est-ac-10", "est-ac-11"]);
+    expect(new Set(r.politicos.map((p) => p.id)).size).toBe(r.politicos.length);
+    expect(ac.find((p) => p.id === "est-ac-10")?.nome).toBe("Pablo Exemplo");
+  });
+});
+
 describe("Emendas Pix lifecycle", () => {
   it("follows each plan to its reserve and its paid bank orders, ignoring cancelled steps", async () => {
     mockFetch([

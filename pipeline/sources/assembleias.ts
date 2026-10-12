@@ -229,7 +229,11 @@ export async function coletarAssembleias(tse: CandidatoTSE[], anoGastos: number[
     if (best && bestS >= 0.7) {
       const p = novo(best, e);
       p.emExercicio = true;
-      politicos.push(p);
+      // The same person can be listed twice by an assembly (or matched first without its record):
+      // one person, one entry, keeping the one linked to the assembly's own record
+      const i = politicos.findIndex((x) => x.id === p.id);
+      if (i < 0) politicos.push(p);
+      else if (!politicos[i].perfil?.paginaOficial) politicos[i] = p;
     }
   }
 
