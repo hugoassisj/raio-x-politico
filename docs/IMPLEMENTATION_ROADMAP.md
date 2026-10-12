@@ -129,7 +129,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | DADOS-01 | IN_PROGRESS | P0 | Execução completa do TSE | Histórico desde 1994 e contas de campanha publicados e conferidos em perfis reais. | DADOS-02 |
 | DADOS-02 | IMPLEMENTED | P0 | Erros visíveis na execução | Erros e verificações que falham viram anotações do GitHub Actions. | |
 | IA-01 | BLOCKED | P1 | Explicações por IA | Gerar e validar as explicações dos projetos votados. Bloqueio: o ambiente não tem `ANTHROPIC_API_KEY`. Caminho: gerar fora e importar com `pipeline:explicar -- --importar`. | |
-| DOC-01 | NOT_STARTED | P2 | Capturas de tela do README | `docs/telas/*.png` existem e mostram o site real. | VOT-15 |
+| DOC-01 | VERIFIED | P2 | Capturas de tela do README | `docs/telas/*.png` existem e mostram o site real. | VOT-15 |
 | VAL-01 | NOT_STARTED | P1 | Oito casos nos dois temas | Político com muitos dados, com poucos, candidato histórico, empresa, identidade ambígua, emenda com pagamento, grafo, página sem registros. | vários |
 
 ### 4.7 Referências estudadas
@@ -170,6 +170,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | EMD-02 | Índice de destinos (`destinosEmendas` em `pipeline/build.ts`, `emendas.json`), um por governo recebedor (CNPJ quando publicado, senão nome e estado: `chaveDestino` em `src/lib/emendas.ts`, usada pelo pipeline e pelos links). Página `/emendas` com busca por cidade, filtro por estado, soma das etapas, paginação comum e a página de cada destino com quem mandou. Teste “indexes each place with every author” (mesmo CNPJ com dois nomes vira um lugar). Correção de identidade: autor de emenda com nome igual ao de dois políticos não é ligado a nenhum (`vincularAutores`, testado). |
 | DS-01 | Contraste medido no navegador para cada par de tokens nos dois temas (2026-10-12). Ajustes: `--ink-3` do tema claro mais escuro (`--neutro-550`), Sim e Não do tema claro mais escuros (#10704b e #b13a0a, 5,3:1 e 5,2:1 sobre o fundo suave), texto sobre as cores de voto passa a ser um token (`--on-voto`: branco no claro, quase preto no escuro, mínimo 6,1:1 e 6,0:1). |
 | A11Y-01 | Automático: `npm run a11y` (`scripts/acessibilidade.mjs`, axe-core 4.10.2, regras WCAG 2.2 A e AA) em 12 páginas nos dois temas: 0 violações depois das correções (antes: contraste, `nested-interactive` no plenário, `aria-label` proibido na paginação, área de toque pequena nos links de redes). Falta: teste manual com leitor de tela (NVDA/VoiceOver) e zoom de 200%; o ambiente não tem leitor de tela. |
+| DOC-01 | `docs/telas/{inicio,votacao,plenario,perfil,celular}.png` capturadas do site rodando com os dados reais publicados (2026-10-12), sem o indicador de desenvolvimento, e otimizadas. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças
