@@ -17,8 +17,8 @@ export interface DefMetrica {
   /** Short question a regular person would ask */
   pergunta: string;
   formato: (n: number | undefined) => string;
-  /** Sentence template for the comparison line, e.g. "mais presente que 72% dos deputados" */
-  comparacao: (pctAbaixo: number, pares: string) => string;
+  /** Sentence template for the comparison line; `parcela` is already formatted, e.g. "72%" or "menos de 1%" */
+  comparacao: (parcela: string, pares: string) => string;
   casas: Casa[];
   calculo: string;
   fontes: { nome: string; url: string }[];
@@ -35,7 +35,7 @@ export const METRICAS: DefMetrica[] = [
     titulo: "Presença",
     pergunta: "Aparece para trabalhar?",
     formato: (n) => pct(n),
-    comparacao: (p, pares) => `Presença maior que a de ${Math.round(p)}% ${pares}`,
+    comparacao: (p, pares) => `Presença maior que a de ${p} ${pares}`,
     casas: ["camara", "senado"],
     calculo:
       "Câmara: sessões deliberativas do Plenário já encerradas em que o deputado registrou presença, divididas pelo total dessas sessões desde o início do seu exercício atual. Senado: dias com votação nominal em que o senador registrou voto ou presença, divididos pelos dias com votação nominal em que ele estava em exercício. Período: últimos 12 meses.",
@@ -48,7 +48,7 @@ export const METRICAS: DefMetrica[] = [
     titulo: "Votações nominais",
     pergunta: "Vota quando é chamado?",
     formato: (n) => pct(n),
-    comparacao: (p, pares) => `Participou de mais votações que ${Math.round(p)}% ${pares}`,
+    comparacao: (p, pares) => `Participou de mais votações que ${p} ${pares}`,
     casas: ["camara", "senado"],
     calculo:
       "Votações nominais do Plenário em que registrou voto (Sim, Não, Abstenção, Obstrução ou presença sem voto), divididas pelas votações nominais ocorridas enquanto estava em exercício, nos últimos 12 meses. Votações secretas do Senado não entram.",
@@ -60,7 +60,7 @@ export const METRICAS: DefMetrica[] = [
     titulo: "Segue o partido",
     pergunta: "Vota como o partido orienta?",
     formato: (n) => pct(n),
-    comparacao: (p, pares) => `Segue o partido mais que ${Math.round(p)}% ${pares}`,
+    comparacao: (p, pares) => `Segue o partido mais que ${p} ${pares}`,
     casas: ["camara", "senado"],
     calculo:
       "Entre as votações em que votou Sim, Não, Abstenção ou Obstrução e o partido deu orientação, a porcentagem em que o voto foi igual à orientação. Votos liberados e ausências não contam. Mínimo de 10 votações comparáveis. Câmara: orientação oficial da liderança do partido, federação ou bloco. Senado: como o Senado não publica orientações neste formato, usa-se a posição da maioria da bancada do partido naquela votação.",
@@ -72,7 +72,7 @@ export const METRICAS: DefMetrica[] = [
     titulo: "Vota com o governo",
     pergunta: "Acompanha o governo federal?",
     formato: (n) => pct(n),
-    comparacao: (p, pares) => `Vota com o governo mais que ${Math.round(p)}% ${pares}`,
+    comparacao: (p, pares) => `Vota com o governo mais que ${p} ${pares}`,
     casas: ["camara"],
     calculo:
       "Entre as votações em que a liderança do Governo orientou Sim ou Não (ou Obstrução/Abstenção) e o deputado votou, a porcentagem em que o voto coincidiu com a orientação do Governo. Mínimo de 10 votações comparáveis.",
@@ -84,10 +84,10 @@ export const METRICAS: DefMetrica[] = [
     titulo: "Gastos da cota",
     pergunta: "Quanto gastou de verba do mandato?",
     formato: (n) => moedaCurta(n),
-    comparacao: (p, pares) => `Gastou mais que ${Math.round(p)}% ${pares}`,
+    comparacao: (p, pares) => `Gastou mais que ${p} ${pares}`,
     casas: ["camara", "senado", "assembleia"],
     calculo:
-      "Soma dos reembolsos da Cota para o Exercício da Atividade Parlamentar (CEAP na Câmara, CEAPS no Senado; verba indenizatória nas assembleias que publicam) nos últimos 12 meses completos. O mês mais recente só entra quando o total da casa atinge 80% da mediana dos 12 meses anteriores, porque os lançamentos chegam com atraso.",
+      "Soma dos reembolsos da Cota para o Exercício da Atividade Parlamentar (CEAP na Câmara, CEAPS no Senado; verba indenizatória nas assembleias que publicam) nos últimos 12 meses completos. Como os lançamentos chegam com atraso, os dois meses mais recentes só entram quando o total da casa atinge 80% da mediana dos 12 meses anteriores. Meses de gasto naturalmente menor, como recesso e período eleitoral, continuam na conta.",
     fontes: [
       { nome: "Câmara - Cota parlamentar", url: "https://www.camara.leg.br/transparencia/gastos-parlamentares" },
       { nome: "Senado - CEAPS", url: "https://www12.senado.leg.br/transparencia/sen/" },
@@ -99,10 +99,10 @@ export const METRICAS: DefMetrica[] = [
     titulo: "Gastos para conferir",
     pergunta: "Algum gasto merece um segundo olhar?",
     formato: (n) => numero(n),
-    comparacao: (p, pares) => `Mais pontos de atenção que ${Math.round(p)}% ${pares}`,
+    comparacao: (p, pares) => `Mais pontos de atenção que ${p} ${pares}`,
     casas: ["camara", "senado", "assembleia"],
     calculo:
-      "Regras automáticas inspiradas na Operação Serenata de Amor: CNPJ/CPF do fornecedor com dígito verificador inválido; refeição com valor muito acima do padrão da casa (média + 4 desvios-padrão); valor entre os 0,5% maiores da categoria; dois reembolsos com mesmo fornecedor, data e valor; mais de 50% do gasto anual concentrado em um único fornecedor.",
+      "Regras automáticas inspiradas na Operação Serenata de Amor: CNPJ/CPF do fornecedor com dígito verificador inválido (códigos internos que a casa usa para serviços próprios não entram); refeição com valor muito acima do padrão da casa (média + 4 desvios-padrão); valor entre os 0,1% maiores da categoria; o mesmo documento fiscal (fornecedor, número e valor) reembolsado mais de uma vez; mais de 50% do gasto de 12 meses concentrado em um único fornecedor.",
     fontes: [{ nome: "Serenata de Amor (metodologia de referência)", url: "https://github.com/okfn-brasil/serenata-de-amor" }],
     limites: "Um ponto de atenção não é acusação de irregularidade: é um gasto fora do padrão que vale conferir no documento original, sempre linkado.",
   },
@@ -111,7 +111,7 @@ export const METRICAS: DefMetrica[] = [
     titulo: "Projetos apresentados",
     pergunta: "O que propõe?",
     formato: (n) => numero(n),
-    comparacao: (p, pares) => `Apresentou mais projetos que ${Math.round(p)}% ${pares}`,
+    comparacao: (p, pares) => `Apresentou mais projetos que ${p} ${pares}`,
     casas: ["camara", "senado"],
     calculo: "Projetos de lei (PL), projetos de lei complementar (PLP), propostas de emenda à Constituição (PEC) e projetos de decreto legislativo (PDL) em que é autor ou coautor, em toda a carreira registrada pela casa.",
     fontes: [CAM, SEN],
@@ -122,7 +122,7 @@ export const METRICAS: DefMetrica[] = [
     titulo: "Viraram lei",
     pergunta: "Algum projeto virou lei?",
     formato: (n) => numero(n),
-    comparacao: (p, pares) => `Mais projetos transformados em lei que ${Math.round(p)}% ${pares}`,
+    comparacao: (p, pares) => `Mais projetos transformados em lei que ${p} ${pares}`,
     casas: ["camara", "senado"],
     calculo: "Projetos da lista acima cuja situação atual é 'Transformado em Norma Jurídica' (Câmara) ou que geraram norma (Senado).",
     fontes: [CAM, SEN],
@@ -133,7 +133,7 @@ export const METRICAS: DefMetrica[] = [
     titulo: "Emendas Pix",
     pergunta: "Quanto dinheiro mandou para cidades?",
     formato: (n) => moedaCurta(n),
-    comparacao: (p, pares) => `Indicou mais recursos que ${Math.round(p)}% ${pares}`,
+    comparacao: (p, pares) => `Indicou mais recursos que ${p} ${pares}`,
     casas: ["camara", "senado"],
     calculo:
       "Soma dos valores de investimento e custeio dos planos de ação de transferências especiais (as chamadas 'emendas Pix') indicadas pelo parlamentar desde 2020, segundo o Transferegov. Quando a chave da API do Portal da Transparência está configurada, usa todas as emendas individuais pagas.",
@@ -145,7 +145,7 @@ export const METRICAS: DefMetrica[] = [
     titulo: "Patrimônio declarado",
     pergunta: "Quanto declarou ter de bens?",
     formato: (n) => moedaCurta(n),
-    comparacao: (p, pares) => `Patrimônio maior que o de ${Math.round(p)}% ${pares}`,
+    comparacao: (p, pares) => `Patrimônio maior que o de ${p} ${pares}`,
     casas: ["camara", "senado", "assembleia"],
     calculo: "Soma dos bens declarados ao TSE no registro da candidatura mais recente encontrada (2018, 2022 ou 2026).",
     fontes: [TSE],
@@ -156,7 +156,7 @@ export const METRICAS: DefMetrica[] = [
     titulo: "Votos em 2022",
     pergunta: "Quantos votos recebeu?",
     formato: (n) => numero(n),
-    comparacao: (p, pares) => `Mais votado que ${Math.round(p)}% ${pares}`,
+    comparacao: (p, pares) => `Mais votado que ${p} ${pares}`,
     casas: ["camara", "senado", "assembleia"],
     calculo: "Votos nominais recebidos no 1º turno das eleições de 2022, segundo os resultados oficiais do TSE.",
     fontes: [TSE],
@@ -177,6 +177,13 @@ export const NOME_CASA: Record<Casa, string> = {
   senado: "Senado Federal",
   assembleia: "Assembleias Legislativas",
 };
+
+/** "72%", or "menos de 1%" / "mais de 99%" so rounding never states 0% or 100% when that is not true. */
+export function parcela(p: number) {
+  if (p > 0 && p < 1) return "menos de 1%";
+  if (p > 99 && p < 100) return "mais de 99%";
+  return `${Math.round(p)}%`;
+}
 
 /** Share of peers with a strictly lower value (0..100), or undefined if no data. */
 export function percentil(valor: number | undefined, pares: (number | undefined)[]) {

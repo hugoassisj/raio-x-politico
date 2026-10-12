@@ -55,8 +55,8 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 | Votações nominais | Câmara, Senado | Votações nominais com voto registrado dividido pelas votações ocorridas em exercício |
 | Segue o partido | Câmara, Senado | Método da aderência (Parlametria): seguiu / (seguiu + não seguiu), ignorando liberações e ausências, mínimo de 10 votos. Câmara usa a orientação oficial (partido, federação ou bloco); Senado usa a maioria da bancada |
 | Vota com o governo | Câmara | Mesmo método, contra a orientação da liderança do Governo |
-| Gastos da cota | Todas com dados | Reembolsos dos últimos 12 meses completos; o mês corrente só entra quando atinge 80% da mediana dos 12 anteriores |
-| Gastos para conferir | Todas com dados | Regras inspiradas na Operação Serenata de Amor: CNPJ/CPF inválido, refeição atípica, valor no 0,5% superior da categoria, duplicidade, fornecedor com mais de 50% do gasto |
+| Gastos da cota | Todas com dados | Reembolsos dos últimos 12 meses completos; os dois meses mais recentes só entram quando atingem 80% da mediana dos 12 anteriores (lançamentos atrasados) |
+| Gastos para conferir | Todas com dados | Regras inspiradas na Operação Serenata de Amor: CNPJ/CPF inválido (fora códigos internos), refeição atípica, valor no 0,1% superior da categoria, mesmo documento fiscal reembolsado duas vezes, fornecedor com mais de 50% do gasto |
 | Projetos e "viraram lei" | Câmara, Senado | PL, PLP, PEC e PDL como autor ou coautor; situação "Transformado em Norma Jurídica" |
 | Emendas Pix | Câmara, Senado | Planos de ação de transferências especiais no Transferegov desde 2020 (ou todas as emendas pagas, com chave do Portal da Transparência) |
 | Patrimônio e votos | Todas | Declaração de bens e votos nominais do TSE |
@@ -70,7 +70,7 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 | Câmara, arquivos de cota (CEAP) | Todas as despesas reembolsadas | ZIP anual | Em uso, com a API por deputado como reserva |
 | Senado Federal, dados abertos | Senadores, mandatos, comissões, votações com votos de todos, proposições, pronunciamentos | API aberta | Em uso |
 | Senado, CEAPS | Despesas dos senadores | API aberta | Em uso |
-| TSE, dados abertos | Candidaturas 2018, 2022 e 2026, bens declarados, redes sociais declaradas, votos de 2022 | Arquivos ZIP e JSON de resultados | Em uso |
+| TSE, dados abertos | Candidaturas 2018, 2022 e 2026, bens declarados, redes sociais declaradas (2022 e 2026), votos de 2022 | Arquivos ZIP | Em uso |
 | Transferegov | Emendas Pix (transferências especiais) | API aberta (PostgREST) | Em uso |
 | Portal da Transparência | Todas as emendas parlamentares | API com chave gratuita | Pronto, liga com `PORTAL_TRANSPARENCIA_API_KEY` |
 | ALMG (MG) | Deputados em exercício e verbas indenizatórias | API aberta | Em uso |
@@ -159,3 +159,6 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 | 2026-10-11 | IA só com citações validadas e descarte automático do que não tem fonte | Evitar afirmações inventadas |
 | 2026-10-11 | Fontes tipográficas e ícones hospedados no próprio site | Privacidade dos visitantes e independência de terceiros |
 | 2026-10-11 | Cores de voto validadas para daltonismo e sempre acompanhadas do texto | Acessibilidade |
+| 2026-10-12 | Alertas de gastos recalibrados com a primeira coleta real | Códigos internos das casas eram contados como CNPJ inválido e compras repetidas como duplicidade; agora duplicidade exige o mesmo documento fiscal e o limiar de valor atípico passou para 0,1% |
+| 2026-10-12 | Janela de 12 meses de gastos só descarta até dois meses finais incompletos | Em ano eleitoral o gasto cai legitimamente e não pode ser confundido com dado faltante |
+| 2026-10-12 | Votos de 2022 vêm do arquivo consolidado do TSE | O JSON de resultados sai do ar depois de cada eleição |

@@ -1,7 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
 import { fetchRaw, getJson, mapLimit } from "../lib/http";
 import { log } from "../lib/log";
-import { isoDate, nameSimilarity, num } from "../lib/util";
+import { capitalizar, isoDate, nameSimilarity, nomeProprio, num } from "../lib/util";
 import type { CandidatoTSE, Despesa, PoliticoParcial } from "../model";
 import { eleito, fotoTSE } from "./tse";
 
@@ -179,8 +179,8 @@ export async function coletarAssembleias(tse: CandidatoTSE[], anoGastos: number[
       id,
       casa: "assembleia",
       cargo: c.codCargo === 8 ? "Deputado(a) Distrital" : "Deputado(a) Estadual",
-      nome: ext?.nome ?? titleName(c.nomeUrna),
-      nomeCivil: titleName(c.nome),
+      nome: ext?.nome ?? nomeProprio(c.nomeUrna),
+      nomeCivil: nomeProprio(c.nome),
       partido: ext?.partido ?? c.partido,
       uf: c.uf,
       foto: ext?.foto ?? fotoTSE(c.ano, c.sq, c.uf),
@@ -190,8 +190,8 @@ export async function coletarAssembleias(tse: CandidatoTSE[], anoGastos: number[
       sqCandidato: c.sq,
       perfil: {
         nascimento: c.nascimento,
-        escolaridade: c.instrucao,
-        profissoes: c.ocupacao ? [c.ocupacao] : [],
+        escolaridade: c.instrucao ? capitalizar(c.instrucao) : undefined,
+        profissoes: c.ocupacao ? [capitalizar(c.ocupacao)] : [],
         email: ext?.email,
         paginaOficial: ext?.pagina,
         redes: [],
@@ -248,10 +248,3 @@ function walk(o: any, f: (o: any) => void) {
   for (const v of Object.values(o)) walk(v, f);
 }
 
-export function titleName(s: string) {
-  return (s ?? "")
-    .toLowerCase()
-    .split(" ")
-    .map((w) => (["da", "de", "do", "das", "dos", "e"].includes(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)))
-    .join(" ");
-}

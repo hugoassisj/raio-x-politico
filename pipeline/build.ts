@@ -19,7 +19,7 @@ import {
 } from "../src/lib/types";
 import { calcularGastos, calcularPresenca, calcularVotos, enriquecerVotacoes, janela12, ultimoMesCompleto } from "./metrics";
 import type { CandidatoTSE, Despesa, EmendaAgg, PoliticoParcial, Sessao } from "./model";
-import { groupBy, median, mean, nameSimilarity, norm, round } from "./lib/util";
+import { capitalizar, groupBy, median, mean, nameSimilarity, norm, round } from "./lib/util";
 import { SEN_PRESENTE } from "./sources/senado";
 import { eleito } from "./sources/tse";
 import { handleDe, normalizaUrl, plataforma } from "./sources/falas";
@@ -106,12 +106,6 @@ function mandatosTSE(cs: CandidatoTSE[]): Mandato[] {
     .map((c) => ({ cargo: capitalizar(c.cargo), inicio: c.ano + 1, fim: c.ano + 1 + (DURACAO[c.codCargo] ?? 4), uf: c.uf, partido: c.partido, fonte: `TSE - Eleições ${c.ano}` }));
 }
 
-/** "DEPUTADO FEDERAL" -> "Deputado federal" */
-export function capitalizar(s: string) {
-  const t = s.trim().toLowerCase();
-  return t.charAt(0).toUpperCase() + t.slice(1);
-}
-
 function mesclarCarreira(a: Mandato[], b: Mandato[]) {
   const all = [...a];
   for (const m of b) {
@@ -172,8 +166,8 @@ export function montar(inp: BuildInput): BuildResult {
       votos: c.votos,
       patrimonio: c.patrimonio != null ? round(c.patrimonio, 2) : undefined,
       bens: c.bens?.slice(0, 12),
-      ocupacao: c.ocupacao,
-      instrucao: c.instrucao,
+      ocupacao: c.ocupacao ? capitalizar(c.ocupacao) : undefined,
+      instrucao: c.instrucao ? capitalizar(c.instrucao) : undefined,
     }));
     const carreira = mesclarCarreira(p.carreira ?? [], mandatosTSE(cands));
     const comPatrimonio = eleicoes.filter((e) => e.patrimonio != null);

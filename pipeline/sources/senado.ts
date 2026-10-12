@@ -187,6 +187,7 @@ export async function coletarSenado(opts: { hoje: Date; diasVotos: number; anosG
           doc: String(r.cpfCnpj ?? "").replace(/\D/g, ""),
           valor,
           docId: String(r.id ?? r.documento ?? ""),
+          numeroDoc: r.documento ? String(r.documento) : undefined,
         });
       }
       log.info(`Senado CEAPS ${ano}: ${n} lançamentos`);

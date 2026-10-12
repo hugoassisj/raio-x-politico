@@ -1,4 +1,4 @@
-import { fetchRaw, getJson } from "../lib/http";
+import { fetchRaw } from "../lib/http";
 import { log } from "../lib/log";
 import { decode, isoDate, num, parseCsv, unzipFirst, UFS } from "../lib/util";
 import type { CandidatoTSE } from "../model";
@@ -83,21 +83,25 @@ export async function coletarTSE(anos: number[]): Promise<TseOutput> {
         out.avisos.push(`Bens TSE ${ano}: ${(e as Error).message}`);
       }
 
-      // Social media links declared by the candidate
-      try {
-        const redes = await lerZipCsv(`${CDN}/rede_social_candidato/rede_social_candidato_${ano}.zip`, /BRASIL/i);
-        for (const r of redes) {
-          const sq = clean(r.SQ_CANDIDATO);
-          if (!porSq.has(sq)) continue;
-          const url = clean(r.DS_URL);
-          if (!url) continue;
-          const k = `${ano}:${sq}`;
-          const l = out.redes.get(k) ?? [];
-          if (!l.includes(url)) l.push(url);
-          out.redes.set(k, l);
+      // Social media links declared by the candidate. 2022 is published per state, 2026 nationally,
+      // and 2018 has no such dataset.
+      const arquivosRedes = ano === 2022 ? [...UFS, "BR"].map((uf) => `rede_social_candidato_${ano}_${uf}.zip`) : ano >= 2026 ? [`rede_social_candidato_${ano}.zip`] : [];
+      let falhasRedes = 0;
+      for (const arq of arquivosRedes) {
+        try {
+          for (const r of await lerZipCsv(`${CDN}/consulta_cand/${arq}`, /./)) {
+            const sq = clean(r.SQ_CANDIDATO);
+            if (!porSq.has(sq)) continue;
+            const url = clean(r.DS_URL);
+            if (!url) continue;
+            const k = `${ano}:${sq}`;
+            const l = out.redes.get(k) ?? [];
+            if (!l.includes(url)) l.push(url);
+            out.redes.set(k, l);
+          }
+        } catch (e) {
+          if (++falhasRedes === 1) out.avisos.push(`Redes sociais TSE ${ano} (${arq}): ${(e as Error).message}`);
         }
-      } catch (e) {
-        out.avisos.push(`Redes sociais TSE ${ano}: ${(e as Error).message}`);
       }
 
       if (ano === 2022) await votos2022(porSq, out.avisos);
@@ -109,31 +113,49 @@ export async function coletarTSE(anos: number[]): Promise<TseOutput> {
   return out;
 }
 
-/** Votes per candidate from the official results JSON (first round, election 546). */
+/**
+ * Votes per candidate in the 2022 first round, summed over every municipality and zone from the
+ * official bulk results file (the interactive results JSON is taken offline after each election).
+ * Files are large, so rows are scanned line by line instead of parsed into objects.
+ */
 async function votos2022(porSq: Map<string, CandidatoTSE>, avisos: string[]) {
-  let ok = 0;
-  for (const uf of UFS) {
-    const ufl = uf.toLowerCase();
-    const cargos = uf === "DF" ? ["0005", "0006", "0008"] : ["0005", "0006", "0007"];
-    for (const c of cargos) {
-      try {
-        const j: any = await getJson(`https://resultados.tse.jus.br/oficial/ele2022/546/dados-simplificados/${ufl}/${ufl}-c${c}-e000546-r.json`, {
-          ttlHours: 24 * 30,
-          retries: 2,
-        });
-        for (const x of j?.cand ?? []) {
-          const cand = porSq.get(String(x.sqcand));
-          if (cand) {
-            cand.votos = num(x.vap);
-            ok++;
-          }
-        }
-      } catch (e) {
-        if (ok === 0 && uf === "AC") avisos.push(`Votos 2022 (${uf}/${c}): ${(e as Error).message}`);
+  try {
+    const r = await fetchRaw(`${CDN}/votacao_candidato_munzona/votacao_candidato_munzona_2022.zip`, { ttlHours: 24 * 90, timeoutMs: 900_000, retries: 2 });
+    const totais = somarVotos(unzipFirst(r.body, /\.csv$/i).map((f) => decode(f.data, "latin1")));
+    let ok = 0;
+    for (const [sq, v] of totais) {
+      const c = porSq.get(sq);
+      if (c) {
+        c.votos = v;
+        ok++;
       }
     }
+    log.info(`TSE 2022: votos de ${ok} candidatos`);
+  } catch (e) {
+    avisos.push(`Votos 2022: ${(e as Error).message}`);
   }
-  log.info(`TSE 2022: votos de ${ok} candidatos`);
+}
+
+/** Sum QT_VOTOS_NOMINAIS by SQ_CANDIDATO for the first round of legislative and executive state offices. */
+export function somarVotos(csvs: string[]): Map<string, number> {
+  const tot = new Map<string, number>();
+  for (const texto of csvs) {
+    const linhas = texto.split(/\r?\n/);
+    const cab = (linhas[0] ?? "").split(";").map((c) => c.replace(/^"|"$/g, "").trim());
+    const iSq = cab.indexOf("SQ_CANDIDATO");
+    const iVotos = cab.indexOf("QT_VOTOS_NOMINAIS");
+    const iTurno = cab.indexOf("NR_TURNO");
+    const iCargo = cab.indexOf("CD_CARGO");
+    if (iSq < 0 || iVotos < 0) continue;
+    for (let n = 1; n < linhas.length; n++) {
+      if (!linhas[n]) continue;
+      const c = linhas[n].split(";").map((x) => x.replace(/^"|"$/g, ""));
+      if (iTurno >= 0 && c[iTurno] !== "1") continue;
+      if (iCargo >= 0 && !CARGOS.has(Number(c[iCargo]))) continue;
+      tot.set(c[iSq], (tot.get(c[iSq]) ?? 0) + (Number(c[iVotos]) || 0));
+    }
+  }
+  return tot;
 }
 
 export function fotoTSE(ano: number, sq: string, uf: string) {

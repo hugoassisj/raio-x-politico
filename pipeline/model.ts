@@ -7,6 +7,8 @@ export type PoliticoParcial = Partial<Omit<PoliticoDetalhe, "id" | "casa" | "car
     cpfMascarado?: string;
     /** yyyy-mm-dd of the start of the current term in office (for fair attendance) */
     inicioExercicioAtual?: string;
+    /** Periods in office in the current legislature (Câmara); end is exclusive, open when still in office */
+    exercicio?: { ini: string; fim?: string }[];
     proposicoesTotal?: number;
     proposicoesLei?: number;
     /** TSE candidate sequence number when the record came from TSE */
@@ -24,7 +26,10 @@ export interface Despesa {
   doc?: string;
   valor: number;
   url?: string;
+  /** Unique id of the reimbursement row at the source */
   docId?: string;
+  /** Receipt/invoice number printed on the document (used to detect true duplicates) */
+  numeroDoc?: string;
 }
 
 export interface Sessao {

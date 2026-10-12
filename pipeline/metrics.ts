@@ -55,6 +55,12 @@ function maioriaPorPartido(v: VotacaoDetalhe) {
   return m;
 }
 
+/** Whether someone was in office on a date: uses status-history periods when known. */
+export function emExercicioEm(p: PoliticoParcial, data: string) {
+  if (p.exercicio?.length) return p.exercicio.some((e) => e.ini <= data && (!e.fim || data < e.fim));
+  return !p.inicioExercicioAtual || p.inicioExercicioAtual <= data;
+}
+
 export interface ResultadoVotos {
   votos: Map<string, VotoItem[]>;
   metricas: Map<string, Pick<Metricas, "participacao" | "votacoesBase" | "fidelidade" | "fidelidadeMetodo" | "governismo">>;
@@ -72,7 +78,7 @@ export function calcularVotos(vs: VotacaoDetalhe[], pols: PoliticoParcial[], pre
     const votosPorPid = new Map(v.votos.map((x) => [x.pid, x]));
     const elegiveis =
       v.casa === "camara"
-        ? pols.filter((p) => p.casa === "camara" && (!p.inicioExercicioAtual || p.inicioExercicioAtual <= v.data))
+        ? pols.filter((p) => p.casa === "camara" && emExercicioEm(p, v.data))
         : pols.filter((p) => p.casa === "senado" && votosPorPid.has(p.id));
 
     for (const p of elegiveis) {
@@ -139,7 +145,8 @@ export function calcularPresenca(sessoes: Sessao[], pols: PoliticoParcial[]) {
   const out = new Map<string, { sessoes: number; presente: number; justificadas: number; ini: string; fim: string }>();
   const daCasa = (s: Sessao, casa: PoliticoParcial["casa"]) => (casa === "senado") === s.id.startsWith("sen-");
   for (const p of pols) {
-    const rel = sessoes.filter((s) => daCasa(s, p.casa) && (!p.inicioExercicioAtual || s.data >= p.inicioExercicioAtual));
+    if (p.casa === "assembleia") continue; // no attendance feed for state assemblies yet
+    const rel = sessoes.filter((s) => daCasa(s, p.casa) && emExercicioEm(p, s.data));
     if (!rel.length) continue;
     let presente = 0;
     let justificadas = 0;
@@ -155,7 +162,21 @@ export function calcularPresenca(sessoes: Sessao[], pols: PoliticoParcial[]) {
 
 // ---------------------------------------------------------------- expenses
 
-/** Last month with complete data: national total >= 80% of the median of the previous 12 months. */
+/**
+ * Last month with complete data. Reimbursements are filed with a delay, so the newest months can be
+ * partial: up to the two most recent months are dropped while their national total is below 80% of
+ * the median of the previous 12. Only the tail is trimmed, because spending also drops for legitimate
+ * reasons (recess, the electoral period) and those months must stay in the window.
+ */
+/**
+ * Houses use placeholder codes for internal services (e.g. "00000000000001" for official phones).
+ * Only real-looking CPF/CNPJ numbers are checked.
+ */
+export function documentoVerificavel(doc: string | undefined) {
+  const d = (doc ?? "").replace(/\D/g, "");
+  return (d.length === 11 || d.length === 14) && Number(d) >= 1_000_000;
+}
+
 export function ultimoMesCompleto(desp: Despesa[], hoje: Date): string | undefined {
   const tot = new Map<string, number>();
   for (const d of desp) {
@@ -163,12 +184,13 @@ export function ultimoMesCompleto(desp: Despesa[], hoje: Date): string | undefin
     tot.set(k, (tot.get(k) ?? 0) + d.valor);
   }
   const meses = [...tot.keys()].filter((k) => k <= hoje.toISOString().slice(0, 7)).sort();
-  for (let i = meses.length - 1; i >= 0; i--) {
-    const prev = meses.slice(Math.max(0, i - 12), i).map((k) => tot.get(k)!);
-    const med = median(prev);
-    if (med == null || tot.get(meses[i])! >= 0.8 * med) return meses[i];
+  let i = meses.length - 1;
+  for (let cortes = 0; cortes < 2 && i > 0; cortes++) {
+    const med = median(meses.slice(Math.max(0, i - 12), i).map((k) => tot.get(k)!));
+    if (med == null || tot.get(meses[i])! >= 0.8 * med) break;
+    i--;
   }
-  return meses[meses.length - 1];
+  return meses[i];
 }
 
 export function janela12(fimMes: string): string[] {
@@ -193,8 +215,8 @@ export function calcularGastos(desp: Despesa[], hoje: Date): Map<string, Gastos 
   const porCat = groupBy(desp, (d) => d.categoria);
   const limiarCat = new Map<string, number>();
   for (const [cat, ds] of porCat) {
-    if (ds.length < 200) continue;
-    const q = quantile(ds.map((d) => d.valor), 0.995);
+    if (ds.length < 1000) continue;
+    const q = quantile(ds.map((d) => d.valor), 0.999);
     if (q) limiarCat.set(cat, q);
   }
   const refeicoes = desp.filter((d) => /aliment|refei/i.test(d.categoria)).map((d) => d.valor);
@@ -222,18 +244,20 @@ export function calcularGastos(desp: Despesa[], hoje: Date): Map<string, Gastos 
     const alertas: Alerta[] = [];
     const vistos = new Map<string, Despesa>();
     for (const d of ds) {
-      if (d.doc && validDoc(d.doc) === false)
+      if (documentoVerificavel(d.doc) && validDoc(d.doc) === false)
         alertas.push({ regra: "documento_invalido", descricao: `CNPJ/CPF do fornecedor com dígito verificador inválido (${d.doc})`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
       if (/aliment|refei/i.test(d.categoria) && limiarRefeicao > 0 && d.valor > limiarRefeicao)
         alertas.push({ regra: "refeicao_atipica", descricao: `Refeição de valor muito acima do padrão da casa (limite estatístico R$ ${limiarRefeicao.toFixed(2)})`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
       const lc = limiarCat.get(d.categoria);
       if (lc && d.valor > lc && !/aliment|refei/i.test(d.categoria))
-        alertas.push({ regra: "valor_atipico", descricao: `Valor entre os 0,5% maiores da categoria "${d.categoria}"`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
-      if (d.data && d.doc) {
-        const k = `${d.data}|${d.doc}|${d.valor.toFixed(2)}`;
+        alertas.push({ regra: "valor_atipico", descricao: `Valor entre os 0,1% maiores da categoria "${d.categoria}"`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
+      // A true duplicate is the same receipt (supplier + receipt number + value) reimbursed twice
+      const numero = (d.numeroDoc ?? "").replace(/\W/g, "").replace(/^0+/, "");
+      if (d.doc && numero && !/^(sn|semnumero)$/i.test(numero)) {
+        const k = `${d.doc}|${numero}|${d.valor.toFixed(2)}`;
         const prev = vistos.get(k);
         if (prev && prev.docId !== d.docId)
-          alertas.push({ regra: "duplicidade", descricao: "Dois reembolsos com mesmo fornecedor, mesma data e mesmo valor", valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
+          alertas.push({ regra: "duplicidade", descricao: `Mesmo documento fiscal (nº ${d.numeroDoc}) reembolsado mais de uma vez`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
         vistos.set(k, d);
       }
     }

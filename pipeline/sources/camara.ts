@@ -1,6 +1,6 @@
 import { fetchRaw, getJson, getJsonWithHeaders, mapLimit } from "../lib/http";
 import { log } from "../lib/log";
-import { addDays, decode, get, isoDate, num, parseCsv, unzipFirst, windows, ymd } from "../lib/util";
+import { addDays, decode, get, isoDate, nomeProprio, num, parseCsv, unzipFirst, windows, ymd } from "../lib/util";
 import type { Mandato, Proposicao, VotacaoDetalhe } from "../../src/lib/types";
 import type { Despesa, SourceOutput, PoliticoParcial, Sessao } from "../model";
 
@@ -43,11 +43,12 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
     6,
     async (d: any) => {
       const id = String(d.id);
-      const [det, hist, ext, orgaos, frentes, prof] = await Promise.all([
+      const [det, hist, histAtual, ext, orgaos, frentes, prof] = await Promise.all([
         getJson(`${API}/deputados/${id}`, { ttlHours: 72 }).catch(() => null),
-        getJson(`${API}/deputados/${id}/historico-old`, { ttlHours: 168 })
-          .catch(() => getJson(`${API}/deputados/${id}/historico`, { ttlHours: 168 }))
-          .catch(() => null),
+        // historico-old has correct dates for past legislatures (career)...
+        getJson(`${API}/deputados/${id}/historico-old`, { ttlHours: 168 }).catch(() => null),
+        // ...and historico has the status changes (leave, return) of the current one
+        getJson(`${API}/deputados/${id}/historico`, { ttlHours: 24 }).catch(() => null),
         getJson(`${API}/deputados/${id}/mandatosExternos`, { ttlHours: 168 }).catch(() => null),
         allPages(`${API}/deputados/${id}/orgaos?itens=100&ordem=DESC&ordenarPor=dataInicio`, 5, 72).catch(() => []),
         getJson(`${API}/deputados/${id}/frentes`, { ttlHours: 168 }).catch(() => null),
@@ -58,8 +59,7 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
 
       const carreira: Mandato[] = [];
       const legs = new Set<number>();
-      let inicioExercicioAtual: string | undefined;
-      for (const h of hist?.dados ?? []) {
+      for (const h of (hist ?? histAtual)?.dados ?? []) {
         const leg = Number(h.idLegislatura);
         if (leg && !legs.has(leg) && LEGISLATURAS[leg]) {
           legs.add(leg);
@@ -72,11 +72,8 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
             fonte: "Câmara dos Deputados",
           });
         }
-        if (Number(h.idLegislatura) === Number(us.idLegislatura ?? d.idLegislatura) && /exerc/i.test(h.situacao ?? "") && h.dataHora) {
-          const dt = isoDate(h.dataHora);
-          if (dt && (!inicioExercicioAtual || dt > inicioExercicioAtual)) inicioExercicioAtual = dt;
-        }
       }
+      const exercicio = periodosExercicio((histAtual ?? hist)?.dados ?? [], Number(us.idLegislatura ?? d.idLegislatura));
       for (const m of ext?.dados ?? []) {
         const a = Number(m.anoInicio);
         if (!a) continue;
@@ -97,14 +94,15 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
         casa: "camara",
         cargo: "Deputado(a) Federal",
         nome: us.nomeEleitoral ?? d.nome,
-        nomeCivil: dd.nomeCivil,
+        nomeCivil: dd.nomeCivil ? nomeProprio(dd.nomeCivil) : undefined,
         partido: us.siglaPartido ?? d.siglaPartido,
         uf: us.siglaUf ?? d.siglaUf,
         foto: (us.urlFoto ?? d.urlFoto ?? "").replace(/^http:/, "https:"),
         sexo: dd.sexo === "F" ? "F" : dd.sexo === "M" ? "M" : undefined,
         emExercicio: true,
         cpfMascarado: dd.cpf,
-        inicioExercicioAtual,
+        exercicio,
+        inicioExercicioAtual: exercicio[exercicio.length - 1]?.ini,
         perfil: {
           nascimento: isoDate(dd.dataNascimento),
           naturalidade: [dd.municipioNascimento, dd.ufNascimento].filter(Boolean).join(" - ") || undefined,
@@ -112,7 +110,7 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
           profissoes: (prof?.dados ?? []).map((x: any) => x.titulo).filter(Boolean),
           email: us.gabinete?.email ?? us.email ?? d.email ?? undefined,
           telefone: us.gabinete?.telefone ? `(61) ${us.gabinete.telefone}` : undefined,
-          gabinete: us.gabinete?.sala ? `Gabinete ${us.gabinete.sala}, Anexo ${us.gabinete.predio}` : undefined,
+          gabinete: us.gabinete?.sala ? `Gabinete ${us.gabinete.sala}${/\d/.test(us.gabinete.predio ?? "") ? `, Anexo ${us.gabinete.predio}` : ""}` : undefined,
           site: dd.urlWebsite ?? undefined,
           redes: dd.redeSocial ?? [],
           paginaOficial: `https://www.camara.leg.br/deputados/${id}`,
@@ -244,6 +242,7 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
           valor,
           url: row.urlDocumento || undefined,
           docId: row.ideDocumento,
+          numeroDoc: row.txtNumero || undefined,
         });
       }
       log.info(`Câmara cota ${ano}: ${out.despesas.length - n0} lançamentos`);
@@ -266,6 +265,7 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
               valor: num(x.valorLiquido),
               url: x.urlDocumento || undefined,
               docId: String(x.codDocumento ?? ""),
+              numeroDoc: x.numDocumento ? String(x.numDocumento) : undefined,
             }),
           );
         },
@@ -326,6 +326,25 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
     out.avisos.push(`Proposições Câmara: ${(e as Error).message}`);
   }
 
+  return out;
+}
+
+/**
+ * Periods in office in the current legislature, from the status history: a period opens when the
+ * status becomes "Exercício" and closes on any other status (leave, ministry, end of term).
+ */
+export function periodosExercicio(hist: any[], legislatura: number): { ini: string; fim?: string }[] {
+  const eventos = hist
+    .filter((h) => Number(h.idLegislatura) === legislatura && h.dataHora)
+    .map((h) => ({ data: isoDate(h.dataHora)!, exercicio: /exerc/i.test(h.situacao ?? "") }))
+    .filter((e) => e.data)
+    .sort((a, b) => a.data.localeCompare(b.data));
+  const out: { ini: string; fim?: string }[] = [];
+  for (const e of eventos) {
+    const aberto = out.length && !out[out.length - 1].fim;
+    if (e.exercicio && !aberto) out.push({ ini: e.data });
+    else if (!e.exercicio && aberto) out[out.length - 1].fim = e.data;
+  }
   return out;
 }
 

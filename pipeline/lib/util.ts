@@ -1,6 +1,23 @@
 import { unzipSync } from "fflate";
 import { parse } from "csv-parse/sync";
 
+/** "DEPUTADO FEDERAL" -> "Deputado federal" (TSE publishes text in capitals) */
+export function capitalizar(s: string) {
+  const t = s.trim().toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/** "ARTHUR CÉSAR PEREIRA DE LIRA" -> "Arthur César Pereira de Lira"; mixed-case names are kept as published. */
+export function nomeProprio(s: string): string {
+  if (s !== s.toUpperCase()) return s.trim();
+  return s
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => (["da", "de", "do", "das", "dos", "e"].includes(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+    .join(" ");
+}
+
 /** Lowercase, strip accents and punctuation, collapse spaces. */
 export function norm(s: string | undefined | null): string {
   return (s ?? "")

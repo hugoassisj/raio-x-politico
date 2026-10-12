@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { nameSimilarity, num, isoDate, validDoc, windows, norm } from "../lib/util";
-import { calcularGastos, calcularPresenca, calcularVotos, enriquecerVotacoes, janela12, orientacaoDoPartido, ultimoMesCompleto } from "../metrics";
+import { nameSimilarity, nomeProprio, num, isoDate, validDoc, windows, norm } from "../lib/util";
+import { calcularGastos, calcularPresenca, calcularVotos, emExercicioEm, enriquecerVotacoes, janela12, orientacaoDoPartido, ultimoMesCompleto } from "../metrics";
+import { periodosExercicio } from "../sources/camara";
 import { vincularTSE } from "../build";
 import { SEN_PRESENTE } from "../sources/senado";
 import { normalizaUrl, plataforma, handleDe } from "../sources/falas";
+import { somarVotos } from "../sources/tse";
+import { documentoVerificavel } from "../metrics";
 import type { CandidatoTSE, Despesa, PoliticoParcial } from "../model";
 import type { VotacaoDetalhe } from "../../src/lib/types";
 
@@ -41,6 +44,8 @@ describe("util", () => {
     expect(nameSimilarity("José da Silva Júnior", "JOSE SILVA")).toBe(1);
     expect(nameSimilarity("Maria Souza", "Mário Souza")).toBeLessThan(1);
     expect(norm("  São   Paulo! ")).toBe("sao paulo");
+    expect(nomeProprio("ARTHUR CÉSAR PEREIRA DE LIRA")).toBe("Arthur César Pereira de Lira");
+    expect(nomeProprio("Tabata Amaral")).toBe("Tabata Amaral");
   });
   it("splits date ranges into bounded windows", () => {
     const w = windows(new Date("2026-01-01"), new Date("2026-12-31"), 90);
@@ -107,7 +112,40 @@ describe("vote metrics", () => {
   it("aggregates party totals", () => expect(votacoes[0].porPartido.find((p) => p.partido === "PL")!.nao).toBe(1));
 });
 
+describe("periods in office", () => {
+  it("opens on Exercício and closes on leave, per legislature", () => {
+    const hist = [
+      { idLegislatura: 56, situacao: "Exercício", dataHora: "2019-02-01T00:00" },
+      { idLegislatura: 57, situacao: "Exercício", dataHora: "2023-02-01T00:00" },
+      { idLegislatura: 57, situacao: "Licença", dataHora: "2025-03-10T10:00" },
+      { idLegislatura: 57, situacao: "Exercício", dataHora: "2025-09-01T10:00" },
+    ];
+    const per = periodosExercicio(hist, 57);
+    expect(per).toEqual([{ ini: "2023-02-01", fim: "2025-03-10" }, { ini: "2025-09-01" }]);
+    const p = dep("dep-1", "PL", { exercicio: per });
+    expect(emExercicioEm(p, "2025-05-01")).toBe(false);
+    expect(emExercicioEm(p, "2025-09-01")).toBe(true);
+    expect(emExercicioEm(p, "2024-01-01")).toBe(true);
+  });
+});
+
 describe("presence", () => {
+  it("does not count sessions while on leave", () => {
+    const pols = [dep("dep-1", "PL", { exercicio: [{ ini: "2026-01-01", fim: "2026-02-15" }, { ini: "2026-03-01" }] })];
+    const r = calcularPresenca(
+      [
+        { id: "1", data: "2026-02-10", presentes: ["dep-1"] },
+        { id: "2", data: "2026-02-20", presentes: [] },
+        { id: "3", data: "2026-03-10", presentes: [] },
+      ],
+      pols,
+    ).get("dep-1")!;
+    expect(r).toMatchObject({ sessoes: 2, presente: 1 });
+  });
+  it("is never computed for state assemblies", () => {
+    const r = calcularPresenca([{ id: "1", data: "2026-02-10", presentes: [] }], [{ ...dep("est-1", "PL"), casa: "assembleia" }]);
+    expect(r.has("est-1")).toBe(false);
+  });
   it("separates houses and respects the start of the term", () => {
     const pols = [dep("dep-1", "PL", { inicioExercicioAtual: "2026-02-01" })];
     const r = calcularPresenca(
@@ -142,21 +180,30 @@ describe("expenses", () => {
     ds.push(mk("a", 2026, 10, 100)); // October still being filed
     expect(ultimoMesCompleto(ds, new Date("2026-10-11"))).toBe("2026-09");
     expect(janela12("2026-09")).toHaveLength(12);
+  });
+  it("keeps legitimately low months (election period) in the window", () => {
+    const ds: Despesa[] = [];
+    for (let m = 1; m <= 5; m++) ds.push(mk("a", 2026, m, 1000));
+    for (let m = 6; m <= 9; m++) ds.push(mk("a", 2026, m, 300)); // campaign months: real, just lower
+    // only the two newest months may be trimmed, never the whole low stretch
+    expect(ultimoMesCompleto(ds, new Date("2026-10-11"))).toBe("2026-07");
     expect(janela12("2026-09")[0]).toBe("2025-10");
   });
   it("flags invalid documents, duplicates and supplier concentration", () => {
     const ds = [
-      mk("a", 2026, 1, 30000, { docId: "1" }),
-      mk("a", 2026, 1, 30000, { docId: "2" }),
+      mk("a", 2026, 1, 30000, { docId: "1", numeroDoc: "000123" }),
+      mk("a", 2026, 1, 30000, { docId: "2", numeroDoc: "123" }),
+      mk("a", 2026, 1, 30000, { docId: "4", numeroDoc: "124" }), // same day and value, different receipt: not a duplicate
       mk("a", 2026, 2, 500, { doc: "11222333000182", fornecedor: "X", docId: "3" }),
+      mk("a", 2026, 2, 116.56, { doc: "00000000000001", fornecedor: "CELULAR FUNCIONAL", docId: "5" }), // house placeholder code
     ];
     const g = calcularGastos(ds, new Date("2026-03-15")).get("a")!;
     const regras = g.alertas.map((a) => a.regra);
-    expect(regras).toContain("duplicidade");
-    expect(regras).toContain("documento_invalido");
+    expect(regras.filter((r) => r === "duplicidade")).toHaveLength(1);
+    expect(regras.filter((r) => r === "documento_invalido")).toHaveLength(1);
     expect(regras).toContain("fornecedor_concentrado");
     // February is far below the running median, so it is treated as still incomplete
-    expect(g.total12m).toBe(60000);
+    expect(g.total12m).toBe(90000);
   });
 });
 
@@ -201,5 +248,28 @@ describe("social links", () => {
     expect(plataforma("https://x.com/fulano")).toBe("x");
     expect(handleDe("https://www.youtube.com/@canal")).toBe("canal");
     expect(normalizaUrl("@fulano")).toBeUndefined();
+  });
+});
+
+describe("TSE bulk results", () => {
+  it("sums first-round nominal votes per candidate across zones", () => {
+    const csv = [
+      '"ANO_ELEICAO";"NR_TURNO";"CD_CARGO";"SQ_CANDIDATO";"QT_VOTOS_NOMINAIS"',
+      '"2022";"1";"6";"100";"1500"',
+      '"2022";"1";"6";"100";"500"',
+      '"2022";"2";"3";"200";"9999"',
+      '"2022";"1";"7";"300";"42"',
+      '"2022";"1";"11";"400";"7"',
+    ].join("\r\n");
+    const t = somarVotos([csv]);
+    expect(t.get("100")).toBe(2000);
+    expect(t.get("300")).toBe(42);
+    expect(t.has("200")).toBe(false); // second round
+    expect(t.has("400")).toBe(false); // municipal office
+  });
+  it("only checks real-looking documents", () => {
+    expect(documentoVerificavel("00000000000001")).toBe(false);
+    expect(documentoVerificavel("11222333000181")).toBe(true);
+    expect(documentoVerificavel("123")).toBe(false);
   });
 });
