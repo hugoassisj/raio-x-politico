@@ -295,7 +295,7 @@ async function main() {
     .then((t) => JSON.parse(t) as Meta)
     .catch(() => undefined);
   const qualidade = verificarQualidade({ hoje: HOJE, detalhes: r.detalhes, votacoes: r.votacoes, fontes, anterior: anterior?.demo ? undefined : anterior });
-  for (const q of qualidade) (q.ok ? log.info : log.warn)(`Qualidade: ${q.ok ? "ok" : "FALHOU"} - ${q.descricao}${q.detalhe ? ` (${q.detalhe})` : ""}`);
+  for (const q of qualidade) (q.ok ? log.info : log.aviso)(`Qualidade: ${q.ok ? "ok" : "FALHOU"} - ${q.descricao}${q.detalhe ? ` (${q.detalhe})` : ""}`);
   exigirQualidade(qualidade);
 
   log.step(`Gravando dados em ${OUT}`);
