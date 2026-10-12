@@ -14,6 +14,8 @@ Leia [PRODUCT.md](PRODUCT.md) antes de mudar qualquer coisa: os princípios lá 
 - Antes de enviar: `npm run format && npm run lint && npm run typecheck && npm test`. Mudou um coletor? Atualize o teste de contrato em `pipeline/tests/fontes.test.ts`.
 - Mudou o schema do banco? `npm run db:generate` e inclua a migração.
 - Decisões de produto ou arquitetura entram no Registro de decisões do PRODUCT.md.
+- Corrigiu algo que o site mostrou errado? Registre em `src/lib/correcoes.ts` (página `/correcoes`).
+- O plano e o andamento ficam em `docs/IMPLEMENTATION_ROADMAP.md`: atualize a situação e a prova de cada item que mexer.
 
 ## Next.js
 

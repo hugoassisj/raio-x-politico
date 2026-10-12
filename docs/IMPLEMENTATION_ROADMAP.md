@@ -123,7 +123,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 |---|---|---|---|---|---|
 | PROV-01 | IMPLEMENTED | P0 | “Como sabemos disso?” | Cartão de evidência por métrica. Falta estender a todas as seções. | |
 | PROV-02 | VERIFIED | P1 | Fato, cálculo, inferência e IA | Marcas visuais e texto diferentes para cada tipo. | |
-| PROV-03 | IMPLEMENTED | P1 | Pedido de correção | Modelo de issue “erro nos dados” já existe; falta registro público das correções feitas. | |
+| PROV-03 | VERIFIED | P1 | Pedido de correção | Modelo de issue “erro nos dados” já existe; falta registro público das correções feitas. | |
 | BAND-01 | NOT_STARTED | P3 | Bandeiras dos estados | Arquivos locais das fontes oficiais de cada estado, com fonte e licença. | |
 | A11Y-01 | IN_PROGRESS | P1 | Conferência de acessibilidade | Teclado, leitor de tela, zoom 200%, contraste, nas páginas principais. | |
 | DADOS-01 | IN_PROGRESS | P0 | Execução completa do TSE | Histórico desde 1994 e contas de campanha publicados e conferidos em perfis reais. | DADOS-02 |
@@ -150,7 +150,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | LAY-01 | NOT_STARTED | P2 | Layout mais largo e navegação revista | Páginas de dados usam a largura da tela; menu com Presidência, Empresas, Emendas e Mapa de relações também no celular | |
 | CNPJ-04 | NOT_STARTED | P2 | Dados cadastrais da Receita | Situação cadastral, atividade principal e data de abertura a partir dos dados abertos do CNPJ da Receita Federal, com data do arquivo | CNPJ-02 |
 | VOT-16 | NOT_STARTED | P2 | Sessões do Congresso e vetos | Votações em sessão conjunta e de vetos, pela API do Congresso Nacional | |
-| CORR-01 | NOT_STARTED | P1 | Registro público de correções | Página com cada correção feita: o que estava errado, o que mudou, quando e a fonte | PROV-03 |
+| CORR-01 | VERIFIED | P1 | Registro público de correções | Página com cada correção feita: o que estava errado, o que mudou, quando e a fonte | PROV-03 |
 | IAF-01 | BLOCKED | P2 | Recursos de IA | Perguntas em linguagem simples sobre os dados, sempre com citação. Bloqueio: sem chave de IA no ambiente | IA-01 |
 | PERFM-01 | NOT_STARTED | P2 | Desempenho | Medir tamanho das páginas e do JavaScript, tempo de carga no celular; listas grandes paginadas no servidor | |
 | SEG-01 | NOT_STARTED | P2 | Segurança | Cabeçalhos de segurança (CSP e outros), revisão do `npm audit` (9 avisos em dependências de desenvolvimento), entradas validadas nas rotas de API | |
@@ -193,6 +193,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | CARD-01 | Lista de políticos com busca por nome, foto, cargo, partido com nome completo, estado e todas as métricas disponíveis como colunas opcionais. Falta: cobertura de dados na própria lista. |
 | PART-04 | `filiacoesNoTempo` em `src/lib/carreira.ts` junta os pontos em que um registro mostra o partido (candidaturas do TSE, partido gravado em cada voto, cadastro atual) e forma trechos; entre registros nada é suposto (teste “joins records with the same party and never fills gaps”). O pipeline agora grava o partido de cada voto no perfil (`VotoItem.partido`). Cartão “Partido ao longo do tempo” na vida pública. Falta: dados reais com o partido por voto (próxima coleta). |
 | HIST-01 | `eleicoes.json` (`indiceDeCandidaturas` em `pipeline/build.ts`, testado) e página `/eleicoes`: escolher o ano, filtrar por cargo, estado, nome e resultado (contagens clicáveis), partido **daquela** eleição, resultado no gênero da pessoa, paginação comum. Diz com clareza que mostra só as pessoas acompanhadas e quem disputou a Presidência. Conferido com um índice gerado localmente a partir dos perfis publicados (2018, deputado federal, SP: 52 candidaturas, 40 eleitos, partidos de 2018 como PPS e DEM). O arquivo real sai na próxima coleta. |
+| CORR-01 | `src/lib/correcoes.ts` e página `/correcoes` (no rodapé), com as 6 correções reais feitas em 2026-10-12, botão para avisar um erro (formulário com a página preenchida) e link para o histórico público. Regra nova no AGENTS.md: toda correção do que o site mostrou entra no registro. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças

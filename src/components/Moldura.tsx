@@ -26,6 +26,7 @@ const NAV_EXTRA = [
   { href: "/eleicoes", rotulo: "Eleições desde 1994" },
   { href: "/analises", rotulo: "Cruzamentos de dados" },
   { href: "/dados", rotulo: "Sobre os dados" },
+  { href: "/correcoes", rotulo: "Correções" },
 ];
 
 export function Marca() {
