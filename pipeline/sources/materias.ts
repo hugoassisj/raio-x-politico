@@ -4,7 +4,7 @@
  * one-line summary, which is rarely enough to understand what was at stake.
  *
  * Câmara: /proposicoes/{id}, /proposicoes/{id}/temas, /proposicoes/{id}/autores
- * Senado: /processo?codigoMateria={codigo} (current API) with /materia/{codigo} as a fallback
+ * Senado: /materia/{codigo}.json
  */
 import type { MateriaVotada, VotacaoDetalhe } from "../../src/lib/types";
 import { getJson, mapLimit } from "../lib/http";
@@ -13,7 +13,8 @@ import { arr, get, isoDate } from "../lib/util";
 
 const CAMARA = "https://dadosabertos.camara.leg.br/api/v2";
 const SENADO = "https://legis.senado.leg.br/dadosabertos";
-const CACHE = { ttlHours: 24 * 7, retries: 2, timeoutMs: 60_000 };
+// Bill pages are small; the size cap protects memory if an endpoint ignores a filter and returns everything
+const CACHE = { ttlHours: 24 * 7, retries: 2, timeoutMs: 60_000, maxBytes: 3_000_000 };
 
 const texto = (v: unknown) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "");
 
@@ -81,15 +82,10 @@ export async function materiaCamara(id: string): Promise<MateriaVotada | undefin
 }
 
 export async function materiaSenado(codigo: string): Promise<MateriaVotada | undefined> {
-  // The current API lists processes per bill code; the legacy endpoint is the fallback
-  let fonte: unknown = await getJson(`${SENADO}/processo?codigoMateria=${codigo}`, CACHE).catch(() => null);
-  const processo = arr(fonte as any)[0] as any;
-  if (processo?.id) fonte = (await getJson(`${SENADO}/processo/${processo.id}`, CACHE).catch(() => null)) ?? processo;
-  let ementa = campo(fonte, ["ementa", "EmentaMateria"]);
-  if (!ementa) {
-    fonte = await getJson(`${SENADO}/materia/${codigo}.json`, CACHE).catch(() => null);
-    ementa = campo(fonte, ["EmentaMateria", "ementa"]);
-  }
+  // Bill detail by code. (The newer /processo listing is not used: an unknown filter there returns
+  // every process in the Senado, which flooded memory in the data workflow.)
+  const fonte: unknown = await getJson(`${SENADO}/materia/${codigo}.json`, CACHE).catch(() => null);
+  const ementa = campo(fonte, ["EmentaMateria", "ementa"]);
   if (!ementa) return undefined;
   const sigla =
     campo(fonte, ["identificacao", "DescricaoIdentificacaoMateria"]) ||

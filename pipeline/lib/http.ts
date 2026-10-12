@@ -63,6 +63,29 @@ export interface FetchOpts {
   timeoutMs?: number;
   /** Treat these statuses as a valid empty response instead of an error */
   allowStatus?: number[];
+  /** Abort (without retrying) when the body grows past this size, so a wrong filter cannot flood memory */
+  maxBytes?: number;
+}
+
+class RespostaGrandeDemais extends Error {}
+
+async function lerCorpo(res: Response, maxBytes?: number): Promise<Buffer> {
+  if (!maxBytes || !res.body) return Buffer.from(await res.arrayBuffer());
+  if (Number(res.headers.get("content-length")) > maxBytes) throw new RespostaGrandeDemais(`resposta maior que ${maxBytes} bytes`);
+  const partes: Uint8Array[] = [];
+  let total = 0;
+  const reader = res.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > maxBytes) {
+      await reader.cancel();
+      throw new RespostaGrandeDemais(`resposta maior que ${maxBytes} bytes`);
+    }
+    partes.push(value);
+  }
+  return Buffer.concat(partes);
 }
 
 export interface RawResponse {
@@ -80,7 +103,7 @@ function cacheKey(url: string, headers?: Record<string, string>) {
 }
 
 export async function fetchRaw(url: string, opts: FetchOpts = {}): Promise<RawResponse> {
-  const { ttlHours = 20, headers = {}, retries = 4, timeoutMs = 60_000, allowStatus = [] } = opts;
+  const { ttlHours = 20, headers = {}, retries = 4, timeoutMs = 60_000, allowStatus = [], maxBytes } = opts;
   const key = cacheKey(url, headers);
   const bodyPath = path.join(CACHE_DIR, key.slice(0, 2), key + ".bin");
   const metaPath = bodyPath.replace(/\.bin$/, ".json");
@@ -113,7 +136,7 @@ export async function fetchRaw(url: string, opts: FetchOpts = {}): Promise<RawRe
         signal: ctrl.signal,
         redirect: "follow",
       });
-      const buf = Buffer.from(await res.arrayBuffer());
+      const buf = await lerCorpo(res, maxBytes);
       clearTimeout(t);
       const hdrs: Record<string, string> = {};
       res.headers.forEach((v, k) => (hdrs[k] = v));
@@ -131,6 +154,7 @@ export async function fetchRaw(url: string, opts: FetchOpts = {}): Promise<RawRe
       await sleep(Number.isFinite(ra) && ra > 0 ? Math.min(ra, 60) * 1000 : backoff(attempt));
     } catch (e) {
       lastErr = e;
+      if (e instanceof RespostaGrandeDemais) break;
       await sleep(backoff(attempt));
     } finally {
       release(host);

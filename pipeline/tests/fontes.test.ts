@@ -247,6 +247,14 @@ describe("Câmara collector", () => {
   });
 });
 
+describe("HTTP client", () => {
+  it("refuses responses larger than the cap instead of loading them into memory", async () => {
+    mockFetch([[/grande/, { itens: "x".repeat(5000) }]]);
+    const { getJson } = await import("../lib/http");
+    await expect(getJson("https://exemplo.gov.br/grande", { ttlHours: 0, maxBytes: 1000 })).rejects.toThrow(/maior que 1000 bytes/);
+  });
+});
+
 describe("Bills voted collector", () => {
   it("reads Câmara bill details, themes and authors", async () => {
     mockFetch([
