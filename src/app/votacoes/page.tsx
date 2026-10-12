@@ -13,11 +13,7 @@ export const metadata: Metadata = {
 
 const POR_PAGINA = 24;
 const t = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
-const norm = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 export default async function Votacoes({ searchParams }: PageProps<"/votacoes">) {
   const sp = await searchParams;
@@ -50,7 +46,12 @@ export default async function Votacoes({ searchParams }: PageProps<"/votacoes">)
         <FormFiltros acao="/votacoes">
           <label className="flex min-w-[14rem] flex-[2] flex-col gap-1 text-sm">
             <span className="text-ink-3">Assunto</span>
-            <input name="q" defaultValue={q} placeholder="Ex.: saúde, PEC, imposto" className="rounded-lg border border-line bg-surface px-3 py-2 text-ink outline-none focus:border-ink" />
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder="Ex.: saúde, PEC, imposto"
+              className="rounded-lg border border-line bg-surface px-3 py-2 text-ink outline-none focus:border-ink"
+            />
           </label>
           <Seletor
             nome="casa"

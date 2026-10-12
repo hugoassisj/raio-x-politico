@@ -147,7 +147,17 @@ async function main() {
         const raw = await chamar(p.modelo, prompt);
         const idsF = new Set([...falas, ...anteriores].map((f) => f.id));
         const idsV = new Set(votos.map((v) => v.votacaoId));
-        novos.push({ pid: c.pid, periodo: p.periodo, inicio: ini, fim: ymd(hoje), geradoEm: hoje.toISOString(), modelo: p.modelo, hash: h, nFontes: falas.length + votos.length, ...sanitizar(raw, idsF, idsV) });
+        novos.push({
+          pid: c.pid,
+          periodo: p.periodo,
+          inicio: ini,
+          fim: ymd(hoje),
+          geradoEm: hoje.toISOString(),
+          modelo: p.modelo,
+          hash: h,
+          nFontes: falas.length + votos.length,
+          ...sanitizar(raw, idsF, idsV),
+        });
         gerados++;
       } catch (e) {
         log.warn(`IA ${c.pid}/${p.periodo}: ${(e as Error).message}`);

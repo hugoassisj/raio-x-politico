@@ -13,9 +13,7 @@ export function VotoChip({ voto, compacto = false }: { voto?: string; compacto?:
     ausente: "bg-surface-2 text-ink-2 ring-1 ring-inset ring-line",
   }[tipo];
   const texto = tipo === "ausente" ? "Ausente" : (voto ?? VAZIO);
-  return (
-    <span className={`inline-flex items-center rounded-md font-semibold ${compacto ? "px-1.5 py-0.5 text-xs" : "px-2 py-0.5 text-sm"} ${cls}`}>{texto}</span>
-  );
+  return <span className={`inline-flex items-center rounded-md font-semibold ${compacto ? "px-1.5 py-0.5 text-xs" : "px-2 py-0.5 text-sm"} ${cls}`}>{texto}</span>;
 }
 
 export function Fonte({ href, children }: { href: string; children: ReactNode }) {
@@ -97,7 +95,15 @@ export function Container({ children, className = "" }: { children: ReactNode; c
 }
 
 /** Horizontal bars with direct labels: the default way to compare a handful of values. */
-export function Barras({ itens, formato, max }: { itens: { rotulo: ReactNode; valor: number; detalhe?: ReactNode; href?: string }[]; formato: (n: number) => string; max?: number }) {
+export function Barras({
+  itens,
+  formato,
+  max,
+}: {
+  itens: { rotulo: ReactNode; valor: number; detalhe?: ReactNode; href?: string }[];
+  formato: (n: number) => string;
+  max?: number;
+}) {
   const m = max ?? Math.max(...itens.map((i) => i.valor), 1);
   return (
     <ul className="space-y-3">
@@ -115,7 +121,17 @@ export function Barras({ itens, formato, max }: { itens: { rotulo: ReactNode; va
             {it.detalhe && <div className="mt-1 text-xs text-ink-3">{it.detalhe}</div>}
           </>
         );
-        return <li key={i}>{it.href ? <Link href={it.href} className="block hover:opacity-80">{corpo}</Link> : corpo}</li>;
+        return (
+          <li key={i}>
+            {it.href ? (
+              <Link href={it.href} className="block hover:opacity-80">
+                {corpo}
+              </Link>
+            ) : (
+              corpo
+            )}
+          </li>
+        );
       })}
     </ul>
   );

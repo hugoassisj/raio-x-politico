@@ -62,7 +62,12 @@ export default async function Falas({ searchParams }: PageProps<"/falas">) {
         <FormFiltros acao="/falas">
           <label className="flex min-w-[16rem] flex-[2] flex-col gap-1 text-sm">
             <span className="text-ink-3">Tema ou palavra</span>
-            <input name="q" defaultValue={q} placeholder="Ex.: reforma tributária, segurança, vacina" className="rounded-lg border border-line bg-surface px-3 py-2 text-ink outline-none focus:border-ink" />
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder="Ex.: reforma tributária, segurança, vacina"
+              className="rounded-lg border border-line bg-surface px-3 py-2 text-ink outline-none focus:border-ink"
+            />
           </label>
           <Seletor
             nome="tipo"
@@ -152,8 +157,8 @@ export default async function Falas({ searchParams }: PageProps<"/falas">) {
 
       <Origem>
         <p>
-          Discursos: transcrições e resumos oficiais publicados pela Câmara dos Deputados e pronunciamentos do Senado Federal. Redes sociais: somente conteúdo obtido pelas APIs oficiais
-          das plataformas, a partir dos perfis declarados à Câmara e ao TSE. Não coletamos conteúdo por raspagem de páginas.
+          Discursos: transcrições e resumos oficiais publicados pela Câmara dos Deputados e pronunciamentos do Senado Federal. Redes sociais: somente conteúdo obtido pelas APIs
+          oficiais das plataformas, a partir dos perfis declarados à Câmara e ao TSE. Não coletamos conteúdo por raspagem de páginas.
         </p>
         <p>{r.motor === "banco" ? "Busca com dicionário em português (encontra variações como 'imposto' e 'impostos')." : "Busca por palavras exatas, sem diferenciar acentos."}</p>
       </Origem>

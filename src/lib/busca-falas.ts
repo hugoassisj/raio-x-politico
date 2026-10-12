@@ -11,11 +11,7 @@ export interface ResultadoBusca {
   motor: "banco" | "arquivos";
 }
 
-const norm = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 let todas: Promise<Fala[]> | undefined;
 /** Snapshot fallback: every statement file loaded once per server instance. */
@@ -71,7 +67,10 @@ export async function buscarFalas(q: string, opts: { pid?: string; tipo?: string
     const doc = sql`to_tsvector('portuguese', coalesce(${schema.falas.titulo}, '') || ' ' || ${schema.falas.texto})`;
     const filtros = [sql`${doc} @@ ${tsq}`, opts.pid ? eq(schema.falas.pid, opts.pid) : undefined, opts.tipo ? eq(schema.falas.tipo, opts.tipo) : undefined].filter(Boolean);
     const where = and(...(filtros as Parameters<typeof and>));
-    const [{ n }] = await d.select({ n: sql<number>`count(*)::int` }).from(schema.falas).where(where);
+    const [{ n }] = await d
+      .select({ n: sql<number>`count(*)::int` })
+      .from(schema.falas)
+      .where(where);
     const rows = await d
       .select({
         id: schema.falas.id,

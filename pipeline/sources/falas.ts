@@ -38,7 +38,12 @@ export async function coletarDiscursos(pols: PoliticoParcial[], hoje: Date, dias
               titulo: [d.tipoDiscurso, d.faseEvento?.titulo].filter(Boolean).join(" - ") || "Discurso",
               texto: (d.transcricao ?? d.sumario ?? "").replace(/\s+/g, " ").trim().slice(0, 12000),
               resumoOficial: d.sumario ?? undefined,
-              palavrasChave: d.keywords ? String(d.keywords).split(/[,;]\s*/).filter(Boolean).slice(0, 12) : undefined,
+              palavrasChave: d.keywords
+                ? String(d.keywords)
+                    .split(/[,;]\s*/)
+                    .filter(Boolean)
+                    .slice(0, 12)
+                : undefined,
               url: d.urlTexto ?? d.urlVideo ?? `https://www.camara.leg.br/deputados/${id}`,
               midia: d.urlVideo ?? d.urlAudio ?? undefined,
               fonte: "Câmara dos Deputados - Discursos",
@@ -74,7 +79,12 @@ export async function coletarDiscursos(pols: PoliticoParcial[], hoje: Date, dias
           titulo: get(d, "TipoUsoPalavra.Descricao") ?? "Pronunciamento",
           texto: String(d.TextoResumo ?? "").trim(),
           resumoOficial: d.TextoResumo ?? undefined,
-          palavrasChave: d.Indexacao ? String(d.Indexacao).split(/[,;.]\s*/).filter(Boolean).slice(0, 12) : undefined,
+          palavrasChave: d.Indexacao
+            ? String(d.Indexacao)
+                .split(/[,;.]\s*/)
+                .filter(Boolean)
+                .slice(0, 12)
+            : undefined,
           url: d.UrlTexto ?? `https://www25.senado.leg.br/web/atividade/pronunciamentos/-/p/pronunciamento/${d.CodigoPronunciamento}`,
           fonte: "Senado Federal - Pronunciamentos",
         });

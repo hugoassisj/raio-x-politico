@@ -19,14 +19,20 @@ export function orientacaoDoPartido(orientacoes: { sigla: string; orientacao: st
   // Federation, e.g. "Fdr PT-PCdoB-PV"
   for (const o of rows) {
     if (!/^(fdr|federa)/.test(o.k)) continue;
-    const parts = o.k.replace(/^(fdr|federacao)\s*/, "").split(/[-/ ]+/).map((x) => x.replace(/[^a-z0-9]/g, ""));
+    const parts = o.k
+      .replace(/^(fdr|federacao)\s*/, "")
+      .split(/[-/ ]+/)
+      .map((x) => x.replace(/[^a-z0-9]/g, ""));
     if (parts.includes(P)) return o.orientacao;
   }
   // Bloc with camel-cased, truncated party names, e.g. "Bl UniPpPsd..."
   for (const o of orientacoes) {
     if (!/^bl/i.test(o.sigla)) continue;
     const body = o.sigla.replace(/^bl(oco)?\s*/i, "").replace(/\.+$/, "");
-    const tokens = body.split(/(?=[A-Z])|[-/ ]+/).map((t) => canon(t).replace(/[^a-z0-9]/g, "")).filter(Boolean);
+    const tokens = body
+      .split(/(?=[A-Z])|[-/ ]+/)
+      .map((t) => canon(t).replace(/[^a-z0-9]/g, ""))
+      .filter(Boolean);
     if (tokens.some((t) => t === P || (t.length >= 3 && P.startsWith(t)))) return o.orientacao;
   }
   return undefined;

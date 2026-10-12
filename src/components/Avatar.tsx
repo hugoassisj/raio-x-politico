@@ -15,11 +15,7 @@ export function Avatar({ src, nome, size = 56, className = "" }: { src?: string;
   const style = { width: size, height: Math.round(size * 1.25) };
   if (!src || erro) {
     return (
-      <span
-        aria-hidden
-        style={style}
-        className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-surface-2 font-display text-ink-3 ${className}`}
-      >
+      <span aria-hidden style={style} className={`inline-flex shrink-0 items-center justify-center rounded-lg bg-surface-2 font-display text-ink-3 ${className}`}>
         <span style={{ fontSize: size * 0.34 }} className="font-semibold">
           {iniciais(nome)}
         </span>

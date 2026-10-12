@@ -31,7 +31,9 @@ export function norm(s: string | undefined | null): string {
 
 const STOP = new Set(["de", "da", "do", "das", "dos", "e", "jr", "junior", "filho", "neto", "sobrinho"]);
 export function nameTokens(s: string) {
-  return norm(s).split(" ").filter((t) => t.length > 1 && !STOP.has(t));
+  return norm(s)
+    .split(" ")
+    .filter((t) => t.length > 1 && !STOP.has(t));
 }
 
 /** Token overlap similarity (Dice coefficient) for person names. */
@@ -190,4 +192,32 @@ export function groupBy<T>(xs: T[], key: (x: T) => string) {
   return m;
 }
 
-export const UFS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
+export const UFS = [
+  "AC",
+  "AL",
+  "AP",
+  "AM",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MT",
+  "MS",
+  "MG",
+  "PA",
+  "PB",
+  "PR",
+  "PE",
+  "PI",
+  "RJ",
+  "RN",
+  "RS",
+  "RO",
+  "RR",
+  "SC",
+  "SP",
+  "SE",
+  "TO",
+];

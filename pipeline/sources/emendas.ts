@@ -74,7 +74,16 @@ export async function coletarEmendasPortal(anos: number[], chave: string): Promi
       const rows: any[] = data ?? [];
       for (const r of rows) {
         // Committee/bench amendments have non-person authors; they are kept and simply never match a politician
-        add(agg, r.nomeAutor ?? r.autor, r.codigoEmenda, Number(r.ano) || ano, num(r.valorPago) || num(r.valorEmpenhado), r.localidadeDoGasto ?? "Não informado", undefined, "Portal da Transparência - Emendas");
+        add(
+          agg,
+          r.nomeAutor ?? r.autor,
+          r.codigoEmenda,
+          Number(r.ano) || ano,
+          num(r.valorPago) || num(r.valorEmpenhado),
+          r.localidadeDoGasto ?? "Não informado",
+          undefined,
+          "Portal da Transparência - Emendas",
+        );
       }
       registros += rows.length;
       if (rows.length < 15) break;

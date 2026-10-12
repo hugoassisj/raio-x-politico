@@ -28,7 +28,11 @@ export default async function Comparar({ searchParams }: PageProps<"/comparar">)
   ].slice(0, 4);
   const pessoas = (await Promise.all(ids.map((id) => getPolitico(id)))).filter((p): p is PoliticoDetalhe => !!p);
   const linhas = METRICAS.filter((m) => pessoas.some((p) => p.m[m.chave] != null));
-  const semEsta = (id: string) => `/comparar?ids=${pessoas.filter((p) => p.id !== id).map((p) => p.id).join(",")}`;
+  const semEsta = (id: string) =>
+    `/comparar?ids=${pessoas
+      .filter((p) => p.id !== id)
+      .map((p) => p.id)
+      .join(",")}`;
 
   // Votes in common: same roll call, different choices
   const comuns =
@@ -48,7 +52,9 @@ export default async function Comparar({ searchParams }: PageProps<"/comparar">)
       </div>
 
       {pessoas.length === 0 ? (
-        <p className="mt-8 rounded-lg bg-surface-2 px-4 py-5 text-ink-2">Comece adicionando alguém pelo nome. Dica: no perfil de qualquer político há um botão &ldquo;Comparar com outro&rdquo;.</p>
+        <p className="mt-8 rounded-lg bg-surface-2 px-4 py-5 text-ink-2">
+          Comece adicionando alguém pelo nome. Dica: no perfil de qualquer político há um botão &ldquo;Comparar com outro&rdquo;.
+        </p>
       ) : (
         <div className="mt-8 overflow-x-auto rounded-xl border border-line bg-surface">
           <table className="w-full min-w-[640px] text-sm">

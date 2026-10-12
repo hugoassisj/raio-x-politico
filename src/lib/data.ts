@@ -2,18 +2,7 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { cache } from "react";
-import type {
-  Agregado,
-  Fala,
-  FalasArquivo,
-  GastosGerais,
-  IAArquivo,
-  Meta,
-  PoliticoDetalhe,
-  PoliticoResumo,
-  VotacaoDetalhe,
-  VotacaoResumo,
-} from "./types";
+import type { Agregado, Fala, FalasArquivo, GastosGerais, IAArquivo, Meta, PoliticoDetalhe, PoliticoResumo, VotacaoDetalhe, VotacaoResumo } from "./types";
 
 /**
  * Read-only access to the published snapshot (./data, or DATA_DIR).

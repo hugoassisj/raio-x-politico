@@ -17,11 +17,82 @@ const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 const pick = <T>(xs: T[]) => xs[Math.floor(rnd() * xs.length)];
 const between = (a: number, b: number) => a + rnd() * (b - a);
 
-const NOMES_F = ["Ana", "Beatriz", "Camila", "Daniela", "Elisa", "Fernanda", "Gabriela", "Helena", "Isadora", "Júlia", "Larissa", "Marina", "Natália", "Paula", "Renata", "Simone", "Tânia", "Vera"];
-const NOMES_M = ["André", "Bruno", "Carlos", "Diego", "Eduardo", "Fábio", "Gustavo", "Henrique", "Igor", "João", "Leonardo", "Marcos", "Otávio", "Paulo", "Rafael", "Sérgio", "Tiago", "Vinícius"];
-const SOBRENOMES = ["Albuquerque", "Barros", "Cardoso", "Duarte", "Esteves", "Falcão", "Guimarães", "Holanda", "Igarashi", "Junqueira", "Lacerda", "Macedo", "Nogueira", "Orsini", "Pacheco", "Queiroz", "Rezende", "Sampaio", "Toledo", "Uchôa", "Vasconcelos", "Xavier"];
+const NOMES_F = [
+  "Ana",
+  "Beatriz",
+  "Camila",
+  "Daniela",
+  "Elisa",
+  "Fernanda",
+  "Gabriela",
+  "Helena",
+  "Isadora",
+  "Júlia",
+  "Larissa",
+  "Marina",
+  "Natália",
+  "Paula",
+  "Renata",
+  "Simone",
+  "Tânia",
+  "Vera",
+];
+const NOMES_M = [
+  "André",
+  "Bruno",
+  "Carlos",
+  "Diego",
+  "Eduardo",
+  "Fábio",
+  "Gustavo",
+  "Henrique",
+  "Igor",
+  "João",
+  "Leonardo",
+  "Marcos",
+  "Otávio",
+  "Paulo",
+  "Rafael",
+  "Sérgio",
+  "Tiago",
+  "Vinícius",
+];
+const SOBRENOMES = [
+  "Albuquerque",
+  "Barros",
+  "Cardoso",
+  "Duarte",
+  "Esteves",
+  "Falcão",
+  "Guimarães",
+  "Holanda",
+  "Igarashi",
+  "Junqueira",
+  "Lacerda",
+  "Macedo",
+  "Nogueira",
+  "Orsini",
+  "Pacheco",
+  "Queiroz",
+  "Rezende",
+  "Sampaio",
+  "Toledo",
+  "Uchôa",
+  "Vasconcelos",
+  "Xavier",
+];
 const PARTIDOS = ["PL", "PT", "UNIÃO", "PP", "MDB", "PSD", "REPUBLICANOS", "PDT", "PSB", "PSDB", "PSOL", "PODE", "AVANTE", "NOVO", "PCdoB", "PV", "CIDADANIA", "SOLIDARIEDADE"];
-const CATEGORIAS = ["Divulgação da atividade parlamentar", "Combustíveis e lubrificantes", "Passagem aérea - reembolso", "Locação ou fretamento de veículos automotores", "Manutenção de escritório de apoio", "Fornecimento de alimentação do parlamentar", "Consultorias, pesquisas e trabalhos técnicos", "Telefonia", "Hospedagem"];
+const CATEGORIAS = [
+  "Divulgação da atividade parlamentar",
+  "Combustíveis e lubrificantes",
+  "Passagem aérea - reembolso",
+  "Locação ou fretamento de veículos automotores",
+  "Manutenção de escritório de apoio",
+  "Fornecimento de alimentação do parlamentar",
+  "Consultorias, pesquisas e trabalhos técnicos",
+  "Telefonia",
+  "Hospedagem",
+];
 const TEMAS = [
   ["reforma tributária", "a simplificação de impostos para pequenas empresas"],
   ["segurança pública", "o aumento do efetivo policial nos municípios"],

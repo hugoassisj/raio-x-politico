@@ -38,7 +38,9 @@ export const politicos = pgTable(
 export const mandatos = pgTable(
   "mandatos",
   {
-    pid: text("pid").notNull().references(() => politicos.id, { onDelete: "cascade" }),
+    pid: text("pid")
+      .notNull()
+      .references(() => politicos.id, { onDelete: "cascade" }),
     cargo: text("cargo").notNull(),
     inicio: integer("inicio").notNull(),
     fim: integer("fim"),
@@ -68,7 +70,9 @@ export const votacoes = pgTable(
 export const votos = pgTable(
   "votos",
   {
-    votacaoId: text("votacao_id").notNull().references(() => votacoes.id, { onDelete: "cascade" }),
+    votacaoId: text("votacao_id")
+      .notNull()
+      .references(() => votacoes.id, { onDelete: "cascade" }),
     pid: text("pid").notNull(),
     partido: text("partido"),
     voto: text("voto").notNull(),

@@ -41,9 +41,20 @@ export async function coletarConectoresSociais(redes: RedeSocial[], dias: number
         const id = u?.data?.id;
         if (!id) return;
         r.verificado = true;
-        const t: any = await getJson(`https://api.x.com/2/users/${id}/tweets?max_results=100&start_time=${desde}&tweet.fields=created_at&exclude=replies`, { headers: h, ttlHours: 20 });
+        const t: any = await getJson(`https://api.x.com/2/users/${id}/tweets?max_results=100&start_time=${desde}&tweet.fields=created_at&exclude=replies`, {
+          headers: h,
+          ttlHours: 20,
+        });
         for (const tw of t?.data ?? []) {
-          falas.push({ id: `x-${tw.id}`, pid: r.pid, data: tw.created_at.slice(0, 10), tipo: "x", texto: tw.text, url: `https://x.com/${user}/status/${tw.id}`, fonte: "X API v2" });
+          falas.push({
+            id: `x-${tw.id}`,
+            pid: r.pid,
+            data: tw.created_at.slice(0, 10),
+            tipo: "x",
+            texto: tw.text,
+            url: `https://x.com/${user}/status/${tw.id}`,
+            fonte: "X API v2",
+          });
         }
       },
       "X",

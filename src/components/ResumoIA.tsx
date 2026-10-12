@@ -115,7 +115,8 @@ export function ResumoIA({ resumos, refs }: { resumos: Resumo[]; refs: Record<st
           </details>
         )}
         <p className="text-xs text-ink-3">
-          Resumos de IA podem conter erros. Toda afirmação acima aponta para o registro original: confira antes de compartilhar. Afirmações sem fonte verificável são descartadas automaticamente.
+          Resumos de IA podem conter erros. Toda afirmação acima aponta para o registro original: confira antes de compartilhar. Afirmações sem fonte verificável são descartadas
+          automaticamente.
         </p>
       </div>
     </div>

@@ -7,11 +7,7 @@ import { Avatar } from "./Avatar";
 /** [id, nome, nomeCivil, partido, uf, cargo, foto] */
 export type ItemIndice = [string, string, string, string, string, string, string];
 
-const norm = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 let indiceCache: Promise<ItemIndice[]> | undefined;
 function carregarIndice() {

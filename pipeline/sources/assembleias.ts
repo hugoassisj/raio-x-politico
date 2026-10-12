@@ -199,10 +199,7 @@ export async function coletarAssembleias(tse: CandidatoTSE[], anoGastos: number[
       carreira: [],
       comissoes: [],
       frentes: [],
-      fontes: [
-        { nome: "TSE - Candidaturas 2022", url: "https://dadosabertos.tse.jus.br/dataset/candidatos-2022" },
-        ...(ext ? [{ nome: ext.fonte, url: ext.pagina ?? "" }] : []),
-      ],
+      fontes: [{ nome: "TSE - Candidaturas 2022", url: "https://dadosabertos.tse.jus.br/dataset/candidatos-2022" }, ...(ext ? [{ nome: ext.fonte, url: ext.pagina ?? "" }] : [])],
     };
   };
 
@@ -247,4 +244,3 @@ function walk(o: any, f: (o: any) => void) {
   if (!Array.isArray(o)) f(o);
   for (const v of Object.values(o)) walk(v, f);
 }
-

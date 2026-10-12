@@ -54,10 +54,7 @@ export function GraficoMensal({ meses, referencia, rotuloReferencia }: { meses: 
           </span>
         ))}
       </div>
-      <figcaption className="sr-only">
-        Gastos por mês:{" "}
-        {meses.map((m) => `${mesAno(m.mes)} ${moedaCurta(m.valor)}`).join("; ")}
-      </figcaption>
+      <figcaption className="sr-only">Gastos por mês: {meses.map((m) => `${mesAno(m.mes)} ${moedaCurta(m.valor)}`).join("; ")}</figcaption>
     </figure>
   );
 }

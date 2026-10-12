@@ -74,7 +74,9 @@ export interface RawResponse {
 
 function cacheKey(url: string, headers?: Record<string, string>) {
   // never put secrets in the key file name; hash everything
-  return createHash("sha1").update(url + JSON.stringify(headers ?? {})).digest("hex");
+  return createHash("sha1")
+    .update(url + JSON.stringify(headers ?? {}))
+    .digest("hex");
 }
 
 export async function fetchRaw(url: string, opts: FetchOpts = {}): Promise<RawResponse> {

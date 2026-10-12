@@ -40,8 +40,8 @@ export default async function Gastos() {
     <Container className="py-10">
       <h1 className="display text-4xl font-extrabold sm:text-5xl">Gastos com a cota parlamentar</h1>
       <p className="mt-4 max-w-3xl text-xl leading-relaxed">
-        Entre {mesAno(g.periodo.inicio)} e {mesAno(g.periodo.fim)}, parlamentares pediram reembolso de <span className="grifo font-semibold">{moeda(total)}</span> em despesas do mandato:
-        passagens, combustível, aluguel de escritório, divulgação e alimentação.
+        Entre {mesAno(g.periodo.inicio)} e {mesAno(g.periodo.fim)}, parlamentares pediram reembolso de <span className="grifo font-semibold">{moeda(total)}</span> em despesas do
+        mandato: passagens, combustível, aluguel de escritório, divulgação e alimentação.
       </p>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">

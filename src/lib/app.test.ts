@@ -85,7 +85,9 @@ describe("peer comparison", () => {
 describe("plain-language summary", () => {
   it("uses only available numbers and gendered wording", () => {
     const f = fraseResumo(pol("a", { sexo: "F", inicioPolitica: 2015, m: { presenca: 0.9, gasto12m: 120_000, proposicoes: 3, proposicoesLei: 1 } }), 2026);
-    expect(f).toBe("Nos últimos 12 meses, esteve em 90% das sessões do Plenário e usou R$ 120 mil da cota parlamentar. É autora ou coautora de 3 projetos, um virou lei. Tem mandatos registrados desde 2015 (11 anos).");
+    expect(f).toBe(
+      "Nos últimos 12 meses, esteve em 90% das sessões do Plenário e usou R$ 120 mil da cota parlamentar. É autora ou coautora de 3 projetos, um virou lei. Tem mandatos registrados desde 2015 (11 anos).",
+    );
   });
   it("is empty when there is nothing to say", () => expect(fraseResumo(pol("a"))).toBe(""));
 });

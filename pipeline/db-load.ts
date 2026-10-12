@@ -87,7 +87,16 @@ export async function carregar(db: DB, dataDir: string, stageDir?: string) {
     for (const c of chunks(mand)) await tx.insert(s.mandatos).values(c);
 
     const props = politicos.flatMap((p) =>
-      p.proposicoesLista.map((x) => ({ id: x.id, pid: p.id, tipo: x.tipo, ementa: x.ementa, data: x.data ?? null, situacao: x.situacao ?? null, virouLei: x.virouLei ?? null, fonteUrl: x.url ?? null })),
+      p.proposicoesLista.map((x) => ({
+        id: x.id,
+        pid: p.id,
+        tipo: x.tipo,
+        ementa: x.ementa,
+        data: x.data ?? null,
+        situacao: x.situacao ?? null,
+        virouLei: x.virouLei ?? null,
+        fonteUrl: x.url ?? null,
+      })),
     );
     for (const c of chunks(props)) await tx.insert(s.proposicoes).values(c).onConflictDoNothing();
 
@@ -129,7 +138,10 @@ export async function carregar(db: DB, dataDir: string, stageDir?: string) {
     for (const c of chunks(vts, 2000)) await tx.insert(s.votos).values(c).onConflictDoNothing();
 
     const ids = new Set(politicos.map((p) => p.id));
-    for (const c of chunks(despesas.filter((d) => ids.has(d.pid)), 2000))
+    for (const c of chunks(
+      despesas.filter((d) => ids.has(d.pid)),
+      2000,
+    ))
       await tx.insert(s.despesas).values(
         c.map((d) => ({
           pid: d.pid,
@@ -156,7 +168,11 @@ export async function carregar(db: DB, dataDir: string, stageDir?: string) {
     );
     for (const c of chunks(rs, 500)) await tx.insert(s.resumosIA).values(c).onConflictDoNothing();
 
-    if (meta) await tx.insert(s.execucoes).values({ id: meta.geradoEm, iniciadaEm: new Date(meta.geradoEm), meta }).onConflictDoNothing();
+    if (meta)
+      await tx
+        .insert(s.execucoes)
+        .values({ id: meta.geradoEm, iniciadaEm: new Date(meta.geradoEm), meta })
+        .onConflictDoNothing();
   });
 
   const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(s.falas);

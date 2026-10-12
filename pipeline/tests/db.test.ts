@@ -39,7 +39,10 @@ describe("database", () => {
   });
 
   it("keeps referential integrity between votes and roll calls", async () => {
-    const [{ orfaos }] = await db.select({ orfaos: sql<number>`count(*)::int` }).from(schema.votos).where(sql`votacao_id not in (select id from votacoes)`);
+    const [{ orfaos }] = await db
+      .select({ orfaos: sql<number>`count(*)::int` })
+      .from(schema.votos)
+      .where(sql`votacao_id not in (select id from votacoes)`);
     expect(orfaos).toBe(0);
     const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.votos);
     expect(n).toBeGreaterThan(1000);

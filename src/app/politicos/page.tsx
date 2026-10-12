@@ -24,7 +24,9 @@ export default async function Politicos({ searchParams }: PageProps<"/politicos"
   return (
     <Container className="py-10">
       <h1 className="display text-4xl font-extrabold sm:text-5xl">Todos os políticos</h1>
-      <p className="mt-3 max-w-2xl text-lg text-ink-2">Filtre por casa, estado ou partido e ordene por qualquer critério. Quem não tem dado para o critério escolhido aparece no fim da lista.</p>
+      <p className="mt-3 max-w-2xl text-lg text-ink-2">
+        Filtre por casa, estado ou partido e ordene por qualquer critério. Quem não tem dado para o critério escolhido aparece no fim da lista.
+      </p>
 
       <div className="mt-8">
         <FormFiltros acao="/politicos">
@@ -39,7 +41,12 @@ export default async function Politicos({ searchParams }: PageProps<"/politicos"
               ["assembleia", "Assembleias Legislativas"],
             ]}
           />
-          <Seletor nome="uf" rotulo="Estado" valor={f.uf} opcoes={[["", "Todos"], ...ESTADOS.map((e) => [e.uf, e.nome] as [string, string]).sort((a, b) => a[1].localeCompare(b[1], "pt-BR"))]} />
+          <Seletor
+            nome="uf"
+            rotulo="Estado"
+            valor={f.uf}
+            opcoes={[["", "Todos"], ...ESTADOS.map((e) => [e.uf, e.nome] as [string, string]).sort((a, b) => a[1].localeCompare(b[1], "pt-BR"))]}
+          />
           <Seletor nome="partido" rotulo="Partido" valor={f.partido} opcoes={[["", "Todos"], ...partidos.map((p) => [p, p] as [string, string])]} />
           <Seletor nome="ordem" rotulo="Ordenar por" valor={f.ordem} opcoes={[["nome", "Nome"], ...METRICAS.map((m) => [m.chave, m.titulo] as [string, string])]} />
           <Seletor
@@ -61,7 +68,11 @@ export default async function Politicos({ searchParams }: PageProps<"/politicos"
 
       <div className="mt-3">
         {itens.length ? (
-          <TabelaPoliticos itens={itens} destaque={def?.chave} linkOrdem={(k) => urlFiltro("/politicos", { ...f, ordem: k, dir: f.ordem === k && f.dir === "desc" ? "asc" : "desc", pagina: 1 })} />
+          <TabelaPoliticos
+            itens={itens}
+            destaque={def?.chave}
+            linkOrdem={(k) => urlFiltro("/politicos", { ...f, ordem: k, dir: f.ordem === k && f.dir === "desc" ? "asc" : "desc", pagina: 1 })}
+          />
         ) : (
           <Vazio>Ninguém corresponde a esses filtros. Tente remover um deles.</Vazio>
         )}

@@ -91,11 +91,18 @@ async function main() {
   const [camara, senado, tse] = await Promise.all([
     etapa("camara", "Câmara dos Deputados", "https://dadosabertos.camara.leg.br", () => coletarCamara({ hoje: HOJE, diasVotos: DIAS, anosGastos }), contarSrc, vazioSrc()),
     etapa("senado", "Senado Federal", "https://legis.senado.leg.br/dadosabertos", () => coletarSenado({ hoje: HOJE, diasVotos: DIAS, anosGastos }), contarSrc, vazioSrc()),
-    etapa("tse", "TSE - Candidaturas, bens e redes sociais", "https://dadosabertos.tse.jus.br", () => coletarTSE([2018, 2022, 2026]), (t) => t.candidatos.length, {
-      candidatos: [] as CandidatoTSE[],
-      redes: new Map<string, string[]>(),
-      avisos: [] as string[],
-    }),
+    etapa(
+      "tse",
+      "TSE - Candidaturas, bens e redes sociais",
+      "https://dadosabertos.tse.jus.br",
+      () => coletarTSE([2018, 2022, 2026]),
+      (t) => t.candidatos.length,
+      {
+        candidatos: [] as CandidatoTSE[],
+        redes: new Map<string, string[]>(),
+        avisos: [] as string[],
+      },
+    ),
   ]);
 
   const assembleias = await etapa(
@@ -128,7 +135,15 @@ async function main() {
     // The Portal covers every amendment type; prefer it when present
     if (portal.agg.size) emendas = portal.agg;
   } else {
-    fontes.push({ id: "portal", nome: "Portal da Transparência - Emendas parlamentares", url: "https://portaldatransparencia.gov.br/emendas", status: "ignorado", registros: 0, duracaoMs: 0, erro: "PORTAL_TRANSPARENCIA_API_KEY não configurada" });
+    fontes.push({
+      id: "portal",
+      nome: "Portal da Transparência - Emendas parlamentares",
+      url: "https://portaldatransparencia.gov.br/emendas",
+      status: "ignorado",
+      registros: 0,
+      duracaoMs: 0,
+      erro: "PORTAL_TRANSPARENCIA_API_KEY não configurada",
+    });
   }
 
   const politicos = [...camara.politicos, ...senado.politicos, ...assembleias.politicos];
@@ -160,15 +175,38 @@ async function main() {
   const falasSociais: Fala[] = [];
   const redes: RedeSocial[] = r.redes;
   if (process.env.YOUTUBE_API_KEY) {
-    const yt = await etapa("youtube", "YouTube Data API", "https://developers.google.com/youtube/v3", () => coletarYouTube(redes, process.env.YOUTUBE_API_KEY!, 90), (x) => x.length, [] as Fala[]);
+    const yt = await etapa(
+      "youtube",
+      "YouTube Data API",
+      "https://developers.google.com/youtube/v3",
+      () => coletarYouTube(redes, process.env.YOUTUBE_API_KEY!, 90),
+      (x) => x.length,
+      [] as Fala[],
+    );
     falasSociais.push(...yt);
   } else {
-    fontes.push({ id: "youtube", nome: "YouTube Data API", url: "https://developers.google.com/youtube/v3", status: "ignorado", registros: 0, duracaoMs: 0, erro: "YOUTUBE_API_KEY não configurada" });
+    fontes.push({
+      id: "youtube",
+      nome: "YouTube Data API",
+      url: "https://developers.google.com/youtube/v3",
+      status: "ignorado",
+      registros: 0,
+      duracaoMs: 0,
+      erro: "YOUTUBE_API_KEY não configurada",
+    });
   }
   const conectores = await coletarConectoresSociais(redes, 90);
   falasSociais.push(...conectores.falas);
   for (const c of conectores.status)
-    fontes.push({ id: `social-${c.plataforma}`, nome: `Conector ${c.plataforma}`, url: "", status: c.ativo ? "ok" : "ignorado", registros: c.coletados, duracaoMs: 0, erro: c.motivo });
+    fontes.push({
+      id: `social-${c.plataforma}`,
+      nome: `Conector ${c.plataforma}`,
+      url: "",
+      status: c.ativo ? "ok" : "ignorado",
+      registros: c.coletados,
+      duracaoMs: 0,
+      erro: c.motivo,
+    });
 
   for (const s of assembleias.status)
     fontes.push({ id: `assembleia-${s.uf.toLowerCase()}`, nome: s.fonte, url: s.url, status: s.ok ? "ok" : "falhou", registros: s.registros, duracaoMs: 0, erro: s.erro });
@@ -179,11 +217,12 @@ async function main() {
     "Fotos oficiais (Câmara, Senado, assembleias e TSE)",
     "https://www.camara.leg.br",
     async () => {
-      const oficiais = await baixarFotos(r.detalhes.map((d) => ({ id: d.id, url: d.foto })), path.resolve("public"));
+      const oficiais = await baixarFotos(
+        r.detalhes.map((d) => ({ id: d.id, url: d.foto })),
+        path.resolve("public"),
+      );
       // State deputies whose assembly has no photo feed: TSE candidate photos, extracted per state
-      const semFoto = r.detalhes
-        .filter((d) => d.casa === "assembleia" && !oficiais.locais.has(d.id))
-        .map((d) => ({ id: d.id, uf: d.uf, sq: d.id.split("-").pop()! }));
+      const semFoto = r.detalhes.filter((d) => d.casa === "assembleia" && !oficiais.locais.has(d.id)).map((d) => ({ id: d.id, uf: d.uf, sq: d.id.split("-").pop()! }));
       for (const [id, local] of await baixarFotosTSE(semFoto, path.resolve("public"))) oficiais.locais.set(id, local);
       return oficiais;
     },

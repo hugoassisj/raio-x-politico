@@ -23,8 +23,8 @@ export default async function Dados() {
     <Container className="py-10">
       <h1 className="display text-4xl font-extrabold sm:text-5xl">Sobre os dados</h1>
       <p className="mt-4 max-w-3xl text-xl leading-relaxed">
-        O Raio-X Político reúne dados públicos que já existem, espalhados em dezenas de sites oficiais, e os organiza para qualquer pessoa entender. Não produzimos notas, rankings de
-        &ldquo;melhores&rdquo; ou opiniões: mostramos o que os registros oficiais dizem e como chegamos a cada número.
+        O Raio-X Político reúne dados públicos que já existem, espalhados em dezenas de sites oficiais, e os organiza para qualquer pessoa entender. Não produzimos notas, rankings
+        de &ldquo;melhores&rdquo; ou opiniões: mostramos o que os registros oficiais dizem e como chegamos a cada número.
       </p>
 
       <Secao titulo="Princípios" subtitulo="O que guia cada decisão do projeto.">
@@ -33,7 +33,10 @@ export default async function Dados() {
             ["Todo número tem fonte", "Cada dado leva ao registro oficial de onde veio, e os arquivos completos podem ser baixados do repositório."],
             ["Fatos, não notas", "Mostramos posição em relação aos colegas (mediana, faixa), nunca uma nota de bom ou ruim. Faltar ou gastar pode ter boas explicações."],
             ["Comparação justa", "Só comparamos pessoas da mesma casa, e gastos com colegas do mesmo estado, porque as regras e tetos são diferentes."],
-            ["IA com rédea curta", "Resumos de IA usam só registros públicos, toda afirmação precisa citar a fonte e o que não tem fonte é descartado. Tudo vem marcado como gerado por IA."],
+            [
+              "IA com rédea curta",
+              "Resumos de IA usam só registros públicos, toda afirmação precisa citar a fonte e o que não tem fonte é descartado. Tudo vem marcado como gerado por IA.",
+            ],
             ["Código e dados abertos", "O código que coleta e calcula está no GitHub. Qualquer pessoa pode auditar, apontar erros e reproduzir os números."],
             ["Sem raspagem de redes", "Conteúdo de redes sociais só entra por APIs oficiais das plataformas. Perfis vêm do que o próprio político declarou à Câmara ou ao TSE."],
           ].map(([t, d]) => (
@@ -76,10 +79,7 @@ export default async function Dados() {
         </div>
       </Secao>
 
-      <Secao
-        titulo="Fontes consultadas"
-        subtitulo={meta ? `Situação de cada fonte na última atualização, em ${dataHora(meta.geradoEm)}.` : "Os dados ainda não foram coletados."}
-      >
+      <Secao titulo="Fontes consultadas" subtitulo={meta ? `Situação de cada fonte na última atualização, em ${dataHora(meta.geradoEm)}.` : "Os dados ainda não foram coletados."}>
         {meta && (
           <div className="overflow-x-auto rounded-xl border border-line bg-surface">
             <table className="w-full text-sm">

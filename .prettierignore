@@ -1,0 +1,9 @@
+data
+public
+.next
+node_modules
+drizzle
+src/lib/mapa-br.ts
+scripts/dados
+*.md
+package-lock.json
