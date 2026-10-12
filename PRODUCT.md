@@ -1,0 +1,161 @@
+# Raio-X Político: documento de produto
+
+> Documento vivo. Toda mudança relevante de escopo, fonte de dados, métrica ou decisão de arquitetura entra aqui, com data, no [Registro de decisões](#registro-de-decisões).
+
+## Visão
+
+Ser o lugar onde qualquer pessoa no Brasil entende, em poucos segundos, o que fazem as pessoas que ela elegeu: se aparecem para trabalhar, como votam, o que propõem, quanto gastam, para onde mandam dinheiro e o que dizem. Com tudo verificável na fonte oficial, sem opinião e sem partido.
+
+## O problema
+
+Os dados existem e são públicos, mas estão espalhados em dezenas de sites (Câmara, Senado, TSE, Transferegov, Portal da Transparência, 27 assembleias), em formatos técnicos, com nomes de campos internos e sem comparação entre pessoas. Quem quer saber "meu deputado vai trabalhar?" desiste antes de chegar à resposta. Quem chega, raramente consegue comparar com os colegas ou conferir de onde veio o número.
+
+## Para quem
+
+| Pessoa | O que precisa | Como o produto atende |
+|---|---|---|
+| Cidadã no celular, pouco tempo, pouca familiaridade com política | Saber em 10 segundos quem a representa e se essa pessoa trabalha | Página inicial "Quem te representa?", mapa de estados, frase-resumo em linguagem simples no topo de cada perfil |
+| Eleitor em período eleitoral | Comparar candidatos e ver coerência entre discurso e voto | Comparador lado a lado, votos em comum onde divergiram, "Diz e faz" nos resumos de IA |
+| Jornalista, pesquisador, organização da sociedade civil | Ir fundo, baixar dados, auditar metodologia | Toda métrica com "Como calculamos", link para o registro oficial, JSON bruto por página, código aberto |
+| Assessorias e os próprios parlamentares | Conferir e corrigir informações | Fontes visíveis e canal para reportar erros |
+
+## Princípios (não negociáveis)
+
+1. **Todo número tem fonte.** Cada valor exibido leva ao registro oficial e ao arquivo bruto. Se não dá para rastrear, não publicamos.
+2. **Fatos, não notas.** Mostramos posição em relação aos colegas (mediana, faixa de 80%), nunca nota, selo de "bom" ou "ruim", ou ranking de "melhores". Faltar, gastar ou seguir o partido podem ter boas explicações.
+3. **Comparação justa.** Só comparamos pessoas da mesma casa. Gastos são comparados com colegas do mesmo estado, porque o teto da cota muda conforme a distância até Brasília.
+4. **Ausência de dado nunca vira zero.** Quando falta dado, mostramos "–" e explicamos por quê.
+5. **IA com rédea curta.** A IA só resume registros públicos fornecidos a ela. Toda afirmação precisa citar um registro existente, senão é descartada automaticamente. Todo texto de IA vem rotulado.
+6. **Sem raspagem de redes sociais.** Perfis vêm do que o próprio político declarou à Câmara ou ao TSE. Conteúdo só entra por API oficial da plataforma.
+7. **Profundidade em camadas.** Primeiro a resposta simples (frase e números grandes), depois a explicação ("Como calculamos"), depois a fonte e o dado bruto. Ninguém é obrigado a descer, todos podem.
+8. **Acessível de verdade.** Funciona em celular simples e sem JavaScript nos fluxos principais, cores de votos validadas para daltonismo e sempre acompanhadas de texto, navegação por teclado, contraste adequado e modo escuro.
+
+## O que existe hoje
+
+| Página | Pergunta que responde |
+|---|---|
+| `/` Início | Quem me representa? O que foi votado e dito recentemente? |
+| `/estado/[uf]` | Quem são os 3 senadores, os deputados federais e os estaduais do meu estado? |
+| `/politico/[id]` | O que essa pessoa faz: presença, votos, gastos, projetos, emendas, falas, carreira, patrimônio, redes e fontes |
+| `/politicos` | Lista de todos, filtrável por casa, estado e partido, ordenável por qualquer critério |
+| `/votacoes` e `/votacao/[id]` | O que foi votado, o resultado, como cada partido orientou e como cada um votou |
+| `/gastos` | Quanto se gasta da cota, em quê, com quais fornecedores, e o que merece um segundo olhar |
+| `/falas` | O que disseram sobre um tema, com link para o registro original |
+| `/comparar` | Até 4 pessoas lado a lado, incluindo votações em que divergiram |
+| `/partido/[sigla]` | Membros do partido e suas medianas comparadas com a casa |
+| `/dados` | Fontes, situação da última coleta, metodologia, limites e salários |
+
+## Métricas
+
+A definição oficial de cada métrica mora em um único lugar do código, [`src/lib/metricas.ts`](src/lib/metricas.ts), e é a mesma explicação exibida nos cartões, nas listas e na página `/dados`. Resumo:
+
+| Métrica | Casas | Regra |
+|---|---|---|
+| Presença | Câmara, Senado | Sessões deliberativas do Plenário com presença registrada desde o início do exercício atual (Câmara); dias com votação nominal com voto ou presença registrada (Senado). Últimos 12 meses |
+| Votações nominais | Câmara, Senado | Votações nominais com voto registrado dividido pelas votações ocorridas em exercício |
+| Segue o partido | Câmara, Senado | Método da aderência (Parlametria): seguiu / (seguiu + não seguiu), ignorando liberações e ausências, mínimo de 10 votos. Câmara usa a orientação oficial (partido, federação ou bloco); Senado usa a maioria da bancada |
+| Vota com o governo | Câmara | Mesmo método, contra a orientação da liderança do Governo |
+| Gastos da cota | Todas com dados | Reembolsos dos últimos 12 meses completos; o mês corrente só entra quando atinge 80% da mediana dos 12 anteriores |
+| Gastos para conferir | Todas com dados | Regras inspiradas na Operação Serenata de Amor: CNPJ/CPF inválido, refeição atípica, valor no 0,5% superior da categoria, duplicidade, fornecedor com mais de 50% do gasto |
+| Projetos e "viraram lei" | Câmara, Senado | PL, PLP, PEC e PDL como autor ou coautor; situação "Transformado em Norma Jurídica" |
+| Emendas Pix | Câmara, Senado | Planos de ação de transferências especiais no Transferegov desde 2020 (ou todas as emendas pagas, com chave do Portal da Transparência) |
+| Patrimônio e votos | Todas | Declaração de bens e votos nominais do TSE |
+| Anos de mandato | Todas | Primeiro mandato encontrado no histórico da casa, mandatos externos declarados à Câmara e candidaturas eleitas no TSE |
+
+## Fontes de dados
+
+| Fonte | O que traz | Acesso | Situação |
+|---|---|---|---|
+| Câmara dos Deputados, API v2 | Deputados, histórico, mandatos externos, comissões, frentes, sessões e presença, votações, votos, orientações, proposições, discursos | API aberta | Em uso |
+| Câmara, arquivos de cota (CEAP) | Todas as despesas reembolsadas | ZIP anual | Em uso, com a API por deputado como reserva |
+| Senado Federal, dados abertos | Senadores, mandatos, comissões, votações com votos de todos, proposições, pronunciamentos | API aberta | Em uso |
+| Senado, CEAPS | Despesas dos senadores | API aberta | Em uso |
+| TSE, dados abertos | Candidaturas 2018, 2022 e 2026, bens declarados, redes sociais declaradas, votos de 2022 | Arquivos ZIP e JSON de resultados | Em uso |
+| Transferegov | Emendas Pix (transferências especiais) | API aberta (PostgREST) | Em uso |
+| Portal da Transparência | Todas as emendas parlamentares | API com chave gratuita | Pronto, liga com `PORTAL_TRANSPARENCIA_API_KEY` |
+| ALMG (MG) | Deputados em exercício e verbas indenizatórias | API aberta | Em uso |
+| ALESP (SP) | Deputados e despesas de gabinete | XML aberto | Em uso |
+| Assembleias com SAPL (AC, TO, AM) | Parlamentares | API aberta | Em uso; novas casas entram em `SAPL_HOSTS` |
+| Demais assembleias | Lista de eleitos via TSE | TSE | Parcial: sem presença e votos |
+| YouTube Data API | Vídeos dos canais declarados | API oficial com chave | Pronto, liga com `YOUTUBE_API_KEY` |
+| X, Instagram, TikTok | Publicações | APIs oficiais pagas ou restritas | Conectores prontos, ligam com credencial |
+
+## Arquitetura
+
+```
+ Fontes oficiais                     Pipeline (GitHub Actions, diário)              Publicação
+ ─────────────────                   ─────────────────────────────────              ──────────
+ Câmara, Senado, TSE,      ──▶  coletar (cache HTTP, limites por servidor,   ──▶  data/ (JSON versionado no git,
+ Transferegov, Portal,          novas tentativas, cada fonte isolada)              público e baixável)
+ Assembleias, YouTube...        consolidar (vincula pessoas entre fontes)              │
+                                calcular métricas e alertas                             ├──▶ Next.js (páginas estáticas
+                                resumos de IA com citações validadas                    │     + busca e filtros sob demanda)
+                                                                                        └──▶ Postgres (histórico de falas,
+                                                                                              resumos de IA, busca textual)
+```
+
+- **Snapshot em JSON no repositório:** cada atualização vira um commit, então qualquer número publicado pode ser auditado e comparado no tempo pelo histórico do git.
+- **Postgres opcional e complementar:** guarda o histórico que não cabe no snapshot (transcrições completas, resumos de IA de todos os períodos) e faz a busca textual em português. O schema está em [`src/db/schema.ts`](src/db/schema.ts), com tabelas de retrato (substituídas a cada execução) e tabelas de histórico (só acrescentam).
+- **Falha isolada:** se uma fonte cai, as outras continuam e a página `/dados` mostra o que falhou.
+
+## IA
+
+- Entrada: discursos e publicações do período mais os votos nominais do mesmo período, com identificadores.
+- Saída obrigatória em JSON: resumo, posições por tema, mudanças de discurso (período anterior x atual) e pontos onde fala e voto não batem, cada item com citações.
+- Validação: citações que não apontam para um registro enviado são removidas; afirmações sem citação válida são descartadas; contradições precisam de pelo menos duas citações.
+- Períodos: semana, mês e trimestre, regenerados só quando as fontes mudam (hash). O histórico de resumos permite ver a evolução do discurso no tempo.
+- Rótulo sempre visível com modelo, data e número de fontes.
+
+## Roadmap
+
+**Fase 1, fundação (feito):** pipeline com todas as fontes abertas, métricas, testes, banco, app completo, CI e coleta diária.
+
+**Fase 2, dados reais em produção (agora):**
+- Primeira coleta completa no GitHub Actions e correção do que as fontes reais revelarem.
+- Deploy na Vercel, domínio, banco Postgres (Neon ou Supabase) e chaves opcionais (Portal da Transparência, YouTube, Anthropic).
+- Revisão manual de uma amostra de perfis contra os sites oficiais.
+
+**Fase 3, alcance:**
+- Mais assembleias com dados abertos (Panóptico mapeou conectores para cerca de 20).
+- Página de cada município com as emendas recebidas.
+- Resumo semanal por e-mail ou WhatsApp: "o que seus representantes fizeram nesta semana".
+- Imagens de compartilhamento por perfil (cartões para redes sociais).
+
+**Fase 4, profundidade:**
+- Diz e faz em escala, temas por votação, linha do tempo de posições.
+- Doações de campanha (TSE) cruzadas com votos e fornecedores da cota.
+- Sanções (CEIS/CNEP) e quadro societário de fornecedores.
+- API pública e downloads em CSV.
+
+## Indicadores de sucesso do produto
+
+- Tempo até a primeira resposta útil (meta: menos de 10 segundos da página inicial até o perfil).
+- Proporção de visitas em celular que chegam a um perfil.
+- Erros de dados reportados e tempo para corrigir.
+- Fontes com status "ok" em cada coleta.
+- Cobertura: parlamentares com cada métrica disponível, por casa e estado.
+
+## Riscos e como lidamos
+
+| Risco | Mitigação |
+|---|---|
+| Dado errado atribuído a alguém (homônimos, mudanças de partido) | Ligações por data de nascimento e CPF parcial, testes automatizados, limites explicados, canal de correção |
+| Leitura enviesada | Linguagem neutra, nenhuma nota, comparação com pares, explicação de limites em todo cartão |
+| Erro da IA | Citações obrigatórias e validadas, rótulo de IA, link para a fonte em cada afirmação |
+| Instabilidade das APIs oficiais | Cache, novas tentativas, fontes isoladas, status público por fonte |
+| Bloqueio de acesso a sites do governo fora do Brasil | Pipeline pode rodar em runner próprio no Brasil sem mudar código |
+| Termos de uso de redes sociais | Apenas APIs oficiais, nenhuma raspagem |
+
+## Registro de decisões
+
+| Data | Decisão | Motivo |
+|---|---|---|
+| 2026-10-11 | App em Next.js com páginas estáticas geradas a partir de um snapshot JSON versionado | Rápido para o público, barato de hospedar, auditável pelo histórico do git |
+| 2026-10-11 | Postgres como complemento, não como dependência para o site funcionar | O site continua de pé mesmo sem banco; o banco guarda histórico e busca textual |
+| 2026-10-11 | Nenhuma nota ou ranking de "melhores"; sempre comparação com pares | Credibilidade e neutralidade |
+| 2026-10-11 | Fidelidade partidária pelo método de aderência da Parlametria, ausências fora do denominador | Método público, testado e que não mistura ausência com discordância |
+| 2026-10-11 | Gastos comparados só com colegas do mesmo estado | Teto da cota varia por estado |
+| 2026-10-11 | Redes sociais só por API oficial; perfis a partir de declarações à Câmara e ao TSE | Rastreabilidade e respeito aos termos das plataformas |
+| 2026-10-11 | IA só com citações validadas e descarte automático do que não tem fonte | Evitar afirmações inventadas |
+| 2026-10-11 | Fontes tipográficas e ícones hospedados no próprio site | Privacidade dos visitantes e independência de terceiros |
+| 2026-10-11 | Cores de voto validadas para daltonismo e sempre acompanhadas do texto | Acessibilidade |
