@@ -13,7 +13,8 @@ export function NavPrincipal({ itens }: { itens: { href: string; rotulo: string 
           atual === n.href ||
           atual.startsWith(`${n.href}/`) ||
           (n.href === "/votacoes" && atual.startsWith("/votacao/")) ||
-          (n.href === "/partidos" && atual.startsWith("/partido/"));
+          (n.href === "/partidos" && atual.startsWith("/partido/")) ||
+          (n.href === "/empresas" && atual.startsWith("/empresa/"));
         return (
           <Link
             key={n.href}
