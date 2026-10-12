@@ -75,6 +75,15 @@ describe("plenário", () => {
     expect(s[0].x).toBeLessThan(s[80].x);
   });
 
+  it("never lets two seats touch, including across the central aisle", () => {
+    for (const n of [3, 20, 81, 100, 513]) {
+      const s = layoutPlenario(n);
+      let menor = Infinity;
+      for (let i = 0; i < s.length; i++) for (let j = i + 1; j < s.length; j++) menor = Math.min(menor, Math.hypot(s[i].x - s[j].x, s[i].y - s[j].y));
+      expect(menor).toBeGreaterThanOrEqual(2 * s[0].r);
+    }
+  });
+
   it("colors seats by vote and fills the room with members who did not vote", () => {
     const membros = [pol("a"), pol("b"), pol("c", { partido: "PT" })];
     const v: VotacaoDetalhe = {

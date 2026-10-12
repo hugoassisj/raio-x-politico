@@ -20,39 +20,47 @@ export function layoutPlenario(total: number, opts: { fileiras?: number; corredo
   if (total <= 0) return [];
   const fileiras = opts.fileiras ?? Math.max(3, Math.min(14, Math.round(Math.sqrt(total / 2.6))));
   const raioInterno = RAIO_EXTERNO * 0.36;
-  const corredor = opts.corredor ?? 0.07; // radians removed around the vertical axis (central aisle)
+  // The central aisle has the same width on every row, like a real corridor; a fixed angle would
+  // make it vanish on the inner rows and seats on both sides would touch.
+  const corredor = opts.corredor ?? 22;
   const passo = (RAIO_EXTERNO - raioInterno) / Math.max(1, fileiras - 1);
   const raios = Array.from({ length: fileiras }, (_, i) => raioInterno + i * passo);
 
-  // Seats per row proportional to its arc length, adjusted so the total is exact
-  const arco = Math.PI - corredor;
-  const comprimentos = raios.map((r) => r * arco);
-  const soma = comprimentos.reduce((a, b) => a + b, 0);
-  const porFileira = comprimentos.map((c) => Math.floor((c / soma) * total));
-  let faltam = total - porFileira.reduce((a, b) => a + b, 0);
-  for (let i = fileiras - 1; faltam > 0; i = (i - 1 + fileiras) % fileiras, faltam--) porFileira[i]++;
+  let raioAssento = passo * 0.42;
+  let linhas: { r: number; fim: number; n: number }[] = [];
+  // Two passes: the aisle depends on the seat size, and the seat size on how many seats fit per row
+  for (let passada = 0; passada < 2; passada++) {
+    // Each section spans from the floor line (angle π or 0) to the edge of the aisle
+    const meiaAbertura = raios.map((r) => Math.PI / 2 - Math.asin(Math.min(1, (corredor / 2 + raioAssento) / r)));
+    const comprimentos = raios.map((r, i) => 2 * r * meiaAbertura[i]);
+    const soma = comprimentos.reduce((a, b) => a + b, 0);
+    const porFileira = comprimentos.map((c) => Math.floor((c / soma) * total));
+    let faltam = total - porFileira.reduce((a, b) => a + b, 0);
+    for (let i = fileiras - 1; faltam > 0; i = (i - 1 + fileiras) % fileiras, faltam--) porFileira[i]++;
+    linhas = raios.map((r, i) => ({ r, fim: meiaAbertura[i], n: porFileira[i] }));
+    // Largest seat that keeps neighbours apart on every row
+    const espacos = linhas.map(({ r, fim, n }) => {
+      const lado = Math.ceil(n / 2);
+      return lado > 1 ? (r * fim) / (lado - 1) : Infinity;
+    });
+    raioAssento = Math.min(passo * 0.42, Math.min(...espacos) / 2.3);
+  }
 
-  const raioAssento = Math.min(passo * 0.42, (RAIO_EXTERNO * arco) / porFileira[fileiras - 1] / 2.3);
   const pontos: (Assento & { angulo: number })[] = [];
-  raios.forEach((r, i) => {
-    const n = porFileira[i];
-    // Split each row's seats between the left and right sections of the aisle
+  for (const { r, fim, n } of linhas) {
     const esquerda = Math.ceil(n / 2);
     const direita = n - esquerda;
-    const meia = arco / 2;
-    const lado = (k: number, qtd: number, inicio: number) => {
-      const t = qtd === 1 ? 0.5 : k / (qtd - 1);
-      return inicio - t * meia;
-    };
+    const angulo = (k: number, qtd: number) => (qtd === 1 ? fim / 2 : (k / (qtd - 1)) * fim);
+    // Left section: from the floor line (π) up to the aisle; right section mirrors it
     for (let k = 0; k < esquerda; k++) {
-      const a = lado(k, esquerda, Math.PI);
+      const a = Math.PI - angulo(k, esquerda);
       pontos.push({ x: CX + r * Math.cos(a), y: CY - r * Math.sin(a), r: raioAssento, angulo: a });
     }
     for (let k = 0; k < direita; k++) {
-      const a = lado(k, direita, Math.PI / 2 - corredor / 2);
+      const a = fim - angulo(k, direita);
       pontos.push({ x: CX + r * Math.cos(a), y: CY - r * Math.sin(a), r: raioAssento, angulo: a });
     }
-  });
+  }
   // Left to right by angle; within the same angle, inner rows first
   pontos.sort((p, q) => q.angulo - p.angulo || Math.hypot(p.x - CX, p.y - CY) - Math.hypot(q.x - CX, q.y - CY));
   return pontos.map(({ x, y, r }) => ({ x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, r: Math.round(r * 10) / 10 }));
