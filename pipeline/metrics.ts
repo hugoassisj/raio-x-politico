@@ -98,7 +98,8 @@ export function calcularVotos(vs: VotacaoDetalhe[], pols: PoliticoParcial[], pre
       const a = acc.get(p.id) ?? { eleg: 0, votou: 0, seg: 0, naoSeg: 0, gov: 0, naoGov: 0, metodo: "orientacao" as const };
       a.eleg++;
       const x = votosPorPid.get(p.id);
-      const voto = x?.voto ?? "Ausente";
+      // No record in the official list: kept empty, shown as "sem voto registrado", never as a choice
+      const voto = x?.voto ?? "";
       const presente = !!x && (v.casa === "camara" || presenteRe.test(voto));
       if (presente) a.votou++;
 

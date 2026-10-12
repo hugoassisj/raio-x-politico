@@ -257,7 +257,7 @@ describe("rótulos de voto", () => {
     expect(rotuloVoto("P-NRV").rotulo).toBe("Presente, não votou");
     expect(rotuloVoto("LS")).toMatchObject({ rotulo: "Licença de saúde", tipo: "ausente" });
     expect(rotuloVoto("")).toMatchObject({ rotulo: "Sem voto registrado", categoria: "sem-registro" });
-    expect(rotuloVoto("Ausente")).toMatchObject({ categoria: "ausencia" });
+    expect(rotuloVoto("Ausente")).toMatchObject({ categoria: "sem-registro" });
     expect(rotuloVoto("Sim").tipo).toBe("sim");
   });
 });

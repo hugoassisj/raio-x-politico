@@ -19,6 +19,7 @@ import { nomeUf } from "@/lib/ufs";
 import { encurtar, explicarCategoria, explicarEtapa } from "@/lib/linguagem";
 import { partesDescricao } from "@/lib/format";
 import type { VotoLinha } from "@/components/ListaVotos";
+import { votouDiferente } from "@/lib/votos";
 import { CurvaPatrimonio, DinheiroCampanha, LinhaDaVida, MandatosRegistrados, ResumoVida } from "@/components/VidaPublica";
 
 export const dynamicParams = false;
@@ -75,6 +76,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
       descricao: undefined,
       resumo: encurtar(ex?.resumo ?? ementa, 220),
       etapa: etapa && { titulo: etapa.titulo, tipo: etapa.tipo, sim: etapa.sim },
+      assuntos: completa?.assuntos,
     };
   });
 
@@ -84,7 +86,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
   const campanhas = [...p.eleicoes].filter((e) => e.campanha).sort((a, b) => b.ano - a.ano);
   const ultimaComBens = [...p.eleicoes].filter((e) => e.bens?.length).sort((a, b) => b.ano - a.ano)[0];
   const defs = metricasDaCasa(p.casa);
-  const contraPartido = p.votos.filter((v) => v.orientacaoPartido && /^(sim|não)$/i.test(v.voto) && v.voto.toLowerCase() !== v.orientacaoPartido.toLowerCase()).length;
+  const contraPartido = p.votos.filter((v) => votouDiferente(v.voto, v.orientacaoPartido)).length;
 
   const refs: Record<string, { url: string; rotulo: string }> = {};
   for (const f of falas) refs[f.id] = { url: f.url, rotulo: `${f.titulo ?? f.tipo}, ${data(f.data)}` };
@@ -252,7 +254,10 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                 {numero(p.votos.length)} votações nominais nos últimos 12 meses.{" "}
                 {contraPartido > 0 && (
                   <>
-                    Votou diferente do partido <b>{contraPartido}</b> {contraPartido === 1 ? "vez" : "vezes"}.
+                    <Link href="?voto=contra-partido#votos" scroll={false} className="link">
+                      Votou diferente do partido <b>{contraPartido}</b> {contraPartido === 1 ? "vez" : "vezes"}
+                    </Link>
+                    .
                   </>
                 )}
               </>

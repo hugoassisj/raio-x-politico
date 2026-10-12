@@ -407,8 +407,8 @@ const VOTOS: [RegExp, { rotulo: string; explicacao: string; categoria: Categoria
   [/^l[a-z]{1,2}$/i, { rotulo: "De licença", explicacao: "Estava de licença autorizada pelo Senado.", categoria: "ausencia" }],
   [/^ncom/i, { rotulo: "Não compareceu", explicacao: "Não compareceu à sessão.", categoria: "ausencia" }],
   [/^participou/i, { rotulo: "Participou", explicacao: "Votação secreta: a casa publica quem participou, mas não o voto.", categoria: "outro" }],
-  [/^ausente$/i, { rotulo: "Ausente", explicacao: "A Casa registrou ausência nesta votação.", categoria: "ausencia" }],
-  [/^$/, { rotulo: "Sem voto registrado", explicacao: CATEGORIAS_VOTO[6].explicacao, categoria: "sem-registro" }],
+  // "Ausente" is not a house code: older files of this project used it for "no record", so it is read as such
+  [/^(ausente)?$/i, { rotulo: "Sem voto registrado", explicacao: CATEGORIAS_VOTO[6].explicacao, categoria: "sem-registro" }],
 ];
 
 /**

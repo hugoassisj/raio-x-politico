@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { GLOSSARIO } from "@/lib/linguagem";
+import { CATEGORIAS_VOTO, GLOSSARIO } from "@/lib/linguagem";
+import { ASSUNTOS } from "@/lib/assuntos";
+import { COR_CATEGORIA } from "@/lib/votos";
+import { IconeAssunto } from "@/components/Icone";
 import { CARGOS, NIVEL } from "@/lib/cargos";
 import { QuemResolve } from "@/components/QuemResolve";
 import { MiniPlenario } from "@/components/Plenario";
@@ -35,6 +38,8 @@ export default function ComoFunciona() {
           ["#cargos", "O que faz cada cargo"],
           ["#lei", "Como uma ideia vira lei"],
           ["#votos", "Quantos votos cada proposta precisa"],
+          ["#tipos-de-voto", "O que quer dizer cada voto"],
+          ["#assuntos", "Como separamos por assunto"],
           ["#palavras", "Palavras que aparecem muito"],
         ].map(([h, r]) => (
           <a key={h} href={h} className="chip">
@@ -144,6 +149,42 @@ export default function ComoFunciona() {
             </li>
           ))}
         </ul>
+      </Secao>
+
+      <Secao
+        id="tipos-de-voto"
+        titulo="O que quer dizer cada voto"
+        subtitulo="A Câmara e o Senado usam códigos diferentes. Juntamos tudo nestes grupos, sempre mostrando também o código original."
+      >
+        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {CATEGORIAS_VOTO.map((c) => (
+            <div key={c.id} className="cartao p-4">
+              <dt className="flex items-center gap-2 font-bold">
+                <span className="h-3 w-3 rounded-full" style={{ background: COR_CATEGORIA[c.id] }} aria-hidden />
+                {c.rotulo}
+              </dt>
+              <dd className="mt-1 text-ink-2">{c.explicacao}</dd>
+            </div>
+          ))}
+        </dl>
+      </Secao>
+
+      <Secao
+        id="assuntos"
+        titulo="Como separamos as votações por assunto"
+        subtitulo="Cada projeto recebe até dois assuntos. Primeiro olhamos os temas oficiais que a Câmara ou o Senado deram ao projeto; se não houver tema, olhamos o resumo oficial. Um projeto entra no assunto quando aparece uma destas palavras. Palavras com “…” valem para tudo que começa assim (“educac…” vale para educação e educacional)."
+      >
+        <dl className="grid gap-3 sm:grid-cols-2">
+          {ASSUNTOS.map((a) => (
+            <div key={a.id} className="cartao p-4">
+              <dt className="flex items-center gap-2 font-bold">
+                <IconeAssunto nome={a.icone} className="h-4 w-4 text-accent-ink" />
+                {a.nome}
+              </dt>
+              <dd className="mt-1 text-sm text-ink-2">{a.termos.join(", ")}</dd>
+            </div>
+          ))}
+        </dl>
       </Secao>
 
       <Secao id="palavras" titulo="Palavras que aparecem muito">

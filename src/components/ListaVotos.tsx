@@ -1,85 +1,160 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import type { VotoItem } from "@/lib/types";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useMemo, useRef } from "react";
+import { ChevronDown, Search, X } from "lucide-react";
+import { assunto as assuntoPorId } from "@/lib/assuntos";
 import { data } from "@/lib/format";
-import type { EtapaSimples } from "@/lib/linguagem";
+import { CATEGORIAS_VOTO, type EtapaSimples } from "@/lib/linguagem";
+import { paginar } from "@/lib/paginacao";
+import type { VotoItem } from "@/lib/types";
+import {
+  COR_CATEGORIA,
+  FILTRO_PERFIL_INICIAL,
+  contarGruposDoPerfil,
+  escreverFiltroPerfil,
+  filtrarVotosDoPerfil,
+  lerFiltroPerfil,
+  votouDiferente,
+  type FiltroPerfil,
+  type FiltroVotosPerfil,
+} from "@/lib/votos";
+import { Paginacao } from "./Paginacao";
 import { VotoChip } from "./ui";
 
-const canon = (s?: string) => (s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-const posicional = (s?: string) => /^(sim|nao|abstencao|obstrucao)$/.test(canon(s));
-
-type Filtro = "todos" | "contra" | "governo" | "ausente";
+const POR_PAGINA = 25;
 
 /** A vote line already explained on the server: plain summary of the bill and what this step meant. */
-export type VotoLinha = VotoItem & { resumo?: string; etapa?: Pick<EtapaSimples, "titulo" | "tipo" | "sim"> };
+export type VotoLinha = VotoItem & { resumo?: string; etapa?: Pick<EtapaSimples, "titulo" | "tipo" | "sim">; assuntos?: string[] };
 
-export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoLinha[]; mostrarGoverno: boolean }) {
-  const [filtro, setFiltro] = useState<Filtro>("todos");
-  const [q, setQ] = useState("");
-  const [limite, setLimite] = useState(25);
+interface Props {
+  votos: VotoLinha[];
+  mostrarGoverno: boolean;
+}
 
-  const contagem = useMemo(() => {
-    const contra = votos.filter((v) => posicional(v.voto) && posicional(v.orientacaoPartido) && canon(v.voto) !== canon(v.orientacaoPartido)).length;
-    const governo = votos.filter((v) => posicional(v.voto) && posicional(v.orientacaoGoverno) && canon(v.voto) !== canon(v.orientacaoGoverno)).length;
-    const ausente = votos.filter((v) => canon(v.voto) === "ausente").length;
-    return { todos: votos.length, contra, governo, ausente };
-  }, [votos]);
+/**
+ * Every vote of one person, filterable by how they voted, by subject, by year and by text. The
+ * filter lives in the address, so a link like "?voto=nao#votos" opens exactly that list.
+ */
+export function ListaVotos(props: Props) {
+  return (
+    <Suspense fallback={<Lista {...props} f={FILTRO_PERFIL_INICIAL} />}>
+      <ListaComEndereco {...props} />
+    </Suspense>
+  );
+}
 
-  const lista = useMemo(() => {
-    const t = canon(q.trim());
-    return votos.filter((v) => {
-      if (filtro === "contra" && !(posicional(v.voto) && posicional(v.orientacaoPartido) && canon(v.voto) !== canon(v.orientacaoPartido))) return false;
-      if (filtro === "governo" && !(posicional(v.voto) && posicional(v.orientacaoGoverno) && canon(v.voto) !== canon(v.orientacaoGoverno))) return false;
-      if (filtro === "ausente" && canon(v.voto) !== "ausente") return false;
-      return !t || canon(`${v.titulo} ${v.resumo ?? ""} ${v.etapa?.titulo ?? ""}`).includes(t);
-    });
-  }, [votos, filtro, q]);
+function ListaComEndereco(props: Props) {
+  const sp = useSearchParams();
+  const f = useMemo(() => lerFiltroPerfil(new URLSearchParams(sp.toString())), [sp]);
+  const ir = useCallback((novo: FiltroVotosPerfil, modo: "push" | "replace" = "push") => {
+    const qs = escreverFiltroPerfil(novo, new URLSearchParams(window.location.search)).toString();
+    const url = `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`;
+    if (modo === "push") window.history.pushState(null, "", url);
+    else window.history.replaceState(null, "", url);
+  }, []);
+  return <Lista {...props} f={f} ir={ir} />;
+}
 
-  const abas: [Filtro, string][] = [
-    ["todos", "Todos"],
-    ["contra", "Contra o partido"],
-    ...(mostrarGoverno ? ([["governo", "Contra o governo"]] as [Filtro, string][]) : []),
-    ["ausente", "Ausências"],
+function Lista({ votos, mostrarGoverno, f, ir }: Props & { f: FiltroVotosPerfil; ir?: (f: FiltroVotosPerfil, modo?: "push" | "replace") => void }) {
+  const topo = useRef<HTMLDivElement>(null);
+  const mudar = (novo: FiltroVotosPerfil, modo?: "push" | "replace") => ir?.(novo, modo);
+  const comTexto = useMemo(() => votos.map((v) => ({ ...v, texto: `${v.titulo} ${v.resumo ?? ""} ${v.etapa?.titulo ?? ""}` })), [votos]);
+  const lista = useMemo(() => filtrarVotosDoPerfil(comTexto, f), [comTexto, f]);
+  const n = useMemo(() => contarGruposDoPerfil(comTexto, f), [comTexto, f]);
+  const anos = useMemo(() => [...new Set(votos.map((v) => v.data.slice(0, 4)))].sort().reverse(), [votos]);
+  const assuntos = useMemo(() => [...new Set(votos.flatMap((v) => v.assuntos ?? []))].map(assuntoPorId).filter((a) => !!a), [votos]);
+  const pagina = paginar(lista, f.pagina, POR_PAGINA);
+
+  const grupos: [FiltroPerfil | "", string, string?][] = [
+    ["", "Todos"],
+    ...CATEGORIAS_VOTO.filter((c) => n[c.id] > 0).map((c): [FiltroPerfil, string, string] => [c.id, c.rotulo, COR_CATEGORIA[c.id]]),
+    ["contra-partido", "Diferente do partido"],
+    ...(mostrarGoverno ? ([["contra-governo", "Diferente do governo"]] as [FiltroPerfil, string][]) : []),
   ];
+  const outros = !!(f.assunto || f.ano || f.q.trim());
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center gap-2">
-        <div role="tablist" aria-label="Filtrar votos" className="flex flex-wrap gap-1.5">
-          {abas.map(([k, rotulo]) => (
-            <button
-              key={k}
-              role="tab"
-              aria-selected={filtro === k}
-              onClick={() => {
-                setFiltro(k);
-                setLimite(25);
-              }}
-              className={`chip ${filtro === k ? "chip-ativo" : ""}`}
-            >
-              {rotulo} <span className="tnum opacity-70">{contagem[k]}</span>
-            </button>
-          ))}
-        </div>
-        <label className="ml-auto w-full sm:w-64">
-          <span className="sr-only">Buscar votação por assunto</span>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por assunto"
-            className="w-full rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-sm outline-none focus:border-accent"
-          />
-        </label>
+    <div ref={topo} className="scroll-mt-24">
+      <div role="group" aria-label="Mostrar votos por tipo" className="flex flex-wrap gap-1.5">
+        {grupos.map(([g, rotulo, cor]) => (
+          <button
+            key={g || "todos"}
+            type="button"
+            aria-pressed={f.grupo === g}
+            onClick={() => mudar({ ...f, grupo: f.grupo === g ? "" : g, pagina: 1 })}
+            className="chip min-h-10"
+            title={g === "contra-partido" ? "Votou Sim quando o partido pediu Não, ou o contrário" : undefined}
+          >
+            {cor && <span className="h-2.5 w-2.5 rounded-full" style={{ background: cor }} aria-hidden />}
+            {rotulo} <span className="tnum opacity-70">{n[g]}</span>
+          </button>
+        ))}
       </div>
 
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <label className="relative min-w-52 flex-[2]">
+          <span className="sr-only">Buscar votação</span>
+          <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-ink-3" aria-hidden />
+          <input
+            type="search"
+            value={f.q}
+            onChange={(e) => mudar({ ...f, q: e.target.value, pagina: 1 }, "replace")}
+            placeholder="Buscar por assunto ou projeto"
+            className="h-10 w-full rounded-lg border border-line-strong bg-surface pl-9 pr-3 text-sm outline-none focus:border-accent"
+          />
+        </label>
+        {assuntos.length > 0 && (
+          <Escolha
+            rotulo="Assunto"
+            valor={f.assunto}
+            aoMudar={(a) => mudar({ ...f, assunto: a, pagina: 1 })}
+            opcoes={[{ valor: "", rotulo: "Todos os assuntos" }, ...assuntos.map((a) => ({ valor: a.id, rotulo: a.nome }))]}
+          />
+        )}
+        {anos.length > 1 && (
+          <Escolha
+            rotulo="Ano"
+            valor={f.ano}
+            aoMudar={(a) => mudar({ ...f, ano: a, pagina: 1 })}
+            opcoes={[{ valor: "", rotulo: "Todos os anos" }, ...anos.map((a) => ({ valor: a, rotulo: a }))]}
+          />
+        )}
+      </div>
+
+      <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-2" aria-live="polite">
+        <span>
+          {lista.length === votos.length ? (
+            <>
+              <b className="tnum">{votos.length}</b> votações
+            </>
+          ) : (
+            <>
+              Mostrando <b className="tnum">{lista.length}</b> de <b className="tnum">{votos.length}</b> votações
+            </>
+          )}
+          {pagina.paginas > 1 && (
+            <span className="text-ink-3">
+              {" "}
+              · página {pagina.pagina} de {pagina.paginas}
+            </span>
+          )}
+        </span>
+        {(f.grupo || outros) && (
+          <button type="button" onClick={() => mudar(FILTRO_PERFIL_INICIAL)} className="inline-flex items-center gap-1 font-semibold text-accent-ink hover:underline">
+            <X className="h-3.5 w-3.5" aria-hidden />
+            Mostrar todos de novo
+          </button>
+        )}
+      </p>
+
       {lista.length === 0 ? (
-        <p className="mt-4 rounded-lg bg-surface-2 px-4 py-5 text-ink-2">Nenhuma votação com esse filtro.</p>
+        <p className="mt-4 rounded-lg bg-surface-2 px-4 py-5 text-ink-2">Nenhuma votação com esses filtros.</p>
       ) : (
-        <ul className="mt-4 divide-y divide-line cartao rounded-xl">
-          {lista.slice(0, limite).map((v) => {
-            const contraPartido = posicional(v.voto) && posicional(v.orientacaoPartido) && canon(v.voto) !== canon(v.orientacaoPartido);
+        <ul className="mt-3 divide-y divide-line cartao rounded-xl">
+          {pagina.itens.map((v) => {
+            const contraPartido = votouDiferente(v.voto, v.orientacaoPartido);
             return (
               <li key={v.votacaoId} className="grid gap-2 p-4 sm:grid-cols-[1fr_auto] sm:items-start sm:gap-6">
                 <div className="min-w-0">
@@ -101,16 +176,16 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoLinha[]; most
                   </div>
                   {v.orientacaoPartido && (
                     <div className="flex items-center gap-1.5 sm:contents">
-                      <dt className="text-ink-3">Partido</dt>
+                      <dt className="text-ink-3">Partido pediu</dt>
                       <dd className={contraPartido ? "font-semibold" : "text-ink-2"}>
                         {v.orientacaoPartido}
-                        {contraPartido && <span className="ml-1 text-xs text-nao">(votou diferente)</span>}
+                        {contraPartido && <span className="ml-1 text-xs text-ink-2">(votou diferente)</span>}
                       </dd>
                     </div>
                   )}
                   {mostrarGoverno && v.orientacaoGoverno && (
                     <div className="flex items-center gap-1.5 sm:contents">
-                      <dt className="text-ink-3">Governo</dt>
+                      <dt className="text-ink-3">Governo pediu</dt>
                       <dd className="text-ink-2">{v.orientacaoGoverno}</dd>
                     </div>
                   )}
@@ -120,12 +195,40 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoLinha[]; most
           })}
         </ul>
       )}
-      {lista.length > limite && (
-        <button onClick={() => setLimite((l) => l + 50)} className="mt-3 w-full botao-sec">
-          Mostrar mais ({lista.length - limite} restantes)
-        </button>
-      )}
+      <div className="mt-4">
+        <Paginacao
+          pagina={pagina.pagina}
+          paginas={pagina.paginas}
+          rotulo="Páginas de votos"
+          aoIr={(p) => {
+            mudar({ ...f, pagina: p });
+            topo.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        />
+      </div>
     </div>
+  );
+}
+
+function Escolha({ rotulo, valor, aoMudar, opcoes }: { rotulo: string; valor: string; aoMudar: (v: string) => void; opcoes: { valor: string; rotulo: string }[] }) {
+  return (
+    <label className="min-w-36 flex-1">
+      <span className="sr-only">{rotulo}</span>
+      <span className="relative block">
+        <select
+          value={valor}
+          onChange={(e) => aoMudar(e.target.value)}
+          className="h-10 w-full appearance-none rounded-lg border border-line-strong bg-surface pl-3 pr-9 text-sm outline-none focus:border-accent"
+        >
+          {opcoes.map((o) => (
+            <option key={o.valor} value={o.valor}>
+              {o.rotulo}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-ink-3" aria-hidden />
+      </span>
+    </label>
   );
 }
 

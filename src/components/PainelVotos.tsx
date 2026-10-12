@@ -124,7 +124,10 @@ function Painel({
         ))}
       </div>
       <p className="mt-2 text-sm text-ink-3">
-        Toque em um número para ver só essas pessoas. O olho esconde ou mostra um grupo. Os totais acima são os da votação inteira e não mudam com os filtros.
+        Toque em um número para ver só essas pessoas. O olho esconde ou mostra um grupo. Os totais acima são os da votação inteira e não mudam com os filtros.{" "}
+        <Link href="/como-funciona#tipos-de-voto" className="link">
+          O que quer dizer cada voto
+        </Link>
       </p>
       {total["sem-registro"] > 0 && (
         <p className="mt-1 text-sm text-ink-3">

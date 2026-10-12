@@ -8,66 +8,163 @@ export interface Assunto {
   nome: string;
   /** lucide-react icon name, resolved in the interface */
   icone: string;
-  /** Matches official themes and summaries (accent-insensitive, lowercase input) */
-  padrao: RegExp;
+  /**
+   * Words looked for in the official themes and, when there is none, in the summary (lowercase,
+   * without accents). A word ending in "…" matches anything that starts with it ("educac…" matches
+   * educação and educacional); the others must appear as whole words. This list is also the
+   * published criterion, so the rule and its explanation are the same thing.
+   */
+  termos: string[];
 }
 
+const A = (id: string, nome: string, icone: string, termos: string[]): Assunto => ({ id, nome, icone, termos });
+
 export const ASSUNTOS: Assunto[] = [
-  { id: "saude", nome: "Saúde", icone: "HeartPulse", padrao: /saude|\bsus\b|hospita|medicament|vacina|doenca|medic[oa]s?\b|sanitari/ },
-  { id: "educacao", nome: "Educação", icone: "GraduationCap", padrao: /educac|escola|ensino|universidad|professor|estudant|creche/ },
-  {
-    id: "impostos",
-    nome: "Impostos e dinheiro público",
-    icone: "Landmark",
-    padrao: /tribut|imposto|financas publicas|orcament|fiscal|empenho|\bicms\b|\bipi\b|imposto de renda|contribuic(ao|oes) social|divida publica|precatori/,
-  },
-  { id: "economia", nome: "Economia e empresas", icone: "Store", padrao: /economia|industria|comercio|empresa|credito|bancari|consumidor|mercado|microempreend|servicos?\b/ },
-  {
-    id: "trabalho",
-    nome: "Trabalho e aposentadoria",
-    icone: "Briefcase",
-    padrao: /trabalh|emprego|salari|previdenc|aposentad|assistencia social|beneficio de prestacao|bolsa familia|seguro-desemprego/,
-  },
-  {
-    id: "seguranca",
-    nome: "Segurança e justiça",
-    icone: "Shield",
-    padrao: /seguranca publica|penal|crime|criminal|policia|prisao|prisional|violencia|armas?\b|defesa e seguranca|direito e justica|processual/,
-  },
-  {
-    id: "ambiente",
-    nome: "Meio ambiente e energia",
-    icone: "Leaf",
-    padrao: /meio ambiente|ambiental|clima|florest|energia|recursos hidricos|mineracao|minerais|sustentavel|saneamento|combustive/,
-  },
-  { id: "campo", nome: "Campo e agricultura", icone: "Wheat", padrao: /agricult|pecuari|pesca|rural|agropecu|estrutura fundiaria|agrari/ },
-  {
-    id: "cidades",
-    nome: "Cidades e transporte",
-    icone: "Bus",
-    padrao: /cidades|urban|transporte|transito|mobilidade|viacao|rodovi|ferrovi|aeroport|portos?\b|habitac|moradia|marinha mercante/,
-  },
-  {
-    id: "direitos",
-    nome: "Direitos e família",
-    icone: "Users",
-    padrao: /direitos humanos|minorias|mulher|crianca|adolescente|idos|deficiencia|familia|indigena|igualdade|racial|violencia domestica/,
-  },
-  {
-    id: "governo",
-    nome: "Política e governo",
-    icone: "Building2",
-    padrao: /politica, partidos|eleic|eleitora|partido|administracao publica|servidor|processo legislativo|direito constitucional|ministro|tribunal de contas|atuacao parlamentar/,
-  },
-  {
-    id: "tecnologia",
-    nome: "Tecnologia e comunicação",
-    icone: "Cpu",
-    padrao: /tecnolog|ciencia|inovac|comunicac|internet|digital|telecomunic|dados pessoais|inteligencia artificial|radiodifus/,
-  },
-  { id: "cultura", nome: "Cultura, esporte e homenagens", icone: "Music", padrao: /cultura|\barte|esporte|turismo|homenage|datas comemorativas|religi|denomina/ },
-  { id: "exterior", nome: "Outros países", icone: "Globe", padrao: /relacoes internacionais|comercio exterior|acordo entre|tratado|convencao|republica (de|da|do|federal)/ },
+  A("saude", "Saúde", "HeartPulse", ["saude", "sus", "hospita…", "medicament…", "vacina…", "doenca…", "medico", "medicos", "medica", "medicas", "sanitari…"]),
+  A("educacao", "Educação", "GraduationCap", ["educac…", "escola…", "ensino…", "universidad…", "professor…", "estudant…", "creche…"]),
+  A("impostos", "Impostos e dinheiro público", "Landmark", [
+    "tribut…",
+    "imposto…",
+    "financas publicas",
+    "orcament…",
+    "fiscal…",
+    "empenho…",
+    "icms",
+    "ipi",
+    "contribuicao social",
+    "contribuicoes sociais",
+    "divida publica",
+    "precatori…",
+  ]),
+  A("economia", "Economia e empresas", "Store", [
+    "economia…",
+    "industria…",
+    "comercio…",
+    "empresa…",
+    "credito…",
+    "bancari…",
+    "consumidor…",
+    "mercado…",
+    "microempreend…",
+    "servico",
+    "servicos",
+  ]),
+  A("trabalho", "Trabalho e aposentadoria", "Briefcase", [
+    "trabalh…",
+    "emprego…",
+    "salari…",
+    "previdenc…",
+    "aposentad…",
+    "assistencia social",
+    "beneficio de prestacao…",
+    "bolsa familia",
+    "seguro-desemprego",
+  ]),
+  A("seguranca", "Segurança e justiça", "Shield", [
+    "seguranca publica",
+    "penal…",
+    "crime…",
+    "criminal…",
+    "policia…",
+    "prisao…",
+    "prisional…",
+    "violencia…",
+    "arma",
+    "armas",
+    "defesa e seguranca",
+    "direito e justica",
+    "processual…",
+  ]),
+  A("ambiente", "Meio ambiente e energia", "Leaf", [
+    "meio ambiente",
+    "ambiental…",
+    "clima…",
+    "florest…",
+    "energia…",
+    "recursos hidricos",
+    "mineracao…",
+    "minerais…",
+    "sustentavel…",
+    "saneamento…",
+    "combustive…",
+  ]),
+  A("campo", "Campo e agricultura", "Wheat", ["agricult…", "pecuari…", "pesca…", "rural…", "agropecu…", "estrutura fundiaria", "agrari…"]),
+  A("cidades", "Cidades e transporte", "Bus", [
+    "cidades",
+    "urban…",
+    "transporte…",
+    "transito…",
+    "mobilidade…",
+    "viacao…",
+    "rodovi…",
+    "ferrovi…",
+    "aeroport…",
+    "porto",
+    "portos",
+    "habitac…",
+    "moradia…",
+    "marinha mercante",
+  ]),
+  A("direitos", "Direitos e família", "Users", [
+    "direitos humanos",
+    "minorias…",
+    "mulher…",
+    "crianca…",
+    "adolescente…",
+    "idos…",
+    "deficiencia…",
+    "familia…",
+    "indigena…",
+    "igualdade…",
+    "racial…",
+    "violencia domestica",
+  ]),
+  A("governo", "Política e governo", "Building2", [
+    "politica, partidos",
+    "eleic…",
+    "eleitora…",
+    "partido…",
+    "administracao publica",
+    "servidor…",
+    "processo legislativo",
+    "direito constitucional",
+    "ministro…",
+    "tribunal de contas",
+    "atuacao parlamentar",
+  ]),
+  A("tecnologia", "Tecnologia e comunicação", "Cpu", [
+    "tecnolog…",
+    "ciencia…",
+    "inovac…",
+    "comunicac…",
+    "internet…",
+    "digital…",
+    "telecomunic…",
+    "dados pessoais",
+    "inteligencia artificial",
+    "radiodifus…",
+  ]),
+  A("cultura", "Cultura, esporte e homenagens", "Music", ["cultura…", "arte…", "esporte…", "turismo…", "homenage…", "datas comemorativas", "religi…", "denomina…"]),
+  A("exterior", "Outros países", "Globe", [
+    "relacoes internacionais",
+    "comercio exterior",
+    "acordo entre",
+    "tratado…",
+    "convencao…",
+    "republica de",
+    "republica da",
+    "republica do",
+    "republica federal",
+  ]),
 ];
+
+const escapar = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** Regular expression built from the word list (see `termos`). */
+function padrao(a: Assunto): RegExp {
+  const partes = a.termos.map((t) => (t.endsWith("…") ? `\\b${escapar(t.slice(0, -1))}` : `\\b${escapar(t)}\\b`));
+  return new RegExp(partes.join("|"));
+}
+const PADROES = new Map(ASSUNTOS.map((a) => [a.id, padrao(a)]));
 
 const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -76,7 +173,7 @@ const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLo
  * the house assigned no theme.
  */
 export function classificarAssuntos(temas: string[] | undefined, ementa: string): string[] {
-  const achar = (texto: string) => ASSUNTOS.filter((a) => a.padrao.test(semAcento(texto))).map((a) => a.id);
+  const achar = (texto: string) => ASSUNTOS.filter((a) => PADROES.get(a.id)!.test(semAcento(texto))).map((a) => a.id);
   const porTema = [...new Set((temas ?? []).flatMap(achar))];
   const ids = porTema.length ? porTema : achar(ementa);
   return ids.slice(0, 2);

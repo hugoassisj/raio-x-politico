@@ -227,3 +227,96 @@ export function porPartido(linhas: LinhaVoto[]): GrupoPartido[] {
       return { partido, linhas: ls, contagem, comRegistro: ls.length - contagem["sem-registro"] };
     });
 }
+
+// ------------------------------------------------------------ one person's votes (profile)
+
+/** A vote of one person, with what the list needs to filter it. */
+export interface VotoDoPerfil {
+  votacaoId: string;
+  data: string;
+  voto: string;
+  orientacaoPartido?: string;
+  orientacaoGoverno?: string;
+  assuntos?: string[];
+  /** Text searched by the box: title, summary, step */
+  texto: string;
+}
+
+/** Groups of the profile list: a vote category, or a difference from the party or government request. */
+export type FiltroPerfil = CategoriaVoto | "contra-partido" | "contra-governo";
+
+const POSICIONAL = /^(sim|nao)$/;
+const canonVoto = (s?: string) => norm(s ?? "").trim();
+
+/**
+ * True when the person voted Sim or Não and the request was the opposite. Abstaining, obstructing
+ * or having no record is never counted as voting against.
+ */
+export function votouDiferente(voto: string, pedido?: string): boolean {
+  const v = canonVoto(voto);
+  const o = canonVoto(pedido);
+  return POSICIONAL.test(v) && POSICIONAL.test(o) && v !== o;
+}
+
+export interface FiltroVotosPerfil {
+  grupo: FiltroPerfil | "";
+  assunto: string;
+  ano: string;
+  q: string;
+  pagina: number;
+}
+
+export const FILTRO_PERFIL_INICIAL: FiltroVotosPerfil = { grupo: "", assunto: "", ano: "", q: "", pagina: 1 };
+
+export function noGrupo(v: VotoDoPerfil, g: FiltroPerfil | ""): boolean {
+  if (!g) return true;
+  if (g === "contra-partido") return votouDiferente(v.voto, v.orientacaoPartido);
+  if (g === "contra-governo") return votouDiferente(v.voto, v.orientacaoGoverno);
+  return rotuloVoto(v.voto).categoria === g;
+}
+
+/** Filters one person's votes; newest first, then by id so pages never shuffle. */
+export function filtrarVotosDoPerfil<T extends VotoDoPerfil>(votos: T[], f: FiltroVotosPerfil): T[] {
+  const t = norm(f.q.trim());
+  return votos
+    .filter((v) => noGrupo(v, f.grupo) && (!f.assunto || v.assuntos?.includes(f.assunto)) && (!f.ano || v.data.startsWith(f.ano)) && (!t || norm(v.texto).includes(t)))
+    .sort((a, b) => b.data.localeCompare(a.data) || a.votacaoId.localeCompare(b.votacaoId));
+}
+
+/** How many votes fall in each group, within the other filters (subject, year, search). */
+export function contarGruposDoPerfil(votos: VotoDoPerfil[], f: FiltroVotosPerfil): Record<FiltroPerfil | "", number> {
+  const base = filtrarVotosDoPerfil(votos, { ...f, grupo: "" });
+  const grupos: (FiltroPerfil | "")[] = ["", ...ORDEM_CATEGORIAS, "contra-partido", "contra-governo"];
+  return Object.fromEntries(grupos.map((g) => [g, base.filter((v) => noGrupo(v, g)).length])) as Record<FiltroPerfil | "", number>;
+}
+
+const GRUPOS_PERFIL: FiltroPerfil[] = [...ORDEM_CATEGORIAS, "contra-partido", "contra-governo"];
+
+export function lerFiltroPerfil(p: URLSearchParams): FiltroVotosPerfil {
+  const grupo = p.get("voto") as FiltroPerfil;
+  const ano = p.get("ano") ?? "";
+  const pagina = Number.parseInt(p.get("pagina") ?? "", 10);
+  return {
+    grupo: GRUPOS_PERFIL.includes(grupo) ? grupo : "",
+    assunto: (p.get("assunto") ?? "").slice(0, 30),
+    ano: /^\d{4}$/.test(ano) ? ano : "",
+    q: (p.get("q") ?? "").slice(0, 80),
+    pagina: Number.isFinite(pagina) && pagina > 0 ? pagina : 1,
+  };
+}
+
+export function escreverFiltroPerfil(f: FiltroVotosPerfil, base = new URLSearchParams()): URLSearchParams {
+  const p = new URLSearchParams(base);
+  const pares: [string, string][] = [
+    ["voto", f.grupo],
+    ["assunto", f.assunto],
+    ["ano", f.ano],
+    ["q", f.q.trim()],
+    ["pagina", f.pagina > 1 ? String(f.pagina) : ""],
+  ];
+  for (const [k, v] of pares) {
+    if (v) p.set(k, v);
+    else p.delete(k);
+  }
+  return p;
+}

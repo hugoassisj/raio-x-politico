@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { AvisoDemo, Cabecalho, Rodape } from "@/components/Moldura";
 import { BarraInferior } from "@/components/BarraInferior";
+import { SCRIPT_TEMA } from "@/lib/tema";
 import "./globals.css";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://raio-x-politico.vercel.app";
@@ -22,7 +23,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    // The theme script may set data-theme before React loads
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
+      </head>
       <body className="min-h-dvh antialiased">
         <Cabecalho />
         <AvisoDemo />

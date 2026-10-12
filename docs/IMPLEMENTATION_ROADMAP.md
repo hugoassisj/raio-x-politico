@@ -69,9 +69,9 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | VOT-07 | VERIFIED | P1 | Partidos sem ranking | Por partido, a distribuição de todos os tipos de voto, a orientação do partido separada do voto de cada membro, ordem alfabética declarada, tocar no partido filtra a lista; visão “por partido” com os membros. | VOT-05 |
 | VOT-08 | IMPLEMENTED | P1 | Partido da época | Votos usam o partido gravado pela Casa no voto. Para quem não tem voto registrado, a interface diz que o partido mostrado é o atual. | VOT-05 |
 | VOT-09 | NOT_STARTED | P1 | Contexto da votação | Pergunta votada, etapa, resultado desta votação separado do destino final do projeto; não dizer “virou lei” sem prova. | |
-| VOT-10 | NOT_STARTED | P1 | Procedimento ou mérito | Cada votação marcada como “sobre o andamento” (pedido, requerimento) ou “sobre o conteúdo”, com regra pública e testada. Filtro no catálogo. | VOT-01 |
-| VOT-11 | NOT_STARTED | P1 | Catálogo de votações | Busca por texto, filtros por casa, assunto, resultado, tipo (andamento ou conteúdo), período; estado na URL; paginação comum. | PAG-01, VOT-10 |
-| VOT-12 | NOT_STARTED | P1 | Votos no perfil | No perfil, filtrar votos por voto, assunto, ano e casa, com link para cada votação. | VOT-01 |
+| VOT-10 | VERIFIED | P1 | Procedimento ou mérito | Cada votação marcada como “sobre o andamento” (pedido, requerimento) ou “sobre o conteúdo”, com regra pública e testada. Filtro no catálogo. | VOT-01 |
+| VOT-11 | VERIFIED | P1 | Catálogo de votações | Busca por texto, filtros por casa, assunto, resultado, tipo (andamento ou conteúdo), período; estado na URL; paginação comum. | PAG-01, VOT-10 |
+| VOT-12 | VERIFIED | P1 | Votos no perfil | No perfil, filtrar votos por voto, assunto, ano e casa, com link para cada votação. | VOT-01 |
 | VOT-13 | IN_PROGRESS | P0 | Origem de cada voto | Identificador oficial da votação, casa, data, código original do voto e link oficial visíveis no detalhe; data da coleta mostrada. | VOT-05 |
 | VOT-14 | IN_PROGRESS | P0 | Testes de votação | Testes para: Sim, Não, abstenção, obstrução, sem voto, presidindo, licença, voto secreto, Câmara e Senado, troca de partido, filtro vazio, combinação de filtros com URL e paginação. | VOT-01 a VOT-06 |
 | VOT-15 | IN_PROGRESS | P1 | Conferência na tela | Página de votação conferida no navegador, claro e escuro, celular e computador, só com teclado. | VOT-02 a VOT-08, TEMA-01 |
@@ -80,7 +80,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 
 | ID | Situação | P | O que é | Critérios de aceite | Depende de |
 |---|---|---|---|---|---|
-| TEMA-01 | NOT_STARTED | P1 | Botão de tema | Botão visível (claro, escuro, do sistema), preferência salva, sem piscar na carga, nome acessível. | |
+| TEMA-01 | VERIFIED | P1 | Botão de tema | Botão visível (claro, escuro, do sistema), preferência salva, sem piscar na carga, nome acessível. | |
 | PAG-01 | VERIFIED | P0 | Paginação comum | Uma função pura (`src/lib/paginacao.ts`) e um componente (`Paginacao`); página na URL; volta à página 1 quando um filtro muda; ordem estável. | |
 | PAG-02 | IN_PROGRESS | P1 | Paginação nas listas | Políticos, votações, falas e lista de votos usam PAG-01. | PAG-01 |
 | TAB-01 | NOT_STARTED | P2 | Primitivos de tabela | Avaliar TanStack Table para `/politicos` e gastos: ordenar, esconder colunas, redimensionar, exportar CSV, preferências salvas. Decidir com base em peso e acessibilidade. | PAG-01 |
@@ -152,6 +152,10 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | VOT-06 | Teste “round-trips through the address and ignores junk” e “sorts deterministically”. Navegador: voltar no histórico restaura `?voto=nao` e a lista. HTML estático da página já traz a lista completa (sem depender de JavaScript). |
 | VOT-07 | Teste “groups by party alphabetically and keeps each person's vote”. Tela `?visao=partido&partido=PT`: barra com todos os tipos de voto, “Partido pediu: Sim” separado dos votos, botão “Ver só este partido”. |
 | VOT-08 | Partido da época: teste “builds one row per person with the party of the vote day”. “Sem voto registrado” agora vem do histórico de exercício da Câmara (`marcarSemRegistro` em `pipeline/build.ts`, testes em `pipeline/tests/core.test.ts`). Falta: a próxima coleta publicar o campo `semRegistro` e conferir na tela. |
+| TEMA-01 | `src/components/Tema.tsx` e `src/lib/tema.ts`. Navegador: o botão alterna “igual ao aparelho”, claro e escuro, com nome acessível que diz o estado e o próximo; depois de recarregar, `data-theme="dark"` já está no documento antes do React (script no `<head>`, antes do `<body>`). |
+| VOT-10 | Regra pública `explicarEtapa` (testes “linguagem” em `src/lib/congresso.test.ts`); no catálogo, “Esconder pedidos sobre o andamento”; no perfil e na votação, a marca “sobre o andamento, não sobre o conteúdo”. |
+| VOT-11 | Catálogo `/votacoes`: busca, casa, resultado, novo filtro “Quando” (30 dias, 3 meses, 12 meses, contados a partir da votação mais recente dos dados: 10, 27 e 213 projetos em 2026-10-12), assuntos, paginação comum com links. Critérios dos assuntos publicados em `/como-funciona#assuntos`, lidos da mesma lista que classifica (`termos` em `src/lib/assuntos.ts`). A troca para listas de palavras corrigiu 16 de 212 projetos que caíam em assuntos errados (“agricultura” contava como “cultura”; “partidos” como “direitos”). |
+| VOT-12 | `src/components/ListaVotos.tsx` com `filtrarVotosDoPerfil` (testes “votos no perfil”). Navegador em `/politico/dep-104552`: “Não” leva a `?voto=nao` (67 de 262), “Diferente do partido” a `?voto=contra-partido` (16), assunto “Impostos” a `?assunto=impostos` (58); “Mostrar todos de novo” limpa. O link “Votou diferente do partido 16 vezes” abre a lista filtrada. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças
@@ -180,8 +184,10 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 |---|---|---|
 | 2026-10-12 | `npm run lint`, `tsc --noEmit`, `vitest run` | sem erros; 89 testes passando |
 | 2026-10-12 | `npm run lint`, `tsc --noEmit`, `vitest run`, `npm run build` | sem erros; 107 testes passando; build com as 351 votações estáticas |
+| 2026-10-12 | `npm run lint`, `tsc --noEmit`, `vitest run` | sem erros; 111 testes passando |
 
 ## 8. Registro de progresso
 
+- **2026-10-12 (3):** botão de tema; votos do perfil com filtros na URL e paginação; catálogo com período e paginação comum; critérios de assunto e tipos de voto publicados em “Como funciona”. O pipeline deixou de gravar “Ausente” para quem não tem registro (agora grava vazio, lido como “sem voto registrado”; arquivos antigos com “Ausente” são lidos do mesmo jeito). Próximo: CONT-01, PART-01/02, PRES-01, PERF-01.
 - **2026-10-12 (2):** lista “Quem votou como” na página da votação (`src/components/PainelVotos.tsx`): totais que filtram, esconder e mostrar grupos, plenário aceso pelo filtro, busca, partido, estado, ordem, três visões, paginação e tudo na URL. Plenário corrigido (o filtro de destaque não apagava as cadeiras por causa da animação; agora usa `fill-opacity`). Código antigo `VotosNominais.tsx` removido. Próximo: TEMA-01, VOT-10/11 (catálogo), VOT-12 (votos no perfil).
 - **2026-10-12:** rastreador criado a partir da auditoria do código e dos dados reais. Trabalho anterior enviado (vida pública, contas de campanha, “Como sabemos disso?”, “Quem resolve”). Erros do pipeline agora aparecem como anotações. Nova execução completa do TSE disparada. Próximo passo: VOT-01 a VOT-08.

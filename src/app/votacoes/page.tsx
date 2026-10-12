@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FormFiltros, Seletor } from "@/components/Filtros";
 import { IconeAssunto } from "@/components/Icone";
 import { CartaoProjeto, CartaoVotacao } from "@/components/Listas";
+import { Paginacao } from "@/components/Paginacao";
 import { Container, Vazio } from "@/components/ui";
 import { ASSUNTOS } from "@/lib/assuntos";
 import { getExplicacoes, getMaterias, getVotacoes } from "@/lib/data";
@@ -27,10 +28,14 @@ export default async function Votacoes({ searchParams }: PageProps<"/votacoes">)
   const tema = ASSUNTOS.some((a) => a.id === t(sp.assunto)) ? t(sp.assunto) : "";
   const conteudo = t(sp.so) === "conteudo";
   const q = t(sp.q).slice(0, 80);
+  const periodo = ["30", "90"].includes(t(sp.periodo)) ? t(sp.periodo) : "";
   const pagina = Math.max(1, Math.floor(Number(t(sp.pagina)) || 1));
 
   const [todas, materias, explicacoes] = await Promise.all([getVotacoes(), getMaterias(), getExplicacoes()]);
   const termo = norm(q.trim());
+  // Measured from the most recent vote in the data, so the filter is stable between daily updates
+  const ultima = todas.reduce((m, v) => (v.data > m ? v.data : m), "");
+  const desde = periodo && ultima ? new Date(Date.parse(ultima) - Number(periodo) * 86_400_000).toISOString().slice(0, 10) : "";
   const busca = (texto: string) => !termo || norm(texto).includes(termo);
 
   const grupos = agruparPorProjeto(todas, materias, explicacoes);
@@ -38,6 +43,7 @@ export default async function Votacoes({ searchParams }: PageProps<"/votacoes">)
     (p) =>
       (!casa || p.casa === casa) &&
       (!resultado || p.principal.resultado === resultado) &&
+      (!desde || p.votacoes.some((v) => v.data >= desde)) &&
       (!tema || p.assuntos.includes(tema)) &&
       busca([p.sigla, p.ementa, p.explicacao?.resumo, p.materia?.ementaDetalhada, p.materia?.palavrasChave?.join(" ")].filter(Boolean).join(" ")),
   );
@@ -45,6 +51,7 @@ export default async function Votacoes({ searchParams }: PageProps<"/votacoes">)
     (v) =>
       (!casa || v.casa === casa) &&
       (!resultado || v.resultado === resultado) &&
+      (!desde || v.data >= desde) &&
       (!tema || v.assuntos?.includes(tema)) &&
       (!conteudo || explicarEtapa(partesDescricao(v.descricao).procedimento, v.objeto)?.tipo !== "procedimento") &&
       busca(`${v.titulo} ${v.descricao}`),
@@ -54,7 +61,7 @@ export default async function Votacoes({ searchParams }: PageProps<"/votacoes">)
   const pg = Math.min(pagina, paginas);
   const url = (mudar: Record<string, string>) => {
     const u = new URLSearchParams();
-    const atual: Record<string, string> = { ver: ver === "todas" ? "todas" : "", casa, resultado, assunto: tema, so: conteudo ? "conteudo" : "", q, pagina: "" };
+    const atual: Record<string, string> = { ver: ver === "todas" ? "todas" : "", casa, resultado, periodo, assunto: tema, so: conteudo ? "conteudo" : "", q, pagina: "" };
     for (const [k, val] of Object.entries({ ...atual, ...mudar })) if (val) u.set(k, val);
     return `/votacoes${u.size ? `?${u}` : ""}`;
   };
@@ -124,6 +131,16 @@ export default async function Votacoes({ searchParams }: PageProps<"/votacoes">)
               ["Rejeitada", "Rejeitadas"],
             ]}
           />
+          <Seletor
+            nome="periodo"
+            rotulo="Quando"
+            valor={periodo}
+            opcoes={[
+              ["", "Últimos 12 meses"],
+              ["90", "Últimos 3 meses"],
+              ["30", "Últimos 30 dias"],
+            ]}
+          />
         </FormFiltros>
       </div>
 
@@ -154,27 +171,9 @@ export default async function Votacoes({ searchParams }: PageProps<"/votacoes">)
               .map((v, i) => <CartaoVotacao key={v.id} v={v} i={i} resumo={v.materia ? explicacoes.get(v.materia)?.resumo : undefined} />)}
       </div>
       {!total && <Vazio>Nada encontrado com esses filtros. Tente outro assunto ou apague a busca.</Vazio>}
-      {paginas > 1 && (
-        <nav aria-label="Paginação" className="mt-8 flex items-center justify-between">
-          {pg > 1 ? (
-            <Link href={url({ pagina: String(pg - 1) })} className="botao-sec">
-              Anterior
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className="text-sm text-ink-3">
-            Página {pg} de {paginas}
-          </span>
-          {pg < paginas ? (
-            <Link href={url({ pagina: String(pg + 1) })} className="botao-sec">
-              Próxima
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )}
+      <div className="mt-8">
+        <Paginacao pagina={pg} paginas={paginas} href={(p) => url({ pagina: p > 1 ? String(p) : "" })} rotulo="Páginas de votações" />
+      </div>
     </Container>
   );
 }

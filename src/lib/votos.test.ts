@@ -4,6 +4,14 @@ import { lerPagina, numerosDePagina, paginar } from "./paginacao";
 import type { PoliticoResumo, VotacaoDetalhe } from "./types";
 import {
   FILTRO_INICIAL,
+  FILTRO_PERFIL_INICIAL,
+  contarGruposDoPerfil,
+  escreverFiltroPerfil,
+  filtrarVotosDoPerfil,
+  lerFiltroPerfil,
+  votouDiferente,
+  type FiltroVotosPerfil,
+  type VotoDoPerfil,
   alternar,
   alternarPartido,
   contar,
@@ -193,5 +201,51 @@ describe("paginação", () => {
     expect(lerPagina("abc")).toBe(1);
     expect(lerPagina(null)).toBe(1);
     expect(lerPagina("-2")).toBe(1);
+  });
+});
+
+describe("votos no perfil", () => {
+  const v = (votacaoId: string, data: string, voto: string, over: Partial<VotoDoPerfil> = {}): VotoDoPerfil => ({ votacaoId, data, voto, texto: votacaoId, ...over });
+  const votos = [
+    v("a", "2026-05-01", "Sim", { orientacaoPartido: "Não", orientacaoGoverno: "Sim", assuntos: ["saude"], texto: "PL 1 vacinas" }),
+    v("b", "2025-11-20", "Não", { orientacaoPartido: "Não", orientacaoGoverno: "Sim", assuntos: ["impostos"] }),
+    v("c", "2026-05-01", "Abstenção", { orientacaoPartido: "Sim" }),
+    v("d", "2026-02-10", "", { orientacaoPartido: "Sim" }),
+    v("e", "2026-03-03", "Ausente", { orientacaoPartido: "Sim" }),
+    v("f", "2026-03-04", "LS"),
+  ];
+
+  it("counts a difference from the party only between Sim and Não", () => {
+    expect(votouDiferente("Sim", "Não")).toBe(true);
+    expect(votouDiferente("Não", "não")).toBe(false);
+    expect(votouDiferente("Abstenção", "Sim")).toBe(false);
+    expect(votouDiferente("", "Sim")).toBe(false);
+    expect(votouDiferente("Sim", "Liberado")).toBe(false);
+  });
+
+  it("filters by group, subject, year and text, newest first with a stable tie", () => {
+    const ids = (f: Partial<FiltroVotosPerfil>) => filtrarVotosDoPerfil(votos, { ...FILTRO_PERFIL_INICIAL, ...f }).map((x) => x.votacaoId);
+    expect(ids({})).toEqual(["a", "c", "f", "e", "d", "b"]);
+    expect(ids({ grupo: "contra-partido" })).toEqual(["a"]);
+    expect(ids({ grupo: "contra-governo" })).toEqual(["b"]);
+    expect(ids({ grupo: "sem-registro" })).toEqual(["e", "d"]);
+    expect(ids({ grupo: "ausencia" })).toEqual(["f"]);
+    expect(ids({ assunto: "impostos" })).toEqual(["b"]);
+    expect(ids({ ano: "2025" })).toEqual(["b"]);
+    expect(ids({ q: "vacina" })).toEqual(["a"]);
+  });
+
+  it("counts each group within the other filters", () => {
+    const n = contarGruposDoPerfil(votos, { ...FILTRO_PERFIL_INICIAL, ano: "2026" });
+    expect(n[""]).toBe(5);
+    expect(n.sim).toBe(1);
+    expect(n["sem-registro"]).toBe(2);
+    expect(n["contra-partido"]).toBe(1);
+  });
+
+  it("round-trips through the address", () => {
+    const f: FiltroVotosPerfil = { grupo: "contra-partido", assunto: "saude", ano: "2026", q: "x", pagina: 2 };
+    expect(lerFiltroPerfil(escreverFiltroPerfil(f))).toEqual(f);
+    expect(lerFiltroPerfil(new URLSearchParams("voto=talvez&ano=26"))).toEqual(FILTRO_PERFIL_INICIAL);
   });
 });

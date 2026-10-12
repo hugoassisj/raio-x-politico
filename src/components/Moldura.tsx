@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BotaoTema } from "./Tema";
 import { getMeta } from "@/lib/data";
 import { dataCurtaHora, dataHora } from "@/lib/format";
 import { Busca } from "./Busca";
@@ -58,8 +59,11 @@ export async function Cabecalho() {
             Atualizado {dataCurtaHora(meta.geradoEm)}
           </Link>
         )}
-        <div className="ml-auto w-full max-w-xs 2xl:ml-0">
-          <Busca />
+        <div className="ml-auto flex w-full max-w-xs items-center gap-1 2xl:ml-0">
+          <div className="min-w-0 flex-1">
+            <Busca />
+          </div>
+          <BotaoTema />
         </div>
       </Container>
     </header>
