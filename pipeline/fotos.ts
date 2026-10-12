@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { Unzip, UnzipInflate } from "fflate";
 import sharp from "sharp";
 import { fetchRaw, mapLimit } from "./lib/http";
 import { log } from "./lib/log";
@@ -49,4 +50,52 @@ export async function baixarFotos(alvos: FotoAlvo[], dirPublico: string): Promis
   );
   log.info(`Fotos: ${locais.size} salvas, ${falhas} sem foto disponível`);
   return { locais, falhas };
+}
+
+/**
+ * Candidate photos from the TSE, published as one ZIP per state with every 2022 candidate. Only
+ * the files of the people we show are extracted (matched by the candidate sequence number).
+ */
+export async function baixarFotosTSE(alvos: { id: string; uf: string; sq: string }[], dirPublico: string): Promise<Map<string, string>> {
+  const dir = path.join(dirPublico, "fotos");
+  await mkdir(dir, { recursive: true });
+  const locais = new Map<string, string>();
+  const porUf = new Map<string, { id: string; sq: string }[]>();
+  for (const a of alvos) porUf.set(a.uf, [...(porUf.get(a.uf) ?? []), a]);
+  for (const [uf, lista] of porUf) {
+    try {
+      const r = await fetchRaw(`https://cdn.tse.jus.br/estatistica/sead/eleicoes/eleicoes2022/fotos/foto_cand2022_${uf}_div.zip`, {
+        ttlHours: 24 * 180,
+        timeoutMs: 900_000,
+        retries: 2,
+      });
+      const porSq = new Map(lista.map((a) => [a.sq, a.id]));
+      const achados: { id: string; dados: Uint8Array }[] = [];
+      const uz = new Unzip();
+      uz.register(UnzipInflate);
+      uz.onfile = (f) => {
+        const sq = f.name.match(/(\d{9,})/)?.[1];
+        const id = sq ? porSq.get(sq) : undefined;
+        if (!id) return;
+        const partes: Uint8Array[] = [];
+        f.ondata = (err, chunk, final) => {
+          if (err) throw err;
+          partes.push(chunk);
+          if (final) achados.push({ id, dados: Buffer.concat(partes) });
+        };
+        f.start();
+      };
+      const FATIA = 1 << 16;
+      for (let i = 0; i < r.body.length; i += FATIA) uz.push(r.body.subarray(i, i + FATIA), i + FATIA >= r.body.length);
+      for (const { id, dados } of achados) {
+        const webp = await sharp(dados).resize(LARGURA, ALTURA, { fit: "cover", position: "top" }).webp({ quality: 72 }).toBuffer();
+        await writeFile(path.join(dir, `${id}.webp`), webp);
+        locais.set(id, `/fotos/${id}.webp`);
+      }
+      log.info(`Fotos TSE ${uf}: ${achados.length} de ${lista.length}`);
+    } catch (e) {
+      log.warn(`Fotos TSE ${uf}: ${(e as Error).message}`);
+    }
+  }
+  return locais;
 }

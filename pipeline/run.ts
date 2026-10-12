@@ -22,7 +22,7 @@ import { coletarDiscursos, coletarYouTube } from "./sources/falas";
 import { coletarSenado } from "./sources/senado";
 import { coletarConectoresSociais } from "./sources/social-connectors";
 import { coletarTSE } from "./sources/tse";
-import { baixarFotos } from "./fotos";
+import { baixarFotos, baixarFotosTSE } from "./fotos";
 
 const args = Object.fromEntries(
   process.argv.slice(2).map((a) => {
@@ -178,7 +178,15 @@ async function main() {
     "fotos",
     "Fotos oficiais (Câmara, Senado, assembleias e TSE)",
     "https://www.camara.leg.br",
-    () => baixarFotos(r.detalhes.map((d) => ({ id: d.id, url: d.foto })), path.resolve("public")),
+    async () => {
+      const oficiais = await baixarFotos(r.detalhes.map((d) => ({ id: d.id, url: d.foto })), path.resolve("public"));
+      // State deputies whose assembly has no photo feed: TSE candidate photos, extracted per state
+      const semFoto = r.detalhes
+        .filter((d) => d.casa === "assembleia" && !oficiais.locais.has(d.id))
+        .map((d) => ({ id: d.id, uf: d.uf, sq: d.id.split("-").pop()! }));
+      for (const [id, local] of await baixarFotosTSE(semFoto, path.resolve("public"))) oficiais.locais.set(id, local);
+      return oficiais;
+    },
     (f) => f.locais.size,
     { locais: new Map<string, string>(), falhas: 0 },
   );
