@@ -22,7 +22,8 @@ export interface Pergunta {
     | "FileText"
     | "History"
     | "PiggyBank"
-    | "Wrench";
+    | "Wrench"
+    | "Building2";
 }
 
 export const PERGUNTAS: Pergunta[] = [
@@ -79,6 +80,12 @@ export const PERGUNTAS: Pergunta[] = [
     resposta: "Gastos da cota parlamentar mês a mês, por tipo de despesa e por fornecedor, com o link de cada nota fiscal.",
     href: "/gastos",
     icone: "Wallet",
+  },
+  {
+    pergunta: "Quem a eleição colocou na Presidência?",
+    resposta: "Todas as eleições para Presidente desde 1994, a vida pública de quem disputou e o que o governo mandou ao Congresso.",
+    href: "/presidencia",
+    icone: "Building2",
   },
   {
     pergunta: "Meu partido vota com o governo? Vota unido?",

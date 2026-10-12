@@ -17,7 +17,7 @@ O Raio-X Político junta esses dados todos os dias, traduz para o português do 
 | Pergunta | Onde o site responde |
 |---|---|
 | Quem me representa? | Toque no seu estado no mapa e veja os 3 senadores, os deputados federais e os estaduais, com foto e partido. |
-| O que foi votado e o que muda para mim? | Cada projeto explicado em palavras simples, com o resultado e o que significava votar Sim ou Não. |
+| O que foi votado e o que muda para mim? | Cada projeto explicado em palavras simples, com o resultado e o que significava votar Sim ou Não. Toque em Sim ou Não para ver quem votou de cada jeito. |
 | Quem resolve o problema da minha rua? | Digite o problema (buraco, polícia, aposentadoria) e veja se é da cidade, do estado ou do país, e quem cobrar. |
 | Meu deputado vai trabalhar? | Cada perfil mostra quantas sessões a pessoa compareceu e em quantas votações registrou voto, comparado com os colegas. |
 | Quem pagou a campanha? | Quanto cada campanha arrecadou, quanto foi dinheiro público, quem mais doou e com quem mais gastou. |
@@ -25,6 +25,7 @@ O Raio-X Político junta esses dados todos os dias, traduz para o português do 
 | Como votaram os representantes do meu estado? | Em toda votação, escolha seu estado uma vez e veja o voto de cada um, com foto. |
 | Quantos votos uma lei precisa para passar? | Mudar a Constituição exige 308 deputados; uma lei comum, mais Sim do que Não. Cada regra aparece desenhada no plenário. |
 | Quanto gastam da verba do mandato, e com o quê? | Gastos da cota parlamentar mês a mês, por tipo de despesa e por fornecedor, com o link de cada nota fiscal. |
+| Quem a eleição colocou na Presidência? | Todas as eleições para Presidente desde 1994, a vida pública de quem disputou e o que o governo mandou ao Congresso. |
 | Meu partido vota com o governo? Vota unido? | Cada partido no plenário, quantas vezes vota junto com o governo e o quanto seus membros votam iguais. |
 | Para onde mandam dinheiro do orçamento? | As emendas que cada parlamentar indicou para cidades e estados. |
 | O que andam dizendo? | Discursos oficiais com busca por tema e link para o registro original. |

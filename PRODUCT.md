@@ -32,7 +32,7 @@ A lista fica em um só lugar do código, [`src/lib/perguntas.ts`](src/lib/pergun
 | Pergunta | Onde o site responde |
 |---|---|
 | Quem me representa? | Mapa da página inicial e página de cada estado |
-| O que foi votado e o que muda para mim? | Votações agrupadas por projeto e por assunto, explicadas em palavras simples |
+| O que foi votado e o que muda para mim? | Votações agrupadas por projeto e por assunto, explicadas em palavras simples; em cada votação, tocar em Sim ou Não mostra quem votou de cada jeito |
 | Quem resolve o problema da minha rua? | “Quem resolve isso?” na página Como funciona: cidade, estado ou país, e quem cobrar |
 | Meu deputado vai trabalhar? | Perfil: presença nas sessões e votos registrados, ao lado dos colegas |
 | Quem pagou a campanha? | Perfil, seção Dinheiro das campanhas: quanto arrecadou, quanto foi dinheiro público, quem mais doou e com quem mais gastou |
@@ -40,6 +40,7 @@ A lista fica em um só lugar do código, [`src/lib/perguntas.ts`](src/lib/pergun
 | Como votaram os representantes do meu estado? | Em cada votação, depois de escolher o estado uma vez |
 | Quantos votos uma lei precisa para passar? | Cartão “Quantos votos precisava?” em cada votação e a página Como funciona |
 | Quanto gastam da verba do mandato, e com o quê? | Página de gastos e cada perfil, com a nota fiscal de cada despesa |
+| Quem a eleição colocou na Presidência? | Página da Presidência: todas as eleições para Presidente desde 1994, a vida pública de quem disputou e os atos que o Executivo mandou ao Congresso |
 | Meu partido vota com o governo? Vota unido? | Página de partidos e de cada partido |
 | Para onde mandam dinheiro do orçamento? | Emendas no perfil |
 | O que andam dizendo? | Página de falas, com busca por tema |
@@ -95,9 +96,10 @@ Referências: a Política Nacional de Linguagem Simples (Lei 15.263/2025), as re
 | Página inicial (`/`) | Quem me representa (mapa do Brasil)? Como está dividido o Congresso hoje? O que foi votado e dito recentemente? |
 | Cada estado (`/estado/mg`) | Quem são os 3 senadores, os deputados federais e os estaduais do meu estado? |
 | Perfil de cada político (`/politico/...`) | O que essa pessoa faz: presença, votos, gastos, projetos, emendas e falas; a vida pública inteira (todas as candidaturas desde 1994, trocas de partido, bens de cada eleição); o dinheiro de cada campanha; redes e fontes |
+| Presidência (`/presidencia`) | Quem a última eleição colocou no cargo, todas as eleições para Presidente desde 1994, a vida pública de cada candidato (`/presidencia/...` para quem não tem perfil no site) e as medidas provisórias e projetos que o Executivo mandou à Câmara |
 | Lista de políticos (`/politicos`) | Lista de todos, filtrável por casa, estado e partido, ordenável por qualquer critério |
 | Votações (`/votacoes`) | O que foi votado, agrupado por projeto e por assunto, em linguagem simples |
-| Cada votação (`/votacao/...`) | Do que se trata o projeto, o que foi decidido nesta etapa, quantos votos eram precisos, como votaram os representantes do seu estado, todas as votações do mesmo projeto, o plenário, os partidos e cada voto |
+| Cada votação (`/votacao/...`) | Do que se trata o projeto, o que foi decidido nesta etapa, como o projeto está agora (sem dizer que virou lei antes da hora), quantos votos eram precisos, como votaram os representantes do seu estado, todas as votações do mesmo projeto, e “Quem votou como”: totais que filtram a lista e acendem as cadeiras do plenário, grupos que dá para esconder, busca, partido, estado, visão por partido, tudo guardado no endereço da página |
 | Gastos (`/gastos`) | Quanto se gasta da cota, em quê, com quais fornecedores, e o que merece um segundo olhar |
 | Falas (`/falas`) | O que disseram sobre um tema, com link para o registro original |
 | Comparar (`/comparar`) | Até 4 pessoas lado a lado, incluindo votações em que divergiram |
@@ -137,11 +139,11 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 | Câmara, arquivos de cota (CEAP) | Todas as despesas reembolsadas | ZIP anual | Em uso, com a API por deputado como reserva |
 | Senado Federal, dados abertos | Senadores, mandatos, comissões, votações com votos de todos, proposições, pronunciamentos | API aberta | Em uso |
 | Senado, CEAPS | Despesas dos senadores | API aberta | Em uso |
-| TSE, candidaturas (`consulta_cand`) | Todas as candidaturas de todos os cargos desde 1994, usadas para a vida pública de quem acompanhamos | Arquivos ZIP por eleição | Em uso (refeito toda semana) |
+| TSE, candidaturas (`consulta_cand`) | Todas as candidaturas de todos os cargos desde 1994, usadas para a vida pública de quem acompanhamos e de todos que disputaram a Presidência | Arquivos ZIP por eleição | Em uso (refeito toda semana) |
 | TSE, bens (`bem_candidato`) | Bens declarados em cada eleição desde 2006 | Arquivos ZIP por eleição | Em uso (refeito toda semana) |
 | TSE, prestação de contas (`prestacao_de_contas_eleitorais_candidatos`) | Receitas, doadores e despesas de cada campanha desde 2018 | Arquivos ZIP de vários gigabytes | Em uso (refeito toda semana) |
 | TSE, redes e votos | Redes sociais declaradas (2022 e 2026) e votos de 2022 por candidato | Arquivos ZIP | Em uso |
-| Câmara, arquivos de proposições e autores | Todos os projetos desde 1988, com situação atual e autores | JSON anual | Em uso |
+| Câmara, arquivos de proposições e autores | Todos os projetos desde 1988, com situação atual, primeiro autor e coautores; medidas provisórias e projetos do Poder Executivo | JSON anual | Em uso |
 | Câmara e Senado, detalhes das matérias votadas | Ementa detalhada, explicação do Senado, temas, autores e texto completo | API aberta | Em uso |
 | Transferegov | Emendas Pix (transferências especiais) | API aberta (PostgREST) | Em uso |
 | Portal da Transparência | Todas as emendas parlamentares | API com chave gratuita | Pronto, liga com `PORTAL_TRANSPARENCIA_API_KEY` |
@@ -296,3 +298,5 @@ O roadmap segue uma regra simples: **confiança antes de volume**. Uma informaç
 | 2026-10-12 | “Sem voto registrado” separado de ausência, e só para quem a Câmara diz que estava no cargo naquele dia | A fonte não diz o motivo; chamar de falta seria acusar, e contar quem assumiu depois seria errar a pessoa |
 | 2026-10-12 | Um único agrupamento de votos para totais, lista, plenário e partidos | O mesmo filtro precisa significar a mesma coisa em todo lugar |
 | 2026-10-12 | Plano de implementação em `docs/IMPLEMENTATION_ROADMAP.md` | Um registro único do que falta, do que foi feito e de como foi conferido |
+| 2026-10-12 | Página da Presidência feita só com resultados do TSE e atos registrados na Câmara | Responde quem a eleição colocou no cargo sem inventar a lista de quem governou: impeachments e substituições não estão nesses arquivos, e a página diz isso |
+| 2026-10-12 | Projetos separados entre primeiro autor e coautor | Assinar um projeto de outra pessoa é diferente de escrevê-lo; os dois contam, mas não do mesmo jeito |

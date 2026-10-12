@@ -85,6 +85,7 @@ const PERGUNTA: Record<string, LucideIcon> = {
   History,
   PiggyBank,
   Wrench,
+  Building2,
 };
 
 /** Icon of a question the site answers (see src/lib/perguntas.ts). */
