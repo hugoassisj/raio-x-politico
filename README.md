@@ -115,6 +115,7 @@ Abra http://localhost:3000.
 | `npm run pipeline:ai` | Resume o que cada parlamentar disse, com citações (precisa de `ANTHROPIC_API_KEY`) |
 | `npm run db:migrate` e `npm run pipeline:db` | Cria as tabelas e carrega os dados no Postgres (precisa de `DATABASE_URL`) |
 | `npm test` | Testes de cálculos, coletores, banco e interface |
+| `npm run a11y` | Confere acessibilidade (regras WCAG 2.2 A e AA) das páginas principais, nos temas claro e escuro, com o site rodando |
 | `npm run format`, `npm run lint` e `npm run typecheck` | Formatação e qualidade do código |
 | `npx tsx scripts/gerar-mapa.ts` | Gera de novo o mapa do Brasil a partir do arquivo em `scripts/dados/` |
 

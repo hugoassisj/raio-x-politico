@@ -88,7 +88,7 @@ function Lista({ votos, mostrarGoverno, f, ir }: Props & { f: FiltroVotosPerfil;
             title={g === "contra-partido" ? "Votou Sim quando o partido pediu Não, ou o contrário" : undefined}
           >
             {cor && <span className="h-2.5 w-2.5 rounded-full" style={{ background: cor }} aria-hidden />}
-            {rotulo} <span className="tnum opacity-70">{n[g]}</span>
+            {rotulo} <span className="tnum font-normal">{n[g]}</span>
           </button>
         ))}
       </div>

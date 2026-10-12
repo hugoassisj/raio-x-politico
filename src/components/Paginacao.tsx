@@ -29,8 +29,10 @@ export function Paginacao({
     const comum = { "aria-label": extra.label, "aria-current": extra.atual ? ("page" as const) : undefined, className: cls };
     if (href)
       return extra.desligado ? (
-        <span {...comum} aria-disabled>
+        // Not a control: the label is read as text, since aria-label is not allowed on a plain span
+        <span className={cls}>
           {conteudo}
+          {extra.label && <span className="sr-only">{extra.label} (não disponível)</span>}
         </span>
       ) : (
         <Link href={href(p)} {...comum}>

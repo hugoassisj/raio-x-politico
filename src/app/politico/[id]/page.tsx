@@ -655,7 +655,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                         <IconeRede plataforma={r.plataforma} />
                       </span>
                       <span className="min-w-0">
-                        <a href={r.url} target="_blank" rel="noopener noreferrer nofollow" className="link block truncate font-semibold">
+                        <a href={r.url} target="_blank" rel="noopener noreferrer nofollow" className="link block min-h-6 truncate py-0.5 font-semibold">
                           {NOME_REDE[r.plataforma]}
                           {r.handle ? ` @${r.handle}` : ""}
                           <span className="sr-only"> (abre em nova aba)</span>

@@ -85,7 +85,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | PAG-02 | IN_PROGRESS | P1 | Paginação nas listas | Políticos, votações, falas e lista de votos usam PAG-01. | PAG-01 |
 | TAB-01 | NOT_STARTED | P2 | Primitivos de tabela | Avaliar TanStack Table para `/politicos` e gastos: ordenar, esconder colunas, redimensionar, exportar CSV, preferências salvas. Decidir com base em peso e acessibilidade. | PAG-01 |
 | NAV-01 | IN_PROGRESS | P2 | Navegação | Presidente e empresas na navegação quando existirem; revisar menu do celular. | PRES-01 |
-| DS-01 | IMPLEMENTED | P1 | Tokens e movimento | Tokens em três camadas e animações contidas já existem. Falta conferir contraste AA de todos os pares no tema escuro. | |
+| DS-01 | VERIFIED | P1 | Tokens e movimento | Tokens em três camadas e animações contidas já existem. Falta conferir contraste AA de todos os pares no tema escuro. | |
 
 ### 4.3 Partidos
 
@@ -125,7 +125,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | PROV-02 | NOT_STARTED | P1 | Fato, cálculo, inferência e IA | Marcas visuais e texto diferentes para cada tipo. | |
 | PROV-03 | IMPLEMENTED | P1 | Pedido de correção | Modelo de issue “erro nos dados” já existe; falta registro público das correções feitas. | |
 | BAND-01 | NOT_STARTED | P3 | Bandeiras dos estados | Arquivos locais das fontes oficiais de cada estado, com fonte e licença. | |
-| A11Y-01 | NOT_STARTED | P1 | Conferência de acessibilidade | Teclado, leitor de tela, zoom 200%, contraste, nas páginas principais. | |
+| A11Y-01 | IN_PROGRESS | P1 | Conferência de acessibilidade | Teclado, leitor de tela, zoom 200%, contraste, nas páginas principais. | |
 | DADOS-01 | IN_PROGRESS | P0 | Execução completa do TSE | Histórico desde 1994 e contas de campanha publicados e conferidos em perfis reais. | DADOS-02 |
 | DADOS-02 | IMPLEMENTED | P0 | Erros visíveis na execução | Erros e verificações que falham viram anotações do GitHub Actions. | |
 | IA-01 | BLOCKED | P1 | Explicações por IA | Gerar e validar as explicações dos projetos votados. Bloqueio: o ambiente não tem `ANTHROPIC_API_KEY`. Caminho: gerar fora e importar com `pipeline:explicar -- --importar`. | |
@@ -168,6 +168,8 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | GRAFO-01 | `/relacoes` com `MapaRelacoes` (d3-force 3.0.0, licença ISC, posição inicial determinística): tipos de nó (pessoa, empresa, partido, destino de emenda) com formas diferentes, ligações com cor e tracejado por tipo, filtros por tipo, painel lateral com provas, “Mostrar as ligações” busca em `/api/relacoes`, busca por nome ou CNPJ, visão em lista (tabela com prova de cada ligação), nós focáveis por Tab e escolhidos com Enter, rótulos só nos itens principais quando o mapa está cheio, no máximo 40 ligações por item no mapa (todas na lista). Testes em `src/lib/grafo.test.ts`. Conferido no navegador com dados fictícios: 7 nós no início, 47 depois de abrir uma empresa, 275 linhas na lista, 4 sugestões na busca, sem erros no console. Falta: dados reais e conferência com leitor de tela. |
 | EMD-01 | `pipeline/sources/emendas.ts`: plano de ação, empenho (`empenho_especial`), documento hábil (`documento_habil_especial`) e ordem bancária (`ordem_pagamento_ordem_bancaria_especial`) do Transferegov, ligados pelos ids que a própria fonte publica (`cicloPorPlano`); cancelados e estornados ficam fora; só conta como pago o documento com ordem bancária emitida. Se essas tabelas falharem, fica só o indicado, com aviso. Portal da Transparência (com chave) usa empenhado e pago publicados. Perfil mostra “Do indicado ao pago” (`CicloEmenda`) e o pago de cada destino. Testes: “Emendas Pix lifecycle” (contrato, inclusive falha) em `pipeline/tests/fontes.test.ts`. Conferido com dados fictícios. Falta: dados reais (nomes das tabelas e colunas conferidos na documentação OpenAPI do Transferegov em 2026-10-12). Liquidação não é mostrada à parte: a fonte não separa liquidação de pagamento nas transferências especiais. |
 | EMD-02 | Índice de destinos (`destinosEmendas` em `pipeline/build.ts`, `emendas.json`), um por governo recebedor (CNPJ quando publicado, senão nome e estado: `chaveDestino` em `src/lib/emendas.ts`, usada pelo pipeline e pelos links). Página `/emendas` com busca por cidade, filtro por estado, soma das etapas, paginação comum e a página de cada destino com quem mandou. Teste “indexes each place with every author” (mesmo CNPJ com dois nomes vira um lugar). Correção de identidade: autor de emenda com nome igual ao de dois políticos não é ligado a nenhum (`vincularAutores`, testado). |
+| DS-01 | Contraste medido no navegador para cada par de tokens nos dois temas (2026-10-12). Ajustes: `--ink-3` do tema claro mais escuro (`--neutro-550`), Sim e Não do tema claro mais escuros (#10704b e #b13a0a, 5,3:1 e 5,2:1 sobre o fundo suave), texto sobre as cores de voto passa a ser um token (`--on-voto`: branco no claro, quase preto no escuro, mínimo 6,1:1 e 6,0:1). |
+| A11Y-01 | Automático: `npm run a11y` (`scripts/acessibilidade.mjs`, axe-core 4.10.2, regras WCAG 2.2 A e AA) em 12 páginas nos dois temas: 0 violações depois das correções (antes: contraste, `nested-interactive` no plenário, `aria-label` proibido na paginação, área de toque pequena nos links de redes). Falta: teste manual com leitor de tela (NVDA/VoiceOver) e zoom de 200%; o ambiente não tem leitor de tela. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças
@@ -200,6 +202,7 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 
 ## 8. Registro de progresso
 
+- **2026-10-12 (11):** acessibilidade automática zerada nas páginas principais (A11Y-01) e contraste dos tokens (DS-01). Execução de dados anterior bloqueada pela verificação “cada pessoa aparece uma vez” (deputado do AC repetido pelo SAPL): corrigido e testado; nova execução completa disparada.
 - **2026-10-12 (10):** emendas do indicado ao pago (EMD-01) e por cidade (EMD-02).
 - **2026-10-12 (9):** empresas por CNPJ (CNPJ-02/03) e mapa de relações (GRAFO-01). Fornecedores e doadores com CNPJ viram links para a página da empresa. Pergunta nova sobre empresas. `npm audit` aponta 9 vulnerabilidades em dependências de desenvolvimento já existentes (registrar em SEG-01).
 - **2026-10-12 (8):** CNPJ-01 e correção de privacidade (PRIV-01).

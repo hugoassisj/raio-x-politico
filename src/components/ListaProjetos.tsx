@@ -68,7 +68,7 @@ export function ListaProjetos({ projetos, tipos }: { projetos: ProjetoLinha[]; t
               }}
               className="chip min-h-10"
             >
-              {rotulo} <span className="tnum opacity-70">{n(g)}</span>
+              {rotulo} <span className="tnum font-normal">{n(g)}</span>
             </button>
           ))}
         </div>

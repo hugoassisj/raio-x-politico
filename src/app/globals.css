@@ -25,6 +25,8 @@
   --neutro-200: oklch(90.2% 0.014 255);
   --neutro-300: oklch(81% 0.02 255);
   --neutro-500: oklch(54% 0.035 255);
+  /* Secondary text on tinted surfaces still reaches 4.5:1 (WCAG AA) */
+  --neutro-550: oklch(49% 0.038 255);
   --neutro-600: oklch(44% 0.04 255);
   --neutro-800: oklch(30% 0.045 255);
   --neutro-900: oklch(24.5% 0.05 255);
@@ -62,7 +64,7 @@
   --line-strong: var(--neutro-300);
   --ink: var(--neutro-900);
   --ink-2: var(--neutro-600);
-  --ink-3: var(--neutro-500);
+  --ink-3: var(--neutro-550);
   --banda: var(--neutro-900);
   --banda-ink: var(--neutro-50);
 
@@ -79,14 +81,16 @@
   --mark-ink: var(--neutro-900);
   --grifo: var(--amarelo-300);
 
-  --sim: #16855a;
+  --sim: #10704b;
   --sim-soft: #e2f3ea;
-  --nao: #d9480f;
+  --nao: #b13a0a;
   --nao-soft: #fcebe2;
   --abst: #6250d6;
   --abst-soft: #ecebfb;
   --ausente: #8a94a6;
   --obst: #a8336f;
+  /* Text on Sim, Não and other vote colors */
+  --on-voto: #ffffff;
   --obst-soft: #f8e8f1;
   --outro: #4f6075;
   --sem-registro: #c3cad6;
@@ -138,9 +142,10 @@
     --abst: #9085e9;
     --abst-soft: #1f1c3a;
     --ausente: #7d8899;
-    --obst: #b9518a;
+    --obst: #d576aa;
+    --on-voto: #0b1018;
     --obst-soft: #2d1824;
-    --outro: #5d6b80;
+    --outro: #9aa8bb;
     --sem-registro: #3b4454;
     --alerta: #f0a54a;
     --alerta-bg: #2b2114;
@@ -182,9 +187,10 @@
   --abst: #9085e9;
   --abst-soft: #1f1c3a;
   --ausente: #7d8899;
-  --obst: #b9518a;
+  --obst: #d576aa;
+  --on-voto: #0b1018;
   --obst-soft: #2d1824;
-  --outro: #5d6b80;
+  --outro: #9aa8bb;
   --sem-registro: #3b4454;
   --alerta: #f0a54a;
   --alerta-bg: #2b2114;
@@ -223,6 +229,7 @@
   --color-abst-soft: var(--abst-soft);
   --color-ausente: var(--ausente);
   --color-obst: var(--obst);
+  --color-on-voto: var(--on-voto);
   --color-obst-soft: var(--obst-soft);
   --color-outro: var(--outro);
   --color-sem-registro: var(--sem-registro);

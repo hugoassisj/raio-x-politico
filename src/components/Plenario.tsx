@@ -30,7 +30,7 @@ export function Plenario({
   return (
     <figure className="w-full">
       <div className="relative">
-        <svg viewBox={`${-pad} ${-pad} ${LARGURA + 2 * pad} ${ALTURA + 2 * pad}`} className="h-auto w-full" role="img" aria-label={titulo}>
+        <svg viewBox={`${-pad} ${-pad} ${LARGURA + 2 * pad} ${ALTURA + 2 * pad}`} className="h-auto w-full" role="group" aria-label={titulo}>
           <title>{titulo}</title>
           <rect x={MESA.x} y={MESA.y} width={MESA.largura} height={MESA.altura} rx="8" fill="var(--surface-2)" stroke="var(--line)" />
           <text x={LARGURA / 2} y={MESA.y + MESA.altura / 2 + 6} textAnchor="middle" fontSize="18" fill="var(--ink-3)" fontWeight="600">

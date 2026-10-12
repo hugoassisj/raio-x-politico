@@ -140,7 +140,7 @@ export function MapaRelacoes({ inicial, raiz }: { inicial: Grafo; raiz: string }
               <svg width="22" height="8" aria-hidden>
                 <line x1="1" y1="4" x2="21" y2="4" stroke={ESTILO[t.id].cor} strokeWidth="3" strokeDasharray={ESTILO[t.id].traco} />
               </svg>
-              {t.rotulo} <span className="tnum opacity-70">{contagem(t.id)}</span>
+              {t.rotulo} <span className="tnum font-normal">{contagem(t.id)}</span>
             </button>
           ))}
         </div>

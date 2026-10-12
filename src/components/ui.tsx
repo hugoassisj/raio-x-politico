@@ -11,7 +11,7 @@ export function VotoChip({ voto, compacto = false }: { voto?: string; compacto?:
   return (
     <span
       title={r.explicacao}
-      className={`inline-flex items-center whitespace-nowrap rounded-md font-semibold ${compacto ? "px-1.5 py-0.5 text-xs" : "px-2 py-0.5 text-sm"} ${cheio ? "text-white" : "bg-surface-2 text-ink-2 ring-1 ring-inset ring-line"}`}
+      className={`inline-flex items-center whitespace-nowrap rounded-md font-semibold ${compacto ? "px-1.5 py-0.5 text-xs" : "px-2 py-0.5 text-sm"} ${cheio ? "text-on-voto" : "bg-surface-2 text-ink-2 ring-1 ring-inset ring-line"}`}
       style={cheio ? { background: COR_CATEGORIA[r.categoria] } : undefined}
     >
       {r.rotulo}

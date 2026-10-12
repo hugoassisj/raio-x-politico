@@ -90,7 +90,7 @@ export default async function Votacoes({ searchParams }: PageProps<"/votacoes">)
                 <Link href={url({ assunto: a.id })} className="chip" aria-current={tema === a.id ? "page" : undefined}>
                   <IconeAssunto nome={a.icone} className="h-4 w-4" />
                   {a.nome}
-                  <span className="tnum text-xs opacity-70">{n}</span>
+                  <span className="tnum text-xs font-normal">{n}</span>
                 </Link>
               </li>
             );
