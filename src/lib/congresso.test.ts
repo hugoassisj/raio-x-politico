@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { classificarAssuntos } from "./assuntos";
 import { cadeirasPorVoto } from "./cadeiras";
 import { partesDescricao } from "./format";
 import { faixaGoverno, ordenarParaPlenario, resumirPartidos, unidadePartido } from "./partidos";
@@ -152,5 +153,13 @@ describe("descrição de votação", () => {
   it("splits the bill summary from the step that was voted", () => {
     expect(partesDescricao("Altera a lei X. | Aprovado o substitutivo. Sim: 300")).toEqual({ ementa: "Altera a lei X.", procedimento: "Aprovado o substitutivo. Sim: 300" });
     expect(partesDescricao("Só a ementa")).toEqual({ ementa: "Só a ementa", procedimento: "" });
+  });
+});
+
+describe("assuntos", () => {
+  it("uses the official themes first and the summary only as a fallback", () => {
+    expect(classificarAssuntos(["Saúde", "Finanças Públicas e Orçamento"], "Altera a lei X")).toEqual(["saude", "impostos"]);
+    expect(classificarAssuntos([], "Dispõe sobre o ensino médio nas escolas públicas")).toEqual(["educacao"]);
+    expect(classificarAssuntos(undefined, "Texto sem pistas")).toEqual([]);
   });
 });

@@ -7,6 +7,7 @@ import {
   type Emendas,
   type Fala,
   type Mandato,
+  type MateriaVotada,
   type Metricas,
   type PoliticoDetalhe,
   type PoliticoResumo,
@@ -390,6 +391,8 @@ export function resumoVotacao(v: VotacaoDetalhe): VotacaoResumo {
     orientacaoGoverno: v.orientacaoGoverno,
     secreta: v.secreta,
     porPartido: v.porPartido,
+    materia: v.materia,
+    assuntos: v.assuntos,
   };
 }
 
@@ -412,6 +415,8 @@ export const TEXTO_SNAPSHOT = 1500;
 
 export interface PublicarOpts {
   demo: boolean;
+  /** Official details of the bills voted */
+  materias?: MateriaVotada[];
   fontes: FonteStatus[];
   totais: Record<string, number>;
   hoje: Date;
@@ -461,5 +466,8 @@ export async function publicar(out: string, r: BuildResult, falas: Fala[], o: Pu
     ],
   };
   files["meta.json"] = meta;
+  // Only bills referenced by a published vote
+  const usadas = new Set(r.votacoes.map((v) => v.materia));
+  files["materias.json"] = (o.materias ?? []).filter((m) => usadas.has(m.id));
   await escrever(out, files);
 }

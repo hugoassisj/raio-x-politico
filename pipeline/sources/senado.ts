@@ -139,6 +139,7 @@ export async function coletarSenado(opts: { hoje: Date; diasVotos: number; anosG
               uf: x.siglaUFParlamentar,
               voto: String(x.siglaVotoParlamentar ?? x.descricaoVotoParlamentar ?? ""),
             })),
+        materia: v.codigoMateria ? `sen-${v.codigoMateria}` : undefined,
         url: v.codigoMateria ? `https://www25.senado.leg.br/web/atividade/materias/-/materia/${v.codigoMateria}` : undefined,
       };
       const gov = det.orientacoes.find((o) => /governo/i.test(o.sigla));

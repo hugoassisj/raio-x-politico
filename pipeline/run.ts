@@ -10,7 +10,8 @@
  */
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { Fala, FonteStatus, RedeSocial } from "../src/lib/types";
+import { classificarAssuntos } from "../src/lib/assuntos";
+import type { Fala, FonteStatus, MateriaVotada, RedeSocial } from "../src/lib/types";
 import { montar, publicar } from "./build";
 import { stats } from "./lib/http";
 import { log } from "./lib/log";
@@ -18,6 +19,7 @@ import type { CandidatoTSE, EmendaAgg, SourceOutput } from "./model";
 import { coletarAssembleias } from "./sources/assembleias";
 import { coletarCamara } from "./sources/camara";
 import { coletarEmendasPix, coletarEmendasPortal } from "./sources/emendas";
+import { coletarMaterias } from "./sources/materias";
 import { coletarDiscursos, coletarYouTube } from "./sources/falas";
 import { coletarSenado } from "./sources/senado";
 import { coletarConectoresSociais } from "./sources/social-connectors";
@@ -105,6 +107,23 @@ async function main() {
     ),
   ]);
 
+  // Official details of each bill voted (summary, themes, authors, full text)
+  const todasVotacoes = [...camara.votacoes, ...senado.votacoes];
+  const materias = await etapa(
+    "materias",
+    "Matérias votadas (Câmara e Senado)",
+    "https://dadosabertos.camara.leg.br/swagger/api.html#/Proposi%C3%A7%C3%B5es",
+    () => coletarMaterias(todasVotacoes),
+    (m) => m.materias.length,
+    { materias: [] as MateriaVotada[], avisos: [] as string[] },
+  );
+  const porMateria = new Map(materias.materias.map((m) => [m.id, m]));
+  for (const v of todasVotacoes) {
+    const m = v.materia ? porMateria.get(v.materia) : undefined;
+    const assuntos = classificarAssuntos(m?.temas, m?.ementa ?? v.descricao.split(" | ")[0]);
+    if (assuntos.length) v.assuntos = assuntos;
+  }
+
   const assembleias = await etapa(
     "assembleias",
     "Assembleias Legislativas (TSE + ALMG + ALESP + SAPL)",
@@ -162,7 +181,7 @@ async function main() {
   const r = montar({
     hoje: HOJE,
     politicos,
-    votacoes: [...camara.votacoes, ...senado.votacoes],
+    votacoes: todasVotacoes,
     despesas: [...camara.despesas, ...senado.despesas, ...assembleias.despesas],
     sessoes: [...camara.sessoes, ...senado.sessoes],
     tse: tse.candidatos,
@@ -241,6 +260,7 @@ async function main() {
   const todasFalas = [...discursos.falas, ...falasSociais];
   await publicar(OUT, r, todasFalas, {
     demo: false,
+    materias: materias.materias,
     fontes,
     totais: {
       deputadosFederais: camara.politicos.length,

@@ -230,6 +230,91 @@ describe("Câmara collector", () => {
   });
 });
 
+describe("Bills voted collector", () => {
+  it("reads Câmara bill details, themes and authors", async () => {
+    mockFetch([
+      [
+        /proposicoes\/2351506\/temas/,
+        {
+          dados: [
+            { codTema: 40, tema: "Economia", relevancia: 0 },
+            { codTema: 43, tema: "Finanças Públicas e Orçamento", relevancia: 0 },
+          ],
+        },
+      ],
+      [
+        /proposicoes\/2351506\/autores/,
+        {
+          dados: [
+            { uri: "https://dadosabertos.camara.leg.br/api/v2/deputados/204379", nome: "Fulano", codTipo: 10000, tipo: "Deputado(a)", ordemAssinatura: 2, proponente: 1 },
+            { uri: "https://dadosabertos.camara.leg.br/api/v2/deputados/1", nome: "Primeira", codTipo: 10000, tipo: "Deputado(a)", ordemAssinatura: 1, proponente: 1 },
+          ],
+        },
+      ],
+      [
+        /proposicoes\/2351506$/,
+        {
+          dados: {
+            id: 2351506,
+            siglaTipo: "PEC",
+            numero: 5,
+            ano: 2023,
+            ementa: "Acrescenta § 4º-A ao art. 150 da Constituição Federal.",
+            ementaDetalhada: "Estende a imunidade tributária a templos.",
+            keywords: "_Alteração, Constituição Federal, imunidade tributária, templo",
+            dataApresentacao: "2023-03-02T16:20",
+            urlInteiroTeor: "https://www.camara.leg.br/proposicoesWeb/prop_mostrarintegra?codteor=1",
+            statusProposicao: { descricaoSituacao: "Aguardando Apreciação pelo Senado Federal" },
+          },
+        },
+      ],
+    ]);
+    const { coletarMaterias } = await import("../sources/materias");
+    const { materias } = await coletarMaterias([{ materia: "cam-2351506" } as never]);
+    expect(materias[0]).toMatchObject({
+      id: "cam-2351506",
+      sigla: "PEC 5/2023",
+      ementaDetalhada: "Estende a imunidade tributária a templos.",
+      palavrasChave: ["Alteração", "Constituição Federal", "imunidade tributária", "templo"],
+      temas: ["Economia", "Finanças Públicas e Orçamento"],
+      autoresTotal: 2,
+      apresentacao: "2023-03-02",
+      url: "https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=2351506",
+    });
+    expect(materias[0].autores?.[0]).toEqual({ nome: "Primeira", pid: "dep-1", tipo: "Deputado(a)" });
+  });
+
+  it("reads the Senado explanation from the legacy endpoint when the current one has nothing", async () => {
+    mockFetch([
+      [
+        /materia\/158930\.json/,
+        {
+          DetalheMateria: {
+            Materia: {
+              IdentificacaoMateria: { DescricaoIdentificacaoMateria: "PL 2338/2023" },
+              DadosBasicosMateria: {
+                EmentaMateria: "Dispõe sobre o uso da Inteligência Artificial.",
+                ExplicacaoEmentaMateria: "Cria regras para sistemas de IA.",
+                IndexacaoMateria: "Normas, inteligência artificial, direitos",
+              },
+              Assunto: { AssuntoEspecifico: { Descricao: "Ciência, Tecnologia e Informática" } },
+            },
+          },
+        },
+      ],
+    ]);
+    const { materiaSenado } = await import("../sources/materias");
+    expect(await materiaSenado("158930")).toMatchObject({
+      id: "sen-158930",
+      sigla: "PL 2338/2023",
+      ementa: "Dispõe sobre o uso da Inteligência Artificial.",
+      explicacao: "Cria regras para sistemas de IA.",
+      palavrasChave: ["Normas", "inteligência artificial", "direitos"],
+      temas: ["Ciência, Tecnologia e Informática"],
+    });
+  });
+});
+
 describe("AI guardrails", () => {
   const falas = new Set(["f1", "f2"]);
   const votos = new Set(["cam-1"]);

@@ -209,6 +209,7 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
             voto: String(x.tipoVoto ?? ""),
           })),
           orientacoes,
+          materia: (prop.id ?? prop.idProposicao) ? `cam-${prop.id ?? prop.idProposicao}` : undefined,
           url: d.idEvento ? `https://www.camara.leg.br/evento-legislativo/${d.idEvento}` : undefined,
         };
         return det2;

@@ -181,6 +181,56 @@ export interface VotacaoResumo {
   /** Secret ballot: only official totals are published; the list of voters shows presence, not the vote */
   secreta?: boolean;
   porPartido: { partido: string; sim: number; nao: number; outros: number }[];
+  /** Key of the bill being voted (see MateriaVotada), e.g. "cam-2351506" */
+  materia?: string;
+  /** Plain subject areas (see src/lib/assuntos.ts), for filtering */
+  assuntos?: string[];
+}
+
+/** Official details of a bill that went to a roll call, from the house that voted it. */
+export interface MateriaVotada {
+  /** "cam-{idProposicao}" or "sen-{codigoMateria}" */
+  id: string;
+  casa: "camara" | "senado";
+  /** e.g. "PEC 5/2023" */
+  sigla: string;
+  ementa: string;
+  /** Câmara: longer official summary */
+  ementaDetalhada?: string;
+  /** Senado: official plain explanation of the summary */
+  explicacao?: string;
+  palavrasChave?: string[];
+  /** Official subject areas assigned by the house */
+  temas?: string[];
+  autores?: { nome: string; pid?: string; tipo?: string }[];
+  autoresTotal?: number;
+  apresentacao?: string;
+  situacao?: string;
+  /** Official page of the bill */
+  url: string;
+  /** Full text (PDF) */
+  inteiroTeor?: string;
+}
+
+/**
+ * Plain-language explanation of a bill written by a language model from the official texts only.
+ * Every supporting quote must appear verbatim in those texts and every number in the explanation
+ * must appear in them too; otherwise the explanation is discarded.
+ */
+export interface ExplicacaoIA {
+  materia: string;
+  /** One or two short sentences, direct order, everyday words */
+  resumo: string;
+  /** What changes in practice, up to 3 items */
+  mudancas: string[];
+  /** Who is affected, when the texts say so */
+  quemAfeta?: string;
+  /** Verbatim excerpts of the official texts that support the explanation */
+  trechos: string[];
+  modelo: string;
+  geradoEm: string;
+  /** Hash of the official texts used, to regenerate when they change */
+  hashFonte: string;
 }
 
 export interface VotacaoDetalhe extends VotacaoResumo {
