@@ -135,9 +135,9 @@
     --mark: var(--amarelo-500);
     --mark-ink: var(--noite-950);
     --grifo: oklch(80% 0.155 85 / 0.42);
-    --sim: #2fa772;
+    --sim: #3cbd85;
     --sim-soft: #12291e;
-    --nao: #e2622c;
+    --nao: #ef7a45;
     --nao-soft: #2e1a12;
     --abst: #9085e9;
     --abst-soft: #1f1c3a;
@@ -180,9 +180,9 @@
   --mark: var(--amarelo-500);
   --mark-ink: var(--noite-950);
   --grifo: oklch(80% 0.155 85 / 0.42);
-  --sim: #2fa772;
+  --sim: #3cbd85;
   --sim-soft: #12291e;
-  --nao: #e2622c;
+  --nao: #ef7a45;
   --nao-soft: #2e1a12;
   --abst: #9085e9;
   --abst-soft: #1f1c3a;

@@ -18,23 +18,21 @@ export function CicloEmenda({ ciclo, compacto = false }: { ciclo: { indicado: nu
       {ETAPAS.map((e) => {
         const v = ciclo[e.chave];
         return (
-          <div key={e.chave}>
-            <div className="flex items-baseline justify-between gap-3 text-sm">
-              <dt className="font-semibold">
-                {e.nome}
-                {!compacto && <span className="ml-1.5 font-normal text-ink-3">{e.explica}</span>}
-              </dt>
-              <dd className="tnum shrink-0">
-                <b>{moedaCurta(v)}</b>
-                {e.chave !== "indicado" && ciclo.indicado > 0 && <span className="text-ink-3"> ({pct(v / ciclo.indicado)})</span>}
-              </dd>
-            </div>
-            <div className="mt-1 h-2 rounded-full bg-surface-2" aria-hidden>
+          <div key={e.chave} className="grid grid-cols-[1fr_auto] items-baseline gap-x-3 text-sm">
+            <dt className="font-semibold">
+              {e.nome}
+              {!compacto && <span className="ml-1.5 font-normal text-ink-3">{e.explica}</span>}
+            </dt>
+            <dd className="tnum">
+              <b>{moedaCurta(v)}</b>
+              {e.chave !== "indicado" && ciclo.indicado > 0 && <span className="text-ink-3"> ({pct(v / ciclo.indicado)})</span>}
+            </dd>
+            <dd className="col-span-2 mt-1 h-2 rounded-full bg-surface-2" aria-hidden>
               <div
                 className="crescer-x h-2 rounded-full bg-accent"
                 style={{ width: `${Math.max(0.5, (v / max) * 100)}%`, opacity: e.chave === "indicado" ? 0.45 : e.chave === "empenhado" ? 0.7 : 1 }}
               />
-            </div>
+            </dd>
           </div>
         );
       })}
