@@ -5,7 +5,8 @@ import { periodosExercicio } from "../sources/camara";
 import { vincularTSE } from "../build";
 import { SEN_PRESENTE } from "../sources/senado";
 import { normalizaUrl, plataforma, handleDe } from "../sources/falas";
-import { somarVotos } from "../sources/tse";
+import { somarVotos, somarVotosZip } from "../sources/tse";
+import { strToU8, zipSync } from "fflate";
 import { documentoVerificavel } from "../metrics";
 import type { CandidatoTSE, Despesa, PoliticoParcial } from "../model";
 import type { VotacaoDetalhe } from "../../src/lib/types";
@@ -191,9 +192,13 @@ describe("expenses", () => {
   });
   it("flags invalid documents, duplicates and supplier concentration", () => {
     const ds = [
-      mk("a", 2026, 1, 30000, { docId: "1", numeroDoc: "000123" }),
-      mk("a", 2026, 1, 30000, { docId: "2", numeroDoc: "123" }),
-      mk("a", 2026, 1, 30000, { docId: "4", numeroDoc: "124" }), // same day and value, different receipt: not a duplicate
+      mk("a", 2026, 1, 30000, { docId: "1", numeroDoc: "0001234" }),
+      mk("a", 2026, 1, 30000, { docId: "2", numeroDoc: "1234" }), // same receipt reimbursed again
+      mk("a", 2026, 1, 30000, { docId: "4", numeroDoc: "1235" }), // same day and value, different receipt
+      mk("a", 2026, 1, 10, { docId: "6", numeroDoc: "NF" }),
+      mk("a", 2026, 1, 10, { docId: "7", numeroDoc: "NF" }), // placeholder number: not checked
+      mk("a", 2025, 11, 5, { docId: "8", numeroDoc: "95048", data: "2025-11-10" }),
+      mk("a", 2025, 12, 5, { docId: "9", numeroDoc: "95048", data: "2025-12-10" }), // recurring bill, new month
       mk("a", 2026, 2, 500, { doc: "11222333000182", fornecedor: "X", docId: "3" }),
       mk("a", 2026, 2, 116.56, { doc: "00000000000001", fornecedor: "CELULAR FUNCIONAL", docId: "5" }), // house placeholder code
     ];
@@ -202,8 +207,7 @@ describe("expenses", () => {
     expect(regras.filter((r) => r === "duplicidade")).toHaveLength(1);
     expect(regras.filter((r) => r === "documento_invalido")).toHaveLength(1);
     expect(regras).toContain("fornecedor_concentrado");
-    // February is far below the running median, so it is treated as still incomplete
-    expect(g.total12m).toBe(90000);
+    expect(g.total12m).toBeCloseTo(90646.56, 2);
   });
 });
 
@@ -266,6 +270,13 @@ describe("TSE bulk results", () => {
     expect(t.get("300")).toBe(42);
     expect(t.has("200")).toBe(false); // second round
     expect(t.has("400")).toBe(false); // municipal office
+  });
+  it("streams the same totals straight from a ZIP", () => {
+    const csv = ['"NR_TURNO";"CD_CARGO";"SQ_CANDIDATO";"QT_VOTOS_NOMINAIS"', ...Array.from({ length: 5000 }, (_, i) => `"1";"6";"${i % 3}";"2"`)].join("\n");
+    const zip = zipSync({ "votacao_candidato_munzona_2022_BR.csv": strToU8(csv), "leiame.pdf": strToU8("x") });
+    const t = somarVotosZip(zip);
+    expect([...t.values()].reduce((a, b) => a + b, 0)).toBe(10000);
+    expect(t.get("0")).toBe(3334);
   });
   it("only checks real-looking documents", () => {
     expect(documentoVerificavel("00000000000001")).toBe(false);

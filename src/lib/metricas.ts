@@ -102,7 +102,7 @@ export const METRICAS: DefMetrica[] = [
     comparacao: (p, pares) => `Mais pontos de atenção que ${p} ${pares}`,
     casas: ["camara", "senado", "assembleia"],
     calculo:
-      "Regras automáticas inspiradas na Operação Serenata de Amor: CNPJ/CPF do fornecedor com dígito verificador inválido (códigos internos que a casa usa para serviços próprios não entram); refeição com valor muito acima do padrão da casa (média + 4 desvios-padrão); valor entre os 0,1% maiores da categoria; o mesmo documento fiscal (fornecedor, número e valor) reembolsado mais de uma vez; mais de 50% do gasto de 12 meses concentrado em um único fornecedor.",
+      "Regras automáticas inspiradas na Operação Serenata de Amor: CNPJ/CPF do fornecedor com dígito verificador inválido (códigos internos que a casa usa para serviços próprios não entram); refeição com valor muito acima do padrão da casa (média + 4 desvios-padrão); valor entre os 0,1% maiores da categoria; o mesmo documento fiscal (fornecedor, número, valor e data de emissão iguais) reembolsado mais de uma vez; mais de 50% do gasto de 12 meses concentrado em um único fornecedor.",
     fontes: [{ nome: "Serenata de Amor (metodologia de referência)", url: "https://github.com/okfn-brasil/serenata-de-amor" }],
     limites: "Um ponto de atenção não é acusação de irregularidade: é um gasto fora do padrão que vale conferir no documento original, sempre linkado.",
   },

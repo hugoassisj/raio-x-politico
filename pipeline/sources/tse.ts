@@ -1,3 +1,4 @@
+import { Unzip, UnzipInflate } from "fflate";
 import { fetchRaw } from "../lib/http";
 import { log } from "../lib/log";
 import { decode, isoDate, num, parseCsv, unzipFirst, UFS } from "../lib/util";
@@ -116,12 +117,11 @@ export async function coletarTSE(anos: number[]): Promise<TseOutput> {
 /**
  * Votes per candidate in the 2022 first round, summed over every municipality and zone from the
  * official bulk results file (the interactive results JSON is taken offline after each election).
- * Files are large, so rows are scanned line by line instead of parsed into objects.
  */
 async function votos2022(porSq: Map<string, CandidatoTSE>, avisos: string[]) {
   try {
     const r = await fetchRaw(`${CDN}/votacao_candidato_munzona/votacao_candidato_munzona_2022.zip`, { ttlHours: 24 * 90, timeoutMs: 900_000, retries: 2 });
-    const totais = somarVotos(unzipFirst(r.body, /\.csv$/i).map((f) => decode(f.data, "latin1")));
+    const totais = somarVotosZip(r.body);
     let ok = 0;
     for (const [sq, v] of totais) {
       const c = porSq.get(sq);
@@ -136,26 +136,64 @@ async function votos2022(porSq: Map<string, CandidatoTSE>, avisos: string[]) {
   }
 }
 
-/** Sum QT_VOTOS_NOMINAIS by SQ_CANDIDATO for the first round of legislative and executive state offices. */
-export function somarVotos(csvs: string[]): Map<string, number> {
-  const tot = new Map<string, number>();
-  for (const texto of csvs) {
-    const linhas = texto.split(/\r?\n/);
-    const cab = (linhas[0] ?? "").split(";").map((c) => c.replace(/^"|"$/g, "").trim());
-    const iSq = cab.indexOf("SQ_CANDIDATO");
-    const iVotos = cab.indexOf("QT_VOTOS_NOMINAIS");
-    const iTurno = cab.indexOf("NR_TURNO");
-    const iCargo = cab.indexOf("CD_CARGO");
-    if (iSq < 0 || iVotos < 0) continue;
-    for (let n = 1; n < linhas.length; n++) {
-      if (!linhas[n]) continue;
-      const c = linhas[n].split(";").map((x) => x.replace(/^"|"$/g, ""));
-      if (iTurno >= 0 && c[iTurno] !== "1") continue;
-      if (iCargo >= 0 && !CARGOS.has(Number(c[iCargo]))) continue;
-      tot.set(c[iSq], (tot.get(c[iSq]) ?? 0) + (Number(c[iVotos]) || 0));
-    }
+/** Sums QT_VOTOS_NOMINAIS by SQ_CANDIDATO for the first round of the offices we track, one CSV line at a time. */
+class SomadorVotos {
+  readonly totais = new Map<string, number>();
+  private col?: { sq: number; votos: number; turno: number; cargo: number };
+
+  /** A new file starts with its own header line. */
+  novoArquivo() {
+    this.col = undefined;
   }
-  return tot;
+
+  linha(l: string) {
+    if (!l) return;
+    const c = l.split(";").map((x) => x.replace(/^"|"$/g, ""));
+    if (!this.col) {
+      this.col = { sq: c.indexOf("SQ_CANDIDATO"), votos: c.indexOf("QT_VOTOS_NOMINAIS"), turno: c.indexOf("NR_TURNO"), cargo: c.indexOf("CD_CARGO") };
+      return;
+    }
+    const { sq, votos, turno, cargo } = this.col;
+    if (sq < 0 || votos < 0) return;
+    if (turno >= 0 && c[turno] !== "1") return;
+    if (cargo >= 0 && !CARGOS.has(Number(c[cargo]))) return;
+    this.totais.set(c[sq], (this.totais.get(c[sq]) ?? 0) + (Number(c[votos]) || 0));
+  }
+}
+
+/** Already decoded CSV texts (small inputs and tests). */
+export function somarVotos(csvs: string[]): Map<string, number> {
+  const s = new SomadorVotos();
+  for (const t of csvs) {
+    s.novoArquivo();
+    for (const l of t.split(/\r?\n/)) s.linha(l);
+  }
+  return s.totais;
+}
+
+/**
+ * Streams the official ZIP: each CSV is inflated and decoded in chunks, so files larger than the
+ * maximum JavaScript string length (the 2022 one is) are handled without building one huge string.
+ */
+export function somarVotosZip(zip: Uint8Array): Map<string, number> {
+  const s = new SomadorVotos();
+  const uz = new Unzip();
+  uz.register(UnzipInflate);
+  uz.onfile = (f) => {
+    if (!/\.csv$/i.test(f.name)) return;
+    const dec = new TextDecoder("latin1");
+    let resto = "";
+    s.novoArquivo();
+    f.ondata = (err, chunk, final) => {
+      if (err) throw err;
+      const linhas = (resto + dec.decode(chunk, { stream: !final })).split(/\r?\n/);
+      resto = final ? "" : (linhas.pop() ?? "");
+      for (const l of linhas) s.linha(l);
+    };
+    f.start();
+  };
+  uz.push(zip, true);
+  return s.totais;
 }
 
 export function fotoTSE(ano: number, sq: string, uf: string) {

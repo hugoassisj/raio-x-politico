@@ -251,13 +251,15 @@ export function calcularGastos(desp: Despesa[], hoje: Date): Map<string, Gastos 
       const lc = limiarCat.get(d.categoria);
       if (lc && d.valor > lc && !/aliment|refei/i.test(d.categoria))
         alertas.push({ regra: "valor_atipico", descricao: `Valor entre os 0,1% maiores da categoria "${d.categoria}"`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
-      // A true duplicate is the same receipt (supplier + receipt number + value) reimbursed twice
-      const numero = (d.numeroDoc ?? "").replace(/\W/g, "").replace(/^0+/, "");
-      if (d.doc && numero && !/^(sn|semnumero)$/i.test(numero)) {
-        const k = `${d.doc}|${numero}|${d.valor.toFixed(2)}`;
+      // A true duplicate is the same receipt reimbursed twice: supplier, receipt number, value and
+      // issue date all identical. Placeholder numbers ("NF", "s/n", "001") and recurring bills that
+      // reuse a contract number in different months are not duplicates.
+      const numero = (d.numeroDoc ?? "").replace(/\D/g, "").replace(/^0+/, "");
+      if (d.doc && d.data && numero.length >= 4) {
+        const k = `${d.doc}|${numero}|${d.valor.toFixed(2)}|${d.data}`;
         const prev = vistos.get(k);
         if (prev && prev.docId !== d.docId)
-          alertas.push({ regra: "duplicidade", descricao: `Mesmo documento fiscal (nº ${d.numeroDoc}) reembolsado mais de uma vez`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
+          alertas.push({ regra: "duplicidade", descricao: `Mesmo documento fiscal (nº ${d.numeroDoc}, emitido em ${d.data}) reembolsado mais de uma vez`, valor: d.valor, data: d.data, fornecedor: d.fornecedor, url: d.url });
         vistos.set(k, d);
       }
     }
