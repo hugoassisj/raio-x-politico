@@ -4,6 +4,7 @@ import { Avatar } from "@/components/Avatar";
 import { Busca } from "@/components/Busca";
 import { AtalhoEstado } from "@/components/AtalhoEstado";
 import { IconeAssunto } from "@/components/Icone";
+import { GradePerguntas } from "@/components/Perguntas";
 import { CartaoProjeto, LinhaPolitico } from "@/components/Listas";
 import { MapaBrasil, type CamadaMapa } from "@/components/MapaBrasil";
 import { Plenario } from "@/components/Plenario";
@@ -96,12 +97,34 @@ export default async function Home() {
               <MapPin size={16} aria-hidden /> Ou toque no seu estado no mapa.
             </p>
             <AtalhoEstado resumoUf={resumoUf} />
+            <p className="mt-5 text-sm">
+              <Link href="/sobre" className="link">
+                Primeira vez aqui? Entenda o que é o Raio-X Político
+              </Link>
+            </p>
           </div>
-          <MapaBrasil camadas={camadas} resumoUf={resumoUf} />
+          <div id="mapa" className="scroll-mt-20">
+            <MapaBrasil camadas={camadas} resumoUf={resumoUf} />
+          </div>
         </Container>
       </section>
 
       <Container className="space-y-20 pt-14">
+        <section aria-labelledby="perguntas">
+          <h2 id="perguntas" className="display text-3xl font-bold sm:text-4xl">
+            O que dá para descobrir aqui
+          </h2>
+          <p className="mt-2 max-w-2xl text-lg text-ink-2">Escolha uma pergunta. Cada uma leva direto à resposta, com a fonte oficial.</p>
+          <div className="mt-6">
+            <GradePerguntas limite={6} />
+          </div>
+          <p className="mt-4">
+            <Link href="/sobre#perguntas" className="link">
+              Ver todas as perguntas
+            </Link>
+          </p>
+        </section>
+
         {projetos.length > 0 && (
           <section>
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4">

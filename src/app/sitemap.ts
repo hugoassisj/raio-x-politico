@@ -6,7 +6,10 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://raio-x-politico.vercel
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [pols, vots] = await Promise.all([getPoliticos(), getVotacoes()]);
-  const fixas = ["", "/politicos", "/votacoes", "/gastos", "/falas", "/comparar", "/dados"].map((p) => ({ url: `${SITE}${p}`, changeFrequency: "daily" as const }));
+  const fixas = ["", "/sobre", "/politicos", "/votacoes", "/partidos", "/gastos", "/falas", "/comparar", "/como-funciona", "/analises", "/dados"].map((p) => ({
+    url: `${SITE}${p}`,
+    changeFrequency: "daily" as const,
+  }));
   return [
     ...fixas,
     ...ESTADOS.map((e) => ({ url: `${SITE}/estado/${e.uf.toLowerCase()}`, changeFrequency: "daily" as const })),

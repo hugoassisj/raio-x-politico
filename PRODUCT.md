@@ -1,6 +1,10 @@
-# Raio-X Político: documento de produto
+# Raio-X Político: o que é, para quem é e como decidimos
 
-> Documento vivo. Toda mudança relevante de escopo, fonte de dados, métrica ou decisão de arquitetura entra aqui, com data, no [Registro de decisões](#registro-de-decisões).
+## Em poucas palavras
+
+O Raio-X Político é um site gratuito e sem partido que mostra o que fazem senadores, deputados federais e deputados estaduais: se vão trabalhar, como votam, o que propõem, quanto gastam e o que dizem. Tudo em palavras simples, com o link do site oficial de onde cada número veio.
+
+Este documento explica **por que** o site é como é. Ele começa simples (o problema, para quem é, que perguntas responde, nossos princípios) e vai ficando técnico no final (cálculos, fontes, arquitetura). Toda mudança importante entra, com data, no [Registro de decisões](#registro-de-decisões), no fim.
 
 ## Visão
 
@@ -19,37 +23,81 @@ Os dados existem e são públicos, mas estão espalhados em dezenas de sites (C�
 | Jornalista, pesquisador, organização da sociedade civil | Ir fundo, baixar dados, auditar metodologia | Toda métrica com "Como calculamos", link para o registro oficial, JSON bruto por página, código aberto |
 | Assessorias e os próprios parlamentares | Conferir e corrigir informações | Fontes visíveis e canal para reportar erros |
 
+## Perguntas que o site responde
+
+A lista fica em um só lugar do código, [`src/lib/perguntas.ts`](src/lib/perguntas.ts), e aparece na página inicial, na página [“O que é o Raio-X Político”](src/app/sobre/page.tsx) e no README. Se o site deixar de responder uma delas, a lista está errada ou o site está.
+
+| Pergunta | Onde o site responde |
+|---|---|
+| Quem me representa? | Mapa da página inicial e página de cada estado |
+| Meu deputado vai trabalhar? | Perfil: presença nas sessões e votos registrados, ao lado dos colegas |
+| O que foi votado e o que muda para mim? | Votações agrupadas por projeto e por assunto, explicadas em palavras simples |
+| Como votaram os representantes do meu estado? | Em cada votação, depois de escolher o estado uma vez |
+| Quantos votos uma lei precisa para passar? | Cartão “Quantos votos precisava?” em cada votação e a página “Como funciona” |
+| Quanto gastam da verba do mandato, e com o quê? | Página de gastos e cada perfil, com a nota fiscal de cada despesa |
+| Meu partido vota com o governo? Vota unido? | Página de partidos e de cada partido |
+| Para onde mandam dinheiro do orçamento? | Emendas no perfil |
+| O que andam dizendo? | Página de falas, com busca por tema |
+| Como um político se compara com outro? | Comparador de até 4 pessoas |
+
 ## Princípios (não negociáveis)
 
 1. **Todo número tem fonte.** Cada valor exibido leva ao registro oficial e ao arquivo bruto. Se não dá para rastrear, não publicamos.
-2. **Fatos, não notas.** Mostramos posição em relação aos colegas (mediana, faixa de 80%), nunca nota, selo de "bom" ou "ruim", ou ranking de "melhores". Faltar, gastar ou seguir o partido podem ter boas explicações.
+2. **Fatos, não notas.** Mostramos onde a pessoa fica em relação aos colegas (o valor típico da casa e a faixa onde está a maioria), nunca nota, selo de "bom" ou "ruim", ou ranking de "melhores". Faltar, gastar ou seguir o partido podem ter boas explicações.
 3. **Comparação justa.** Só comparamos pessoas da mesma casa. Gastos são comparados com colegas do mesmo estado, porque o teto da cota muda conforme a distância até Brasília.
 4. **Ausência de dado nunca vira zero.** Quando falta dado, mostramos "–" e explicamos por quê.
 5. **IA com rédea curta.** A IA só resume registros públicos fornecidos a ela. Toda afirmação precisa citar um registro existente, senão é descartada automaticamente. Todo texto de IA vem rotulado.
 6. **Sem raspagem de redes sociais.** Perfis vêm do que o próprio político declarou à Câmara ou ao TSE. Conteúdo só entra por API oficial da plataforma.
 7. **Profundidade em camadas.** Primeiro a resposta simples (frase e números grandes), depois a explicação ("Como calculamos"), depois a fonte e o dado bruto. Ninguém é obrigado a descer, todos podem.
-8. **Acessível de verdade.** Funciona em celular simples e sem JavaScript nos fluxos principais, cores de votos validadas para daltonismo e sempre acompanhadas de texto, navegação por teclado, contraste adequado e modo escuro.
+8. **Simples de verdade.** Escrevemos para quem lê pouco: frases curtas, palavras do dia a dia, nenhuma sigla sem explicação. Se uma pessoa sem estudo não entende uma tela, a tela está errada.
+9. **Acessível de verdade.** Funciona em celular simples e sem JavaScript nos fluxos principais, cores de votos validadas para daltonismo e sempre acompanhadas de texto, navegação por teclado, contraste adequado e modo escuro.
+
+## Design e experiência
+
+Referências: a Política Nacional de Linguagem Simples (Lei 15.263/2025), as recomendações de usabilidade para pessoas com pouca leitura do guia Health Literacy Online (ODPHP), a escala de 12 passos do Radix Colors para papéis de cor, o Design Tokens Community Group para a organização dos tokens e os princípios táticos de hierarquia do Refactoring UI.
+
+**Fluxos que guiam cada tela**
+
+1. *Quem me representa?* Busca ou mapa na primeira tela. O estado escolhido fica salvo só neste aparelho e passa a abrir as respostas sobre "os seus".
+2. *O que votaram?* As pessoas pensam em projetos, não em votações. A lista agrupa todas as votações de um projeto, mostra o assunto em palavras simples e o resultado do texto principal.
+3. *O que essa votação significa?* Cada votação começa pelo "do que se trata" em linguagem simples, depois o que foi decidido nesta etapa (com o que significava votar Sim e votar Não), quantos votos eram precisos e como votaram os representantes do seu estado. Plenário, partidos e a lista completa vêm depois.
+4. *Posso confiar?* O texto oficial fica sempre a um toque, junto da página oficial do projeto e do dado bruto.
+
+**Regras de escrita**
+
+- Frases curtas, ordem direta, voz ativa, palavras do dia a dia (Lei 15.263/2025).
+- Termos técnicos aparecem como estão no texto oficial, sublinhados; um toque explica o termo. O glossário é um só (`src/lib/linguagem.ts`) e alimenta as explicações e a página "Como funciona".
+- Votações sobre o andamento (pedidos de urgência, adiamento, retirada de pauta) são marcadas como tal, para ninguém ler um voto de procedimento como voto sobre o conteúdo.
+
+**Tokens de design** (`src/app/globals.css`)
+
+- Três camadas: primitivos (escalas em OKLCH, nunca usados direto), semânticos (papel: página, cartão, texto, borda, destaque, votos) e receitas de componente (`.cartao`, `.chip`, `.botao`).
+- Neutros levemente azulados em vez de cinza puro. Cor saturada só com significado: azul para o que se pode tocar ou está selecionado, verde, laranja e roxo para Sim, Não e outros votos, amarelo para o fato principal da tela. Cores de partidos são evitadas de propósito.
+- Movimento curto e calmo (120 a 480 ms): cartões que sobem ao entrar, barras e cadeiras que crescem, um ponto pulsando ao lado da última atualização. Tudo desliga com `prefers-reduced-motion`.
 
 ## O que existe hoje
 
-| Página | Pergunta que responde |
+| Página | O que a pessoa encontra |
 |---|---|
-| `/` Início | Quem me representa (mapa do Brasil)? Como está dividido o Congresso hoje? O que foi votado e dito recentemente? |
-| `/estado/[uf]` | Quem são os 3 senadores, os deputados federais e os estaduais do meu estado? |
-| `/politico/[id]` | O que essa pessoa faz: presença, votos, gastos, projetos, emendas, falas, carreira, patrimônio, redes e fontes |
-| `/politicos` | Lista de todos, filtrável por casa, estado e partido, ordenável por qualquer critério |
-| `/votacoes` | O que foi votado, agrupado por projeto e por assunto, em linguagem simples |
-| `/votacao/[id]` | Do que se trata o projeto, o que foi decidido nesta etapa, quantos votos eram precisos, como votaram os representantes do seu estado, todas as votações do mesmo projeto, o plenário, os partidos e cada voto |
-| `/gastos` | Quanto se gasta da cota, em quê, com quais fornecedores, e o que merece um segundo olhar |
-| `/falas` | O que disseram sobre um tema, com link para o registro original |
-| `/comparar` | Até 4 pessoas lado a lado, incluindo votações em que divergiram |
-| `/partidos` | Tamanho de cada partido nas duas casas, se costuma votar com o governo e se vota unido |
-| `/partido/[sigla]` | Onde o partido senta no plenário, membros com foto, medianas comparadas com a casa e votações recentes |
-| `/como-funciona` | Como uma ideia vira lei e quantos votos cada tipo de proposta precisa, desenhado no plenário |
-| `/analises` | Cruzamentos simples (gasto x presença, experiência x presença, governo x unidade), sempre dizendo que relação não é causa |
-| `/dados` | Fontes, situação da última coleta, metodologia, limites e salários |
+| O que é o Raio-X Político (`/sobre`) | O que o site faz, por que existe, que perguntas responde, o que ele não é e por que dá para confiar |
+| Página inicial (`/`) | Quem me representa (mapa do Brasil)? Como está dividido o Congresso hoje? O que foi votado e dito recentemente? |
+| Cada estado (`/estado/mg`) | Quem são os 3 senadores, os deputados federais e os estaduais do meu estado? |
+| Perfil de cada político (`/politico/...`) | O que essa pessoa faz: presença, votos, gastos, projetos, emendas, falas, carreira, patrimônio, redes e fontes |
+| Lista de políticos (`/politicos`) | Lista de todos, filtrável por casa, estado e partido, ordenável por qualquer critério |
+| Votações (`/votacoes`) | O que foi votado, agrupado por projeto e por assunto, em linguagem simples |
+| Cada votação (`/votacao/...`) | Do que se trata o projeto, o que foi decidido nesta etapa, quantos votos eram precisos, como votaram os representantes do seu estado, todas as votações do mesmo projeto, o plenário, os partidos e cada voto |
+| Gastos (`/gastos`) | Quanto se gasta da cota, em quê, com quais fornecedores, e o que merece um segundo olhar |
+| Falas (`/falas`) | O que disseram sobre um tema, com link para o registro original |
+| Comparar (`/comparar`) | Até 4 pessoas lado a lado, incluindo votações em que divergiram |
+| Partidos (`/partidos`) | Tamanho de cada partido nas duas casas, se costuma votar com o governo e se vota unido |
+| Cada partido (`/partido/PL`) | Onde o partido senta no plenário, membros com foto, medianas comparadas com a casa e votações recentes |
+| Como funciona (`/como-funciona`) | Como uma ideia vira lei e quantos votos cada tipo de proposta precisa, desenhado no plenário |
+| Cruzamentos de dados (`/analises`) | Cruzamentos simples (gasto x presença, experiência x presença, governo x unidade), sempre dizendo que relação não é causa |
+| Sobre os dados (`/dados`) | Fontes, situação da última coleta, metodologia, limites e salários |
 
 ## Métricas
+
+_Daqui para baixo o documento fica técnico: é para quem quer conferir os cálculos ou ajudar no código._
 
 A definição oficial de cada métrica mora em um único lugar do código, [`src/lib/metricas.ts`](src/lib/metricas.ts), e é a mesma explicação exibida nos cartões, nas listas e na página `/dados`. Resumo:
 
@@ -101,29 +149,6 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 - **Snapshot em JSON no repositório:** cada atualização vira um commit, então qualquer número publicado pode ser auditado e comparado no tempo pelo histórico do git.
 - **Postgres opcional e complementar:** guarda o histórico que não cabe no snapshot (transcrições completas, resumos de IA de todos os períodos) e faz a busca textual em português. O schema está em [`src/db/schema.ts`](src/db/schema.ts), com tabelas de retrato (substituídas a cada execução) e tabelas de histórico (só acrescentam).
 - **Falha isolada:** se uma fonte cai, as outras continuam e a página `/dados` mostra o que falhou.
-
-## Design e experiência
-
-Referências: a Política Nacional de Linguagem Simples (Lei 15.263/2025), as recomendações de usabilidade para pessoas com pouca leitura do guia Health Literacy Online (ODPHP), a escala de 12 passos do Radix Colors para papéis de cor, o Design Tokens Community Group para a organização dos tokens e os princípios táticos de hierarquia do Refactoring UI.
-
-**Fluxos que guiam cada tela**
-
-1. *Quem me representa?* Busca ou mapa na primeira tela. O estado escolhido fica salvo só neste aparelho e passa a abrir as respostas sobre "os seus".
-2. *O que votaram?* As pessoas pensam em projetos, não em votações. A lista agrupa todas as votações de um projeto, mostra o assunto em palavras simples e o resultado do texto principal.
-3. *O que essa votação significa?* Cada votação começa pelo "do que se trata" em linguagem simples, depois o que foi decidido nesta etapa (com o que significava votar Sim e votar Não), quantos votos eram precisos e como votaram os representantes do seu estado. Plenário, partidos e a lista completa vêm depois.
-4. *Posso confiar?* O texto oficial fica sempre a um toque, junto da página oficial do projeto e do dado bruto.
-
-**Regras de escrita**
-
-- Frases curtas, ordem direta, voz ativa, palavras do dia a dia (Lei 15.263/2025).
-- Termos técnicos aparecem como estão no texto oficial, sublinhados; um toque explica o termo. O glossário é um só (`src/lib/linguagem.ts`) e alimenta as explicações e a página "Como funciona".
-- Votações sobre o andamento (pedidos de urgência, adiamento, retirada de pauta) são marcadas como tal, para ninguém ler um voto de procedimento como voto sobre o conteúdo.
-
-**Tokens de design** (`src/app/globals.css`)
-
-- Três camadas: primitivos (escalas em OKLCH, nunca usados direto), semânticos (papel: página, cartão, texto, borda, destaque, votos) e receitas de componente (`.cartao`, `.chip`, `.botao`).
-- Neutros levemente azulados em vez de cinza puro. Cor saturada só com significado: azul para o que se pode tocar ou está selecionado, verde, laranja e roxo para Sim, Não e outros votos, amarelo para o fato principal da tela. Cores de partidos são evitadas de propósito.
-- Movimento curto e calmo (120 a 480 ms): cartões que sobem ao entrar, barras e cadeiras que crescem, um ponto pulsando ao lado da última atualização. Tudo desliga com `prefers-reduced-motion`.
 
 ## IA
 
@@ -211,3 +236,4 @@ Referências: a Política Nacional de Linguagem Simples (Lei 15.263/2025), as re
 | 2026-10-12 | Lista de votações agrupada por projeto e por assunto | As pessoas procuram "o que votaram sobre saúde", não a votação nº 2611313-34 |
 | 2026-10-12 | Estado do visitante guardado só no aparelho (localStorage) | Personaliza sem cadastro e sem enviar dado pessoal a ninguém |
 | 2026-10-12 | Tokens de design em três camadas, com neutros azulados e cor só com significado | Hierarquia mais clara e uma interface que parece viva sem ficar barulhenta |
+| 2026-10-12 | README, PRODUCT.md e a página “O que é o Raio-X Político” escritos para qualquer pessoa, com a mesma lista de perguntas que o site responde | Quem chega ao site ou ao repositório precisa entender em segundos o que é, para quem é e o que dá para descobrir |

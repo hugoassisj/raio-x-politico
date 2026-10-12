@@ -1,5 +1,10 @@
 import {
   Briefcase,
+  GitCompare,
+  HandCoins,
+  MapPin,
+  MessageSquareQuote,
+  Scale,
   Building2,
   Bus,
   CalendarCheck,
@@ -59,5 +64,13 @@ const ASSUNTO: Record<string, LucideIcon> = { HeartPulse, GraduationCap, Landmar
 /** Icon of a subject area (see src/lib/assuntos.ts). */
 export function IconeAssunto({ nome, className = "h-4 w-4" }: { nome: string; className?: string }) {
   const I = ASSUNTO[nome] ?? FileText;
+  return <I className={className} aria-hidden />;
+}
+
+const PERGUNTA: Record<string, LucideIcon> = { MapPin, CalendarCheck, Vote, Scale, Wallet, Users, MessageSquareQuote, Landmark, GitCompare, HandCoins, FileText };
+
+/** Icon of a question the site answers (see src/lib/perguntas.ts). */
+export function IconePergunta({ nome, className = "h-5 w-5" }: { nome: string; className?: string }) {
+  const I = PERGUNTA[nome] ?? FileText;
   return <I className={className} aria-hidden />;
 }
