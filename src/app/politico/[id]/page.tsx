@@ -11,7 +11,7 @@ import { cargoDe } from "@/components/Listas";
 import { ListaVotos } from "@/components/ListaVotos";
 import { ResumoIA } from "@/components/ResumoIA";
 import { Barras, Container, Fonte, Origem, Secao, Vazio } from "@/components/ui";
-import { getFalas, getIA, getPolitico, getPoliticos, urlDadoBruto } from "@/lib/data";
+import { getExplicacoes, getFalas, getIA, getPolitico, getPoliticos, getVotacoes, urlDadoBruto } from "@/lib/data";
 import { data, idade, moeda, moedaCurta, numero, pct, plural, VAZIO } from "@/lib/format";
 import { distribuicao, metrica, NOME_CASA } from "@/lib/metricas";
 import { fraseResumo } from "@/lib/resumo";
@@ -57,7 +57,7 @@ const REGRA: Record<string, string> = {
 
 export default async function PaginaPolitico({ params }: PageProps<"/politico/[id]">) {
   const { id } = await params;
-  const [p, todos, falas, ia] = await Promise.all([getPolitico(id), getPoliticos(), getFalas(id), getIA(id)]);
+  const [p, todos, falas, ia, explicacoes, votacoes] = await Promise.all([getPolitico(id), getPoliticos(), getFalas(id), getIA(id), getExplicacoes(), getVotacoes()]);
   if (!p) notFound();
 
   const anoAtual = new Date().getUTCFullYear();
@@ -156,7 +156,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               </dl>
             </div>
             <div className="flex flex-row flex-wrap gap-2 sm:flex-col sm:items-end">
-              <Link href={`/comparar?ids=${p.id}`} className="rounded-lg border-2 border-ink px-4 py-2 text-center font-semibold hover:bg-ink hover:text-paper">
+              <Link href={`/comparar?ids=${p.id}`} className="botao-sec">
                 Comparar com outro
               </Link>
               {p.perfil.paginaOficial && <Fonte href={p.perfil.paginaOficial}>Página oficial</Fonte>}
@@ -376,11 +376,26 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                     {x.tipo} {x.numero}/{x.ano} · apresentado em {data(x.data)}
                     {x.virouLei && <span className="ml-2 rounded bg-ok-bg px-1.5 py-0.5 text-xs font-semibold text-sim">Virou lei</span>}
                   </p>
-                  <p className="mt-1">{x.ementa}</p>
-                  <p className="mt-1 flex flex-wrap items-center gap-x-3 text-sm text-ink-2">
-                    {x.situacao && <span>Situação: {x.situacao}</span>}
-                    {x.url && <Fonte href={x.url}>Tramitação completa</Fonte>}
-                  </p>
+                  {(() => {
+                    const chave = p.casa === "camara" ? `cam-${x.id}` : `sen-${x.id}`;
+                    const ex = explicacoes.get(chave);
+                    const votada = votacoes.find((v) => v.materia === chave);
+                    return (
+                      <>
+                        <p className="mt-1">{ex?.resumo ?? x.ementa}</p>
+                        {ex && <p className="mt-0.5 text-xs text-ink-3">Em linguagem simples, feito por IA a partir do texto oficial. Ementa: {x.ementa}</p>}
+                        <p className="mt-1 flex flex-wrap items-center gap-x-3 text-sm text-ink-2">
+                          {x.situacao && <span>Situação: {x.situacao}</span>}
+                          {votada && (
+                            <Link href={`/votacao/${votada.id}`} className="link">
+                              Foi votado no Plenário: ver como cada um votou
+                            </Link>
+                          )}
+                          {x.url && <Fonte href={x.url}>Tramitação completa</Fonte>}
+                        </p>
+                      </>
+                    );
+                  })()}
                 </li>
               ))}
             </ul>

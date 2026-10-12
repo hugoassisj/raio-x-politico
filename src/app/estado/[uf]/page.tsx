@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { cargoDe } from "@/components/Listas";
+import { Contador } from "@/components/Contador";
+import { LembrarEstado } from "@/components/MeuEstado";
 import { GradeRostos } from "@/components/Rostos";
 import { TabelaPoliticos } from "@/components/TabelaPoliticos";
 import { Container, Vazio } from "@/components/ui";
@@ -35,6 +37,7 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
 
   return (
     <>
+      <LembrarEstado uf={uf} />
       <header className="border-b border-line bg-surface">
         <Container className="py-10">
           <nav aria-label="Trilha" className="mb-4 text-sm text-ink-3">
@@ -48,15 +51,21 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
           <dl className="mt-6 flex flex-wrap gap-x-10 gap-y-4">
             <div>
               <dt className="text-sm text-ink-3">Senadores</dt>
-              <dd className="figure text-3xl font-bold">{senadores.length}</dd>
+              <dd className="figure text-3xl font-bold">
+                <Contador valor={senadores.length} />
+              </dd>
             </div>
             <div>
               <dt className="text-sm text-ink-3">Deputados federais</dt>
-              <dd className="figure text-3xl font-bold">{federais.length}</dd>
+              <dd className="figure text-3xl font-bold">
+                <Contador valor={federais.length} />
+              </dd>
             </div>
             <div>
               <dt className="text-sm text-ink-3">Deputados {uf === "DF" ? "distritais" : "estaduais"}</dt>
-              <dd className="figure text-3xl font-bold">{estaduais.length}</dd>
+              <dd className="figure text-3xl font-bold">
+                <Contador valor={estaduais.length} />
+              </dd>
             </div>
             {gasto > 0 && (
               <div>
@@ -77,7 +86,7 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
           {senadores.length ? (
             <div className="mt-5 grid gap-4 md:grid-cols-3">
               {senadores.map((p) => (
-                <Link key={p.id} href={`/politico/${p.id}`} className="flex gap-4 rounded-2xl border border-line bg-surface p-4 transition-colors hover:border-ink-3">
+                <Link key={p.id} href={`/politico/${p.id}`} className="flex gap-4 cartao p-4">
                   <Avatar src={p.foto} nome={p.nome} size={84} className="shadow-sm" />
                   <div className="min-w-0">
                     <p className="font-semibold">{p.nome}</p>

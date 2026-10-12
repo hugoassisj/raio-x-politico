@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { definirUf, useUf } from "./MeuEstado";
 import { MAPA_ESTADOS, MAPA_VIEWBOX } from "@/lib/mapa-br";
 import { moedaCurta, numero, pct } from "@/lib/format";
 import { ESTADOS } from "@/lib/ufs";
@@ -38,6 +39,7 @@ export function MapaBrasil({ camadas, resumoUf }: { camadas: CamadaMapa[]; resum
   const router = useRouter();
   const [camadaId, setCamadaId] = useState(camadas[0]?.id);
   const [uf, setUf] = useState<string | null>(null);
+  const meu = useUf();
   const camada = camadas.find((c) => c.id === camadaId) ?? camadas[0];
   const valores = useMemo(() => Object.values(camada?.valores ?? {}).filter((v): v is number => v != null), [camada]);
   const corDe = (u: string) => {
@@ -53,13 +55,7 @@ export function MapaBrasil({ camadas, resumoUf }: { camadas: CamadaMapa[]; resum
       {camadas.length > 1 && (
         <div role="tablist" aria-label="O que o mapa mostra" className="mb-3 flex flex-wrap gap-1.5">
           {camadas.map((c) => (
-            <button
-              key={c.id}
-              role="tab"
-              aria-selected={c.id === camada.id}
-              onClick={() => setCamadaId(c.id)}
-              className={`rounded-full border px-3 py-1 text-sm ${c.id === camada.id ? "border-ink bg-ink text-paper" : "border-line bg-surface text-ink-2 hover:border-ink-3"}`}
-            >
+            <button key={c.id} role="tab" aria-selected={c.id === camada.id} onClick={() => setCamadaId(c.id)} className={`chip ${c.id === camada.id ? "chip-ativo" : ""}`}>
               {c.rotulo}
             </button>
           ))}
@@ -76,14 +72,15 @@ export function MapaBrasil({ camadas, resumoUf }: { camadas: CamadaMapa[]; resum
               onFocus={() => setUf(e.uf)}
               onClick={(ev) => {
                 ev.preventDefault();
+                definirUf(e.uf);
                 router.push(`/estado/${e.uf.toLowerCase()}`);
               }}
             >
               <path
                 d={e.d}
                 fill={uf === e.uf ? "var(--mark)" : corDe(e.uf)}
-                stroke="var(--ink-3)"
-                strokeWidth={uf === e.uf ? 1.6 : 0.7}
+                stroke={meu === e.uf ? "var(--accent)" : "var(--ink-3)"}
+                strokeWidth={uf === e.uf || meu === e.uf ? 2.2 : 0.7}
                 strokeLinejoin="round"
                 className="cursor-pointer transition-[fill] duration-150"
               />

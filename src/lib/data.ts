@@ -2,7 +2,20 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { cache } from "react";
-import type { Agregado, Fala, FalasArquivo, GastosGerais, IAArquivo, Meta, PoliticoDetalhe, PoliticoResumo, VotacaoDetalhe, VotacaoResumo } from "./types";
+import type {
+  Agregado,
+  ExplicacaoIA,
+  Fala,
+  FalasArquivo,
+  GastosGerais,
+  IAArquivo,
+  MateriaVotada,
+  Meta,
+  PoliticoDetalhe,
+  PoliticoResumo,
+  VotacaoDetalhe,
+  VotacaoResumo,
+} from "./types";
 
 /**
  * Read-only access to the published snapshot (./data, or DATA_DIR).
@@ -28,6 +41,8 @@ export const getAgregados = cache(
   async () => (await ler<{ porCasa: Agregado[]; porPartido: Agregado[]; porUf: Agregado[] }>("agregados.json")) ?? { porCasa: [], porPartido: [], porUf: [] },
 );
 
+export const getMaterias = cache(async () => new Map(((await ler<MateriaVotada[]>("materias.json")) ?? []).map((m) => [m.id, m])));
+export const getExplicacoes = cache(async () => new Map(Object.entries((await ler<Record<string, ExplicacaoIA>>("explicacoes.json")) ?? {})));
 export const getGastosGerais = cache(() => ler<GastosGerais>("gastos.json"));
 export const getPolitico = cache((id: string) => (seguro(id) ? ler<PoliticoDetalhe>(`politicos/${id}.json`) : Promise.resolve(undefined)));
 export const getVotacao = cache((id: string) => (seguro(id) ? ler<VotacaoDetalhe>(`votacoes/${id}.json`) : Promise.resolve(undefined)));

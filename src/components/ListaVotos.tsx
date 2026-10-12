@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { VotoItem } from "@/lib/types";
 import { data, partesDescricao } from "@/lib/format";
+import { explicarEtapa } from "@/lib/linguagem";
 import { VotoChip } from "./ui";
 
 const canon = (s?: string) => (s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -53,7 +54,7 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
                 setFiltro(k);
                 setLimite(25);
               }}
-              className={`rounded-full border px-3 py-1 text-sm ${filtro === k ? "border-ink bg-ink text-paper" : "border-line bg-surface text-ink-2 hover:border-ink-3"}`}
+              className={`chip ${filtro === k ? "chip-ativo" : ""}`}
             >
               {rotulo} <span className="tnum opacity-70">{contagem[k]}</span>
             </button>
@@ -86,7 +87,7 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
                   <Link href={`/votacao/${v.votacaoId}`} className="font-semibold hover:underline">
                     {v.titulo}
                   </Link>
-                  {v.descricao && <Descricao texto={v.descricao} />}
+                  {v.descricao && <Descricao texto={v.descricao} objeto={v.objeto} />}
                 </div>
                 <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm sm:grid sm:grid-cols-[auto_auto] sm:justify-end sm:gap-x-3">
                   <div className="flex items-center gap-1.5 sm:contents">
@@ -125,13 +126,22 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
   );
 }
 
-function Descricao({ texto }: { texto: string }) {
+function Descricao({ texto, objeto }: { texto: string; objeto?: string }) {
   const { ementa, procedimento } = partesDescricao(texto);
-  const etapa = procedimento.replace(/\s*Sim:.*$/s, "").trim();
+  const etapa = explicarEtapa(procedimento, objeto);
+  const oficial = procedimento.replace(/\s*Sim:.*$/s, "").trim();
   return (
     <>
       <p className="mt-0.5 line-clamp-2 text-sm text-ink-2">{ementa}</p>
-      {etapa && <p className="mt-0.5 line-clamp-1 text-xs text-ink-3">Nesta etapa: {etapa}</p>}
+      {etapa ? (
+        <p className="mt-1 text-xs">
+          <span className="font-semibold text-accent-ink">{etapa.titulo}</span>
+          {etapa.tipo === "procedimento" && <span className="text-ink-3"> · sobre o andamento, não sobre o conteúdo</span>}
+          {etapa.sim && <span className="block text-ink-3">{etapa.sim}</span>}
+        </p>
+      ) : (
+        oficial && <p className="mt-0.5 line-clamp-1 text-xs text-ink-3">Nesta etapa: {oficial}</p>
+      )}
     </>
   );
 }

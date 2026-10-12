@@ -86,6 +86,24 @@ export const REGRAS: Regra[] = [
     artigo: "Constituição, art. 47",
     url: CF,
   },
+  {
+    tipo: "AUT",
+    nome: "Indicação para cargo",
+    oQueE: "Algumas pessoas só assumem um cargo, como embaixadores e diretores do Banco Central e de agências, se o Senado aprovar.",
+    exigencia: "simples",
+    turnos: 1,
+    artigo: "Constituição, art. 52, incisos III e IV",
+    url: CF,
+  },
+  {
+    tipo: "AUT_ABS",
+    nome: "Indicação para cargo",
+    oQueE: "Para tribunais superiores, Procuradoria-Geral da República e os conselhos nacionais de Justiça e do Ministério Público, o Senado precisa aprovar a pessoa indicada.",
+    exigencia: "absoluta",
+    turnos: 1,
+    artigo: "Constituição, arts. 101, 103-B, 104, 128 e 130-A",
+    url: CF,
+  },
 ];
 
 const DESCRICAO: Record<Exigencia, string> = {
@@ -114,6 +132,13 @@ export function regraDaVotacao(titulo: string, descricao = ""): Regra | undefine
   if (/(^|\|)\s*(aprovad|rejeitad)[oa]s? o requerimento|requerimento de (adiamento|retirada|urg[eê]ncia|encerramento)/i.test(descricao))
     return REGRAS.find((r) => r.tipo === "REQ");
   const sigla = titulo.trim().split(/\s+/)[0]?.toUpperCase();
+  // Nominations voted by the Senado: higher courts, PGR and national councils need an absolute majority
+  if (sigla === "MSF" || sigla === "OFS") {
+    const absoluta = /art\. ?(101|103-b|104|128|130-a)\b|supremo tribunal|superior tribunal|procurador-geral da rep|conselho nacional de justi|conselho nacional do minist/i.test(
+      descricao,
+    );
+    return REGRAS.find((r) => r.tipo === (absoluta ? "AUT_ABS" : "AUT"));
+  }
   const porSigla = REGRAS.find((r) => r.tipo === sigla || (sigla === "PLV" && r.tipo === "MPV") || (sigla === "PLS" && r.tipo === "PL"));
   if (porSigla) return porSigla;
   const t = descricao.toLowerCase();

@@ -2,12 +2,16 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, Landmark, MapPin, Users } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { Busca } from "@/components/Busca";
-import { CartaoVotacao, LinhaPolitico } from "@/components/Listas";
+import { AtalhoEstado } from "@/components/AtalhoEstado";
+import { IconeAssunto } from "@/components/Icone";
+import { CartaoProjeto, LinhaPolitico } from "@/components/Listas";
 import { MapaBrasil, type CamadaMapa } from "@/components/MapaBrasil";
 import { Plenario } from "@/components/Plenario";
 import { Container, Fonte } from "@/components/ui";
 import { cadeirasPorPartido } from "@/lib/cadeiras";
-import { getFalasRecentes, getMeta, getPoliticos, getVotacoes } from "@/lib/data";
+import { ASSUNTOS } from "@/lib/assuntos";
+import { getExplicacoes, getFalasRecentes, getMaterias, getMeta, getPoliticos, getVotacoes } from "@/lib/data";
+import { agruparPorProjeto } from "@/lib/projetos";
 import { data, moedaCurta, numero, pct, plural } from "@/lib/format";
 import { resumirPartidos } from "@/lib/partidos";
 import { median } from "@/lib/stats";
@@ -32,7 +36,8 @@ function variedade<T extends { pid: string }>(falas: T[], n = 6): T[] {
 }
 
 export default async function Home() {
-  const [pols, votacoes, falas, meta] = await Promise.all([getPoliticos(), getVotacoes(), getFalasRecentes(), getMeta()]);
+  const [pols, votacoes, falas, meta, materias, explicacoes] = await Promise.all([getPoliticos(), getVotacoes(), getFalasRecentes(), getMeta(), getMaterias(), getExplicacoes()]);
+  const projetos = agruparPorProjeto(votacoes, materias, explicacoes);
   const ativos = pols.filter((p) => p.emExercicio);
   const fed = ativos.filter((p) => p.casa === "camara");
   const sen = ativos.filter((p) => p.casa === "senado");
@@ -90,12 +95,45 @@ export default async function Home() {
             <p className="mt-3 flex items-center gap-1.5 text-sm text-ink-3">
               <MapPin size={16} aria-hidden /> Ou toque no seu estado no mapa.
             </p>
+            <AtalhoEstado resumoUf={resumoUf} />
           </div>
           <MapaBrasil camadas={camadas} resumoUf={resumoUf} />
         </Container>
       </section>
 
       <Container className="space-y-20 pt-14">
+        {projetos.length > 0 && (
+          <section>
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+              <div className="max-w-2xl">
+                <p className="flex items-center gap-2 text-sm font-bold text-accent-ink">
+                  <span className="pulso" aria-hidden /> Últimas decisões
+                </p>
+                <h2 className="display mt-1 text-3xl font-bold sm:text-4xl">O que foi votado</h2>
+                <p className="mt-2 text-lg text-ink-2">Os projetos mais recentes, explicados em palavras simples. Toque para ver como votaram os representantes do seu estado.</p>
+              </div>
+              <Link href="/votacoes" className="botao-sec">
+                Ver todos <ArrowRight size={18} aria-hidden />
+              </Link>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {projetos.slice(0, 6).map((p, i) => (
+                <CartaoProjeto key={p.chave} p={p} i={i} />
+              ))}
+            </div>
+            <ul className="mt-5 flex flex-wrap gap-2" aria-label="Ver por assunto">
+              {ASSUNTOS.filter((a) => projetos.some((p) => p.assuntos.includes(a.id))).map((a) => (
+                <li key={a.id}>
+                  <Link href={`/votacoes?assunto=${a.id}`} className="chip">
+                    <IconeAssunto nome={a.icone} className="h-4 w-4" />
+                    {a.nome}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {fed.length > 0 && (
           <section>
             <div className="flex flex-wrap items-end justify-between gap-4">
@@ -106,18 +144,18 @@ export default async function Home() {
                   registradas.
                 </p>
               </div>
-              <Link href="/partidos" className="inline-flex items-center gap-1.5 rounded-lg border-2 border-ink px-4 py-2 font-semibold hover:bg-ink hover:text-paper">
+              <Link href="/partidos" className="botao-sec">
                 Ver partidos <ArrowRight size={18} aria-hidden />
               </Link>
             </div>
             <div className="mt-8 grid gap-10 lg:grid-cols-[1.5fr_1fr]">
-              <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+              <div className="cartao p-4 sm:p-6">
                 <h3 className="text-center font-semibold">
                   Câmara dos Deputados <span className="text-ink-3">· {fed.length} deputados</span>
                 </h3>
                 <Plenario cadeiras={camara.cadeiras} legenda={camara.legenda} titulo="Plenário da Câmara dos Deputados por posição do partido" />
               </div>
-              <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+              <div className="cartao p-4 sm:p-6">
                 <h3 className="text-center font-semibold">
                   Senado Federal <span className="text-ink-3">· {sen.length} senadores</span>
                 </h3>
@@ -151,7 +189,7 @@ export default async function Home() {
                 texto: "Cuidam das leis do seu estado, como regras da polícia estadual, escolas estaduais e impostos estaduais. Mandato de 4 anos.",
               },
             ].map(({ Icone, titulo, numero: n, texto }) => (
-              <div key={titulo} className="rounded-2xl border border-line bg-surface p-5">
+              <div key={titulo} className="cartao p-5">
                 <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-mark text-mark-ink" aria-hidden>
                   <Icone size={22} />
                 </span>
@@ -166,25 +204,6 @@ export default async function Home() {
           </Link>
         </section>
 
-        {votacoes.length > 0 && (
-          <section>
-            <div className="mb-6 flex items-end justify-between gap-4">
-              <div>
-                <h2 className="display text-3xl font-bold sm:text-4xl">Votações mais recentes</h2>
-                <p className="mt-2 text-lg text-ink-2">Em cada uma você vê o que estava em jogo, quantos votos eram precisos e como cada pessoa votou.</p>
-              </div>
-              <Link href="/votacoes" className="link shrink-0">
-                Ver todas
-              </Link>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {votacoes.slice(0, 6).map((v) => (
-                <CartaoVotacao key={v.id} v={v} />
-              ))}
-            </div>
-          </section>
-        )}
-
         {fed.length > 0 && (
           <section>
             <h2 className="display text-3xl font-bold sm:text-4xl">Quem está nos extremos</h2>
@@ -197,7 +216,7 @@ export default async function Home() {
                   ["participacao", "Menos votações registradas", 1, pct],
                 ] as const
               ).map(([k, titulo, dir, fmt]) => (
-                <div key={k} className="rounded-2xl border border-line bg-surface p-3">
+                <div key={k} className="cartao p-3">
                   <div className="px-2 pb-1 pt-2">
                     <h3 className="font-bold">{titulo}</h3>
                     <p className="text-xs text-ink-3">Deputados federais, últimos 12 meses</p>
@@ -229,7 +248,7 @@ export default async function Home() {
               {variedade(falas).map((f) => {
                 const p = porId.get(f.pid);
                 return (
-                  <li key={f.id} className="flex gap-4 rounded-2xl border border-line bg-surface p-4">
+                  <li key={f.id} className="flex gap-4 cartao p-4">
                     {p && <Avatar src={p.foto} nome={p.nome} size={52} />}
                     <div className="min-w-0">
                       <p className="text-sm text-ink-3">
@@ -252,10 +271,10 @@ export default async function Home() {
           </section>
         )}
 
-        <section className="grid gap-6 rounded-3xl bg-ink p-6 text-paper sm:p-10 md:grid-cols-[1.3fr_1fr] md:items-center">
+        <section className="grid gap-6 rounded-3xl bg-banda p-6 text-banda-ink sm:p-10 md:grid-cols-[1.3fr_1fr] md:items-center">
           <div>
             <h2 className="display text-3xl font-bold">Nenhum número sem fonte</h2>
-            <p className="mt-3 max-w-xl text-paper/80">
+            <p className="mt-3 max-w-xl text-banda-ink/80">
               Cada dado vem de um site oficial: Câmara, Senado, TSE, Transferegov e assembleias. Ao lado de cada número há a explicação de como foi calculado e o link para o
               registro original. Os dados completos podem ser baixados e o código é aberto.
             </p>
@@ -265,7 +284,7 @@ export default async function Home() {
               Ver fontes e metodologia
             </Link>
             {meta && (
-              <p className="w-full text-sm text-paper/60 md:text-right">
+              <p className="w-full text-sm text-banda-ink/60 md:text-right">
                 {plural(meta.fontes.filter((f) => f.status !== "ignorado").length, "fonte consultada", "fontes consultadas")} na última atualização
               </p>
             )}

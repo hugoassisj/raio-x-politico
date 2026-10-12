@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { classificarAssuntos } from "./assuntos";
+import { explicarEtapa } from "./linguagem";
 import { cadeirasPorVoto } from "./cadeiras";
 import { partesDescricao } from "./format";
 import { faixaGoverno, ordenarParaPlenario, resumirPartidos, unidadePartido } from "./partidos";
 import { layoutPlenario } from "./plenario";
+import { agruparPorProjeto, votacaoPrincipal } from "./projetos";
 import { avaliarQuorum, regraDaVotacao, votosNecessarios } from "./quorum";
 import { correlacao, forcaCorrelacao, median } from "./stats";
 import type { PoliticoResumo, VotacaoDetalhe, VotacaoResumo } from "./types";
@@ -48,6 +50,11 @@ describe("quorum", () => {
     expect(regraDaVotacao("PLV 2/2026")?.tipo).toBe("MPV");
     expect(regraDaVotacao("Votação", "Proposta de emenda à Constituição")?.tipo).toBe("PEC");
     expect(regraDaVotacao("Votação", "sem pistas")).toBeUndefined();
+  });
+
+  it("knows which nominations need an absolute majority in the Senado", () => {
+    expect(regraDaVotacao("MSF 19/2026", "o nome do Senhor X para exercer o cargo de Embaixador do Brasil na República da Albânia")?.exigencia).toBe("simples");
+    expect(regraDaVotacao("OFS 4/2026", "nos termos do art. 103-B, inciso II, da Constituição Federal, a indicação para o CNJ")?.exigencia).toBe("absoluta");
   });
 
   it("treats procedural requests as simple majority even inside a PEC debate", () => {
@@ -161,5 +168,36 @@ describe("assuntos", () => {
     expect(classificarAssuntos(["Saúde", "Finanças Públicas e Orçamento"], "Altera a lei X")).toEqual(["saude", "impostos"]);
     expect(classificarAssuntos([], "Dispõe sobre o ensino médio nas escolas públicas")).toEqual(["educacao"]);
     expect(classificarAssuntos(undefined, "Texto sem pistas")).toEqual([]);
+  });
+});
+
+describe("linguagem simples", () => {
+  it("explains common voting steps and tells procedure from content", () => {
+    expect(explicarEtapa("Aprovado o Requerimento de Urgência (Art. 155 do RICD).")).toMatchObject({ tipo: "procedimento", titulo: "Pedido de urgência" });
+    expect(explicarEtapa("Rejeitado o Requerimento.", "Votação do Requerimento de retirada de pauta")).toMatchObject({ titulo: "Pedido para tirar da pauta" });
+    expect(explicarEtapa("Mantido o texto.")).toMatchObject({ tipo: "conteudo", sim: "Votar Sim era manter o trecho no texto." });
+    expect(explicarEtapa("Aprovada, em segundo turno, a Proposta de Emenda à Constituição nº 5, de 2023.")?.titulo).toBe("Segunda votação da mudança na Constituição");
+    expect(explicarEtapa("Votação nominal da Emenda nº 3 ao Projeto de Lei Complementar nº 1, de 2026, destacada.")?.titulo).toBe("Proposta de mudança votada em separado");
+    expect(explicarEtapa("Aprovado o Projeto de Lei nº 1, ressalvado o destaque.")?.texto).toMatch(/Trechos destacados/);
+    expect(explicarEtapa("Resultado.")).toBeUndefined();
+  });
+});
+
+describe("projetos", () => {
+  const v = (id: string, data: string, proc: string, materia = "cam-1") => votacao([], { id, data, descricao: `Ementa do projeto | ${proc}`, materia, titulo: "PL 1/2026" });
+  it("groups roll calls by bill and picks the main text over requests and excerpts", () => {
+    const vs = [
+      v("a", "2026-05-01", "Aprovado o Requerimento de Urgência."),
+      v("b", "2026-05-02", "Aprovado o Projeto de Lei nº 1."),
+      v("c", "2026-05-02", "Mantido o texto."),
+      v("d", "2026-04-01", "Aprovado o Projeto.", "cam-2"),
+    ];
+    expect(votacaoPrincipal(vs.slice(0, 3)).id).toBe("b");
+    const g = agruparPorProjeto(vs, new Map(), new Map());
+    expect(g.map((p) => [p.chave, p.votacoes.length, p.principal.id])).toEqual([
+      ["cam-1", 3, "b"],
+      ["cam-2", 1, "d"],
+    ]);
+    expect(g[0].ementa).toBe("Ementa do projeto");
   });
 });

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GLOSSARIO } from "@/lib/linguagem";
 import { MiniPlenario } from "@/components/Plenario";
 import { Container, Fonte, Secao } from "@/components/ui";
 import { numero } from "@/lib/format";
@@ -18,20 +19,6 @@ const PASSOS = [
   { titulo: "O Congresso pode insistir", texto: "Se houver veto, Câmara e Senado votam juntos e podem derrubá-lo. Aí a lei vale mesmo sem a concordância do Presidente." },
 ];
 
-const GLOSSARIO = [
-  ["Plenário", "O salão onde todos os parlamentares de uma casa se reúnem para votar. Também é o nome da reunião de todos eles."],
-  ["Votação nominal", "Votação em que cada parlamentar registra Sim, Não ou Abstenção no painel eletrônico, e o voto fica público com o nome."],
-  ["Votação simbólica", "Votação rápida em que quem concorda permanece sentado. Não registra o voto de cada um."],
-  ["Quórum", "Número mínimo de parlamentares presentes ou votando para que uma decisão valha."],
-  ["Maioria absoluta", "Mais da metade de todos os membros da casa: 257 deputados ou 41 senadores, contando quem faltou."],
-  ["Maioria simples", "Mais votos Sim do que Não entre os que votaram, desde que pelo menos metade dos membros esteja presente."],
-  ["Turno", "Cada rodada de votação. Mudanças na Constituição precisam ser aprovadas duas vezes em cada casa."],
-  ["Orientação", "O voto que a liderança de um partido, ou do governo, pede aos seus parlamentares antes de cada votação."],
-  ["Obstrução", "Estratégia para atrasar ou impedir uma votação, por exemplo deixando de registrar presença."],
-  ["Cota parlamentar", "Verba mensal para despesas do mandato, como passagens e escritório. É reembolsada mediante nota fiscal."],
-  ["Emenda parlamentar", "Dinheiro do orçamento federal que cada parlamentar pode indicar para obras e serviços em cidades e estados."],
-];
-
 export default function ComoFunciona() {
   return (
     <Container className="py-10">
@@ -43,7 +30,7 @@ export default function ComoFunciona() {
       <Secao titulo="Como uma ideia vira lei">
         <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {PASSOS.map((p, i) => (
-            <li key={p.titulo} className="rounded-2xl border border-line bg-surface p-5">
+            <li key={p.titulo} className="cartao p-5">
               <span className="figure inline-flex h-10 w-10 items-center justify-center rounded-full bg-mark text-lg font-bold text-mark-ink">{i + 1}</span>
               <h3 className="mt-3 text-lg font-bold">{p.titulo}</h3>
               <p className="mt-1 text-ink-2">{p.texto}</p>
@@ -58,7 +45,7 @@ export default function ComoFunciona() {
       >
         <ul className="space-y-5">
           {REGRAS.map((r) => (
-            <li key={r.tipo} className="grid gap-6 rounded-2xl border border-line bg-surface p-5 sm:p-6 lg:grid-cols-[1.1fr_1fr_0.8fr] lg:items-center">
+            <li key={r.tipo} className="grid gap-6 cartao p-5 sm:p-6 lg:grid-cols-[1.1fr_1fr_0.8fr] lg:items-center">
               <div>
                 <p className="text-sm font-semibold text-ink-3">{r.tipo === "VET" ? "Veto" : r.tipo}</p>
                 <h3 className="text-2xl font-bold">{r.nome}</h3>
@@ -92,12 +79,14 @@ export default function ComoFunciona() {
 
       <Secao titulo="Palavras que aparecem muito">
         <dl className="grid gap-4 sm:grid-cols-2">
-          {GLOSSARIO.map(([t, d]) => (
-            <div key={t} className="rounded-xl border border-line bg-surface p-4">
-              <dt className="font-bold">{t}</dt>
-              <dd className="mt-1 text-ink-2">{d}</dd>
-            </div>
-          ))}
+          {[...GLOSSARIO]
+            .sort((a, b) => a.termo.localeCompare(b.termo, "pt-BR"))
+            .map((g) => (
+              <div key={g.termo} id={`termo-${g.termo.toLowerCase().replace(/\s+/g, "-")}`} className="cartao p-4">
+                <dt className="font-bold">{g.termo}</dt>
+                <dd className="mt-1 text-ink-2">{g.explicacao}</dd>
+              </div>
+            ))}
         </dl>
       </Secao>
     </Container>

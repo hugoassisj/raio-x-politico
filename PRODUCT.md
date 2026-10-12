@@ -38,7 +38,8 @@ Os dados existem e são públicos, mas estão espalhados em dezenas de sites (C�
 | `/estado/[uf]` | Quem são os 3 senadores, os deputados federais e os estaduais do meu estado? |
 | `/politico/[id]` | O que essa pessoa faz: presença, votos, gastos, projetos, emendas, falas, carreira, patrimônio, redes e fontes |
 | `/politicos` | Lista de todos, filtrável por casa, estado e partido, ordenável por qualquer critério |
-| `/votacoes` e `/votacao/[id]` | O que estava em jogo, quantos votos eram precisos, o resultado, o plenário cadeira por cadeira, como cada partido orientou e como cada um votou |
+| `/votacoes` | O que foi votado, agrupado por projeto e por assunto, em linguagem simples |
+| `/votacao/[id]` | Do que se trata o projeto, o que foi decidido nesta etapa, quantos votos eram precisos, como votaram os representantes do seu estado, todas as votações do mesmo projeto, o plenário, os partidos e cada voto |
 | `/gastos` | Quanto se gasta da cota, em quê, com quais fornecedores, e o que merece um segundo olhar |
 | `/falas` | O que disseram sobre um tema, com link para o registro original |
 | `/comparar` | Até 4 pessoas lado a lado, incluindo votações em que divergiram |
@@ -101,7 +102,39 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 - **Postgres opcional e complementar:** guarda o histórico que não cabe no snapshot (transcrições completas, resumos de IA de todos os períodos) e faz a busca textual em português. O schema está em [`src/db/schema.ts`](src/db/schema.ts), com tabelas de retrato (substituídas a cada execução) e tabelas de histórico (só acrescentam).
 - **Falha isolada:** se uma fonte cai, as outras continuam e a página `/dados` mostra o que falhou.
 
+## Design e experiência
+
+Referências: a Política Nacional de Linguagem Simples (Lei 15.263/2025), as recomendações de usabilidade para pessoas com pouca leitura do guia Health Literacy Online (ODPHP), a escala de 12 passos do Radix Colors para papéis de cor, o Design Tokens Community Group para a organização dos tokens e os princípios táticos de hierarquia do Refactoring UI.
+
+**Fluxos que guiam cada tela**
+
+1. *Quem me representa?* Busca ou mapa na primeira tela. O estado escolhido fica salvo só neste aparelho e passa a abrir as respostas sobre "os seus".
+2. *O que votaram?* As pessoas pensam em projetos, não em votações. A lista agrupa todas as votações de um projeto, mostra o assunto em palavras simples e o resultado do texto principal.
+3. *O que essa votação significa?* Cada votação começa pelo "do que se trata" em linguagem simples, depois o que foi decidido nesta etapa (com o que significava votar Sim e votar Não), quantos votos eram precisos e como votaram os representantes do seu estado. Plenário, partidos e a lista completa vêm depois.
+4. *Posso confiar?* O texto oficial fica sempre a um toque, junto da página oficial do projeto e do dado bruto.
+
+**Regras de escrita**
+
+- Frases curtas, ordem direta, voz ativa, palavras do dia a dia (Lei 15.263/2025).
+- Termos técnicos aparecem como estão no texto oficial, sublinhados; um toque explica o termo. O glossário é um só (`src/lib/linguagem.ts`) e alimenta as explicações e a página "Como funciona".
+- Votações sobre o andamento (pedidos de urgência, adiamento, retirada de pauta) são marcadas como tal, para ninguém ler um voto de procedimento como voto sobre o conteúdo.
+
+**Tokens de design** (`src/app/globals.css`)
+
+- Três camadas: primitivos (escalas em OKLCH, nunca usados direto), semânticos (papel: página, cartão, texto, borda, destaque, votos) e receitas de componente (`.cartao`, `.chip`, `.botao`).
+- Neutros levemente azulados em vez de cinza puro. Cor saturada só com significado: azul para o que se pode tocar ou está selecionado, verde, laranja e roxo para Sim, Não e outros votos, amarelo para o fato principal da tela. Cores de partidos são evitadas de propósito.
+- Movimento curto e calmo (120 a 480 ms): cartões que sobem ao entrar, barras e cadeiras que crescem, um ponto pulsando ao lado da última atualização. Tudo desliga com `prefers-reduced-motion`.
+
 ## IA
+
+**Explicações em linguagem simples dos projetos votados** (`pipeline/explicar.ts`)
+
+- Entrada: só os textos oficiais do projeto (ementa, ementa detalhada, explicação do Senado, palavras-chave e temas oficiais).
+- Saída: resumo curto, até três mudanças práticas, quem é afetado (quando o texto diz) e de um a três trechos copiados do texto oficial.
+- Validação automática: os trechos precisam aparecer exatamente no texto oficial; todo número da explicação precisa existir no texto oficial; palavras de juízo de valor descartam a explicação; travessões são removidos.
+- Regenerada só quando o texto oficial muda (hash). Na página, sempre rotulada, com os trechos de origem e o texto oficial a um toque.
+
+**Resumos do que cada parlamentar disse**
 
 - Entrada: discursos e publicações do período mais os votos nominais do mesmo período, com identificadores.
 - Saída obrigatória em JSON: resumo, posições por tema, mudanças de discurso (período anterior x atual) e pontos onde fala e voto não batem, cada item com citações.
@@ -172,3 +205,9 @@ A definição oficial de cada métrica mora em um único lugar do código, [`src
 | 2026-10-12 | Fotos oficiais servidas pelo próprio site em WebP; deputados estaduais com a foto de candidatura do TSE | Páginas mais rápidas e independentes dos servidores do governo; o link da foto original segue como fonte |
 | 2026-10-12 | Mapa do Brasil gerado em tempo de build a partir de GeoJSON aberto, sem biblioteca de mapas no navegador | Carrega rápido em celular simples e funciona sem JavaScript para os links de cada estado |
 | 2026-10-12 | Código formatado com Prettier, verificado no CI | Estilo uniforme para quem contribui |
+| 2026-10-12 | Detalhes oficiais de cada projeto votado (ementa detalhada, explicação do Senado, temas, autores, texto completo) | A ementa sozinha raramente explica o que estava em jogo |
+| 2026-10-12 | Etapas de votação traduzidas por regras fixas e públicas, não por IA | Pedidos e destaques se repetem e têm significado conhecido; regras são auditáveis e não alucinam |
+| 2026-10-12 | Explicações de projetos por IA só com trechos copiados do texto oficial e sem números novos | Linguagem simples sem perder a rastreabilidade |
+| 2026-10-12 | Lista de votações agrupada por projeto e por assunto | As pessoas procuram "o que votaram sobre saúde", não a votação nº 2611313-34 |
+| 2026-10-12 | Estado do visitante guardado só no aparelho (localStorage) | Personaliza sem cadastro e sem enviar dado pessoal a ninguém |
+| 2026-10-12 | Tokens de design em três camadas, com neutros azulados e cor só com significado | Hierarquia mais clara e uma interface que parece viva sem ficar barulhenta |

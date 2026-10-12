@@ -46,7 +46,7 @@ export function VotosNominais({ votos, conhecidos }: { votos: VotacaoDetalhe["vo
         </label>
       </div>
       <p className="mt-3 text-sm text-ink-3">{lista.length} votos</p>
-      <ul className="mt-2 grid gap-x-6 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="mt-2 grid grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-3">
         {(todos || q ? lista : lista.slice(0, INICIAL)).map((v) => (
           <li key={v.pid} className="flex items-center justify-between gap-3 border-b border-line py-2">
             <span className="min-w-0">
