@@ -1,0 +1,205 @@
+import { describe, expect, it } from "vitest";
+import { nameSimilarity, num, isoDate, validDoc, windows, norm } from "../lib/util";
+import { calcularGastos, calcularPresenca, calcularVotos, enriquecerVotacoes, janela12, orientacaoDoPartido, ultimoMesCompleto } from "../metrics";
+import { vincularTSE } from "../build";
+import { SEN_PRESENTE } from "../sources/senado";
+import { normalizaUrl, plataforma, handleDe } from "../sources/falas";
+import type { CandidatoTSE, Despesa, PoliticoParcial } from "../model";
+import type { VotacaoDetalhe } from "../../src/lib/types";
+
+const dep = (id: string, partido: string, extra: Partial<PoliticoParcial> = {}): PoliticoParcial => ({
+  id,
+  casa: "camara",
+  cargo: "Deputado(a) Federal",
+  nome: id,
+  partido,
+  uf: "MG",
+  emExercicio: true,
+  ...extra,
+});
+
+describe("util", () => {
+  it("parses Brazilian numbers", () => {
+    expect(num("1.234,56")).toBe(1234.56);
+    expect(num("1234.56")).toBe(1234.56);
+    expect(num("")).toBe(0);
+    expect(num(12)).toBe(12);
+  });
+  it("normalizes dates", () => {
+    expect(isoDate("05/03/1970")).toBe("1970-03-05");
+    expect(isoDate("2026-09-03T17:29:39")).toBe("2026-09-03");
+    expect(isoDate("")).toBeUndefined();
+  });
+  it("validates CPF and CNPJ check digits", () => {
+    expect(validDoc("11.222.333/0001-81")).toBe(true);
+    expect(validDoc("11.222.333/0001-82")).toBe(false);
+    expect(validDoc("529.982.247-25")).toBe(true);
+    expect(validDoc("111.111.111-11")).toBe(false);
+    expect(validDoc("123")).toBeNull();
+  });
+  it("compares names ignoring accents and connectors", () => {
+    expect(nameSimilarity("José da Silva Júnior", "JOSE SILVA")).toBe(1);
+    expect(nameSimilarity("Maria Souza", "Mário Souza")).toBeLessThan(1);
+    expect(norm("  São   Paulo! ")).toBe("sao paulo");
+  });
+  it("splits date ranges into bounded windows", () => {
+    const w = windows(new Date("2026-01-01"), new Date("2026-12-31"), 90);
+    expect(w[0]).toEqual(["2026-01-01", "2026-03-31"]);
+    expect(w[w.length - 1][1]).toBe("2026-12-31");
+  });
+});
+
+describe("party orientation lookup", () => {
+  const ori = [
+    { sigla: "PL", orientacao: "Não" },
+    { sigla: "Fdr PT-PCdoB-PV", orientacao: "Sim" },
+    { sigla: "Bl UniPpPsd...", orientacao: "Sim" },
+    { sigla: "Governo", orientacao: "Sim" },
+  ];
+  it("prefers the party row", () => expect(orientacaoDoPartido(ori, "PL")).toBe("Não"));
+  it("resolves federations", () => expect(orientacaoDoPartido(ori, "PCdoB")).toBe("Sim"));
+  it("resolves truncated blocs", () => {
+    expect(orientacaoDoPartido(ori, "PSD")).toBe("Sim");
+    expect(orientacaoDoPartido(ori, "UNIÃO")).toBe("Sim");
+  });
+  it("returns undefined for unknown parties", () => expect(orientacaoDoPartido(ori, "NOVO")).toBeUndefined());
+});
+
+describe("vote metrics", () => {
+  const pols = [dep("dep-1", "PL"), dep("dep-2", "PT"), dep("dep-3", "PL", { inicioExercicioAtual: "2026-06-01" })];
+  const votacoes: VotacaoDetalhe[] = Array.from({ length: 12 }, (_, i) => ({
+    id: `cam-${i}`,
+    casa: "camara",
+    data: `2026-0${(i % 9) + 1}-10`,
+    titulo: `PL ${i}/2026`,
+    descricao: "",
+    sim: 0,
+    nao: 0,
+    outros: 0,
+    porPartido: [],
+    orientacaoGoverno: "Sim",
+    orientacoes: [
+      { sigla: "PL", orientacao: "Não" },
+      { sigla: "PT", orientacao: "Sim" },
+      { sigla: "Governo", orientacao: "Sim" },
+    ],
+    votos: [
+      { pid: "dep-1", nome: "a", partido: "PL", uf: "MG", voto: i < 10 ? "Não" : "Sim" },
+      ...(i % 2 ? [] : [{ pid: "dep-2", nome: "b", partido: "PT", uf: "MG", voto: "Sim" }]),
+    ],
+  }));
+  enriquecerVotacoes(votacoes);
+  const r = calcularVotos(votacoes, pols, SEN_PRESENTE);
+
+  it("computes participation over eligible votes only", () => {
+    expect(r.metricas.get("dep-1")!.participacao).toBe(1);
+    expect(r.metricas.get("dep-2")!.participacao).toBe(0.5);
+    // dep-3 entered office in June: only votes from June on are eligible, and they missed all of them
+    const m3 = r.metricas.get("dep-3")!;
+    expect(m3.votacoesBase).toBeLessThan(12);
+    expect(m3.participacao).toBe(0);
+  });
+  it("computes party loyalty with the 10-vote minimum", () => {
+    expect(r.metricas.get("dep-1")!.fidelidade).toBeCloseTo(10 / 12);
+    expect(r.metricas.get("dep-2")!.fidelidade).toBeUndefined(); // only 6 comparable votes
+  });
+  it("computes government alignment", () => expect(r.metricas.get("dep-1")!.governismo).toBeCloseTo(2 / 12));
+  it("aggregates party totals", () => expect(votacoes[0].porPartido.find((p) => p.partido === "PL")!.nao).toBe(1));
+});
+
+describe("presence", () => {
+  it("separates houses and respects the start of the term", () => {
+    const pols = [dep("dep-1", "PL", { inicioExercicioAtual: "2026-02-01" })];
+    const r = calcularPresenca(
+      [
+        { id: "1", data: "2026-01-10", presentes: [] },
+        { id: "2", data: "2026-02-10", presentes: ["dep-1"] },
+        { id: "3", data: "2026-03-10", presentes: [] },
+        { id: "sen-2026-03-11", data: "2026-03-11", presentes: [] },
+      ],
+      pols,
+    ).get("dep-1")!;
+    expect(r.sessoes).toBe(2);
+    expect(r.presente).toBe(1);
+  });
+});
+
+describe("expenses", () => {
+  const mk = (pid: string, ano: number, mes: number, valor: number, extra: Partial<Despesa> = {}): Despesa => ({
+    pid,
+    ano,
+    mes,
+    valor,
+    categoria: "Combustíveis",
+    fornecedor: "Posto",
+    doc: "11222333000181",
+    data: `${ano}-${String(mes).padStart(2, "0")}-05`,
+    ...extra,
+  });
+  it("drops the trailing incomplete month", () => {
+    const ds: Despesa[] = [];
+    for (let m = 1; m <= 9; m++) ds.push(mk("a", 2026, m, 1000));
+    ds.push(mk("a", 2026, 10, 100)); // October still being filed
+    expect(ultimoMesCompleto(ds, new Date("2026-10-11"))).toBe("2026-09");
+    expect(janela12("2026-09")).toHaveLength(12);
+    expect(janela12("2026-09")[0]).toBe("2025-10");
+  });
+  it("flags invalid documents, duplicates and supplier concentration", () => {
+    const ds = [
+      mk("a", 2026, 1, 30000, { docId: "1" }),
+      mk("a", 2026, 1, 30000, { docId: "2" }),
+      mk("a", 2026, 2, 500, { doc: "11222333000182", fornecedor: "X", docId: "3" }),
+    ];
+    const g = calcularGastos(ds, new Date("2026-03-15")).get("a")!;
+    const regras = g.alertas.map((a) => a.regra);
+    expect(regras).toContain("duplicidade");
+    expect(regras).toContain("documento_invalido");
+    expect(regras).toContain("fornecedor_concentrado");
+    // February is far below the running median, so it is treated as still incomplete
+    expect(g.total12m).toBe(60000);
+  });
+});
+
+describe("TSE linkage", () => {
+  const c = (over: Partial<CandidatoTSE>): CandidatoTSE => ({
+    ano: 2022,
+    sq: "1",
+    nome: "JOAO DA SILVA PEREIRA",
+    nomeUrna: "JOÃO PEREIRA",
+    nascimento: "1970-01-01",
+    uf: "MG",
+    cargo: "DEPUTADO FEDERAL",
+    codCargo: 6,
+    partido: "PL",
+    numero: "2222",
+    situacao: "ELEITO POR QP",
+    ...over,
+  });
+  const cands = [c({}), c({ ano: 2018, sq: "2" }), c({ ano: 2022, sq: "3", nome: "JOAO DA SILVA", cpf: "99999999999", nomeUrna: "JOAO" })];
+  const porNasc = new Map([["1970-01-01", cands]]);
+  const porUf = new Map([["MG", cands]]);
+  it("links by birth date and name, one candidacy per year", () => {
+    const p = dep("dep-9", "PL", { nomeCivil: "João da Silva Pereira", perfil: { nascimento: "1970-01-01" } });
+    const r = vincularTSE(p, porNasc, porUf);
+    expect(r.map((x) => x.sq)).toEqual(["2", "1"]);
+  });
+  it("accepts a candidate whose CPF matches the masked CPF", () => {
+    const p = dep("dep-9", "PL", { nomeCivil: "João da Silva", cpfMascarado: "999***999", perfil: { nascimento: "1970-01-01" } });
+    expect(vincularTSE(p, porNasc, porUf).some((x) => x.sq === "3")).toBe(true);
+  });
+  it("rejects a candidate whose CPF contradicts the masked CPF", () => {
+    const p = dep("dep-9", "PL", { nomeCivil: "João da Silva", cpfMascarado: "111***111", perfil: { nascimento: "1970-01-01" } });
+    expect(vincularTSE(p, porNasc, porUf).some((x) => x.sq === "3")).toBe(false);
+  });
+});
+
+describe("social links", () => {
+  it("normalizes and classifies", () => {
+    const u = normalizaUrl("instagram.com/fulano/?hl=pt")!;
+    expect(u).toBe("https://instagram.com/fulano");
+    expect(plataforma(u)).toBe("instagram");
+    expect(plataforma("https://x.com/fulano")).toBe("x");
+    expect(handleDe("https://www.youtube.com/@canal")).toBe("canal");
+    expect(normalizaUrl("@fulano")).toBeUndefined();
+  });
+});
