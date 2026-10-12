@@ -70,8 +70,36 @@ function leitor(linha: Linha, opts: Opcoes) {
   return uz;
 }
 
-/** Splits one ";"-separated line, removing the surrounding quotes TSE puts on every field. */
+/** A quoted field next to an unquoted one: the line mixes both styles, so the fast split is wrong. */
+const MISTO = /";(?!")|(?<!");"/;
+
+/**
+ * Splits one ";"-separated line, removing the quotes the TSE puts around fields. Most files quote
+ * every field, which allows a plain split; the national candidacy file ("_BR") leaves numbers
+ * unquoted (`"#NULO";280001681360;"PARTIDO ISOLADO"`), which a plain split would shift by one
+ * column, so those lines are walked field by field, honoring quotes.
+ */
 export function campos(l: string): string[] {
-  if (l.startsWith('"')) return l.replace(/^"|"$/g, "").split('";"');
-  return l.split(";").map((x) => x.replace(/^"|"$/g, ""));
+  if (l.startsWith('"') && l.endsWith('"') && !MISTO.test(l)) {
+    const partes = l.slice(1, -1).split('";"');
+    return l.includes('""') ? partes.map((x) => x.replace(/""/g, '"')) : partes;
+  }
+  if (!l.includes('"')) return l.split(";");
+  const out: string[] = [];
+  const re = /"((?:[^"]|"")*)"|([^;]*)/y;
+  let i = 0;
+  for (;;) {
+    re.lastIndex = i;
+    const m = re.exec(l)!;
+    out.push(m[1] != null ? m[1].replace(/""/g, '"') : m[2]);
+    i = re.lastIndex;
+    if (i >= l.length) break;
+    // Skip the separator (or anything stray after a closing quote, up to the next separator)
+    i = l[i] === ";" ? i + 1 : l.indexOf(";", i) < 0 ? l.length : l.indexOf(";", i) + 1;
+    if (i >= l.length) {
+      out.push("");
+      break;
+    }
+  }
+  return out;
 }

@@ -535,3 +535,18 @@ describe("election index", () => {
     ]);
   });
 });
+
+describe("TSE csv lines", () => {
+  it("splits quoted, unquoted and mixed fields without shifting columns", async () => {
+    const { campos } = await import("../lib/csvzip");
+    expect(campos('"a";"b;c";"d"')).toEqual(["a", "b;c", "d"]);
+    expect(campos("1;2;3")).toEqual(["1", "2", "3"]);
+    // The national candidacy file leaves numbers unquoted
+    expect(campos('"#NULO";280001681360;"PARTIDO ISOLADO";1;"PRESIDENTE"')).toEqual(["#NULO", "280001681360", "PARTIDO ISOLADO", "1", "PRESIDENTE"]);
+    expect(campos('12;"x"')).toEqual(["12", "x"]);
+    expect(campos('"x";12')).toEqual(["x", "12"]);
+    expect(campos('"x";;"y"')).toEqual(["x", "", "y"]);
+    expect(campos('"x";')).toEqual(["x", ""]);
+    expect(campos('"diz ""oi""";"z"')).toEqual(['diz "oi"', "z"]);
+  });
+});

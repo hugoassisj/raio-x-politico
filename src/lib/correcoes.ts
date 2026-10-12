@@ -16,6 +16,13 @@ export interface Correcao {
 export const CORRECOES: Correcao[] = [
   {
     data: "2026-10-12",
+    erro: "A página da Presidência dizia que as candidaturas a Presidente ainda não tinham sido coletadas, em todas as eleições desde 1994, e nenhuma empresa aparecia ligada a campanhas.",
+    correcao:
+      "O arquivo nacional do TSE deixa números sem aspas (os arquivos por estado põem aspas em tudo), e o leitor deslocava todas as colunas. O leitor passou a respeitar as aspas campo a campo; a próxima coleta publica as candidaturas e as contas.",
+    onde: "Presidência, Eleições, Empresas (ligações com campanhas), Dinheiro das campanhas nos perfis",
+  },
+  {
+    data: "2026-10-12",
     erro: "Fornecedores pessoas físicas pagos com a cota parlamentar apareciam com o CPF, como vem no arquivo oficial.",
     correcao: "Só CNPJ válido é publicado. CPF de pessoa nunca aparece, nem dentro do nome de microempreendedor.",
     onde: "Perfis (gastos), página de gastos, alertas de dígito inválido",

@@ -67,8 +67,11 @@ async function etapa<T>(id: string, nome: string, url: string, fn: () => Promise
   const t0 = Date.now();
   try {
     const t = await fn();
-    const avisos = (t as { avisos?: string[] }).avisos ?? [];
-    fontes.push({ id, nome, url, status: avisos.length ? "parcial" : "ok", registros: contar(t), duracaoMs: Date.now() - t0, erro: avisos.join(" | ") || undefined });
+    const avisos = [...((t as { avisos?: string[] }).avisos ?? [])];
+    const registros = contar(t);
+    // A source that answers but yields nothing is a problem to look at, never a silent "ok"
+    if (registros === 0) avisos.push("nenhum registro coletado");
+    fontes.push({ id, nome, url, status: avisos.length ? "parcial" : "ok", registros, duracaoMs: Date.now() - t0, erro: avisos.join(" | ") || undefined });
     await mkdir(STAGE, { recursive: true });
     await writeFile(stageFile, JSON.stringify(t, serializeMap));
     return t;
