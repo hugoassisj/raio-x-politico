@@ -1,3 +1,4 @@
+import { BandeiraUf } from "@/components/Bandeira";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -47,7 +48,11 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
             / <span className="text-ink-2">{nomeUf(uf)}</span>
           </nav>
           <p className="text-ink-2">Quem representa</p>
-          <h1 className="display text-4xl font-extrabold sm:text-6xl">{nomeUf(uf)}</h1>
+          <h1 className="display flex flex-wrap items-center gap-4 text-4xl font-extrabold sm:text-6xl">
+            <BandeiraUf uf={uf} altura={40} className="sm:hidden" />
+            <BandeiraUf uf={uf} altura={56} className="hidden sm:inline-block" />
+            {nomeUf(uf)}
+          </h1>
           <dl className="mt-6 flex flex-wrap gap-x-10 gap-y-4">
             <div>
               <dt className="text-sm text-ink-3">Senadores</dt>

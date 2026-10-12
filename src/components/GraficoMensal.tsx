@@ -3,6 +3,16 @@
 import { useState } from "react";
 import { mesAno, moeda, moedaCurta } from "@/lib/format";
 
+/** Round tick values (1, 2, 2.5 or 5 times a power of ten) inside (0, max], for the value gridlines. */
+function ticksRedondos(max: number, alvo = 3): number[] {
+  const bruto = max / alvo;
+  const pot = 10 ** Math.floor(Math.log10(bruto));
+  const passo = [1, 2, 2.5, 5, 10].map((m) => m * pot).find((x) => x >= bruto) ?? 10 * pot;
+  const out: number[] = [];
+  for (let v = passo; v <= max; v += passo) out.push(v);
+  return out;
+}
+
 /** Monthly columns with a hover/focus readout. Single series, so no legend; the title names it. */
 export function GraficoMensal({ meses, referencia, rotuloReferencia }: { meses: { mes: string; valor: number }[]; referencia?: number; rotuloReferencia?: string }) {
   const [ativo, setAtivo] = useState<number | null>(null);
@@ -21,6 +31,11 @@ export function GraficoMensal({ meses, referencia, rotuloReferencia }: { meses: 
         )}
       </div>
       <div className="relative" style={{ height: H }}>
+        {ticksRedondos(max).map((t) => (
+          <div key={t} className="pointer-events-none absolute inset-x-0 border-t border-line" style={{ bottom: (t / max) * H }} aria-hidden>
+            <span className="absolute -top-2 right-0 bg-paper px-1 text-[10px] leading-4 text-ink-3">{moedaCurta(t)}</span>
+          </div>
+        ))}
         {referencia != null && referencia > 0 && (
           <div className="pointer-events-none absolute inset-x-0 border-t-2 border-dashed border-ink-3" style={{ bottom: (referencia / max) * H }}>
             <span className="absolute -top-5 right-0 bg-paper px-1 text-xs text-ink-3">{rotuloReferencia}</span>

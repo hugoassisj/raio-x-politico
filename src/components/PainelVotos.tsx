@@ -35,6 +35,7 @@ import {
 } from "@/lib/votos";
 import { data as dataPt } from "@/lib/format";
 import { Avatar } from "./Avatar";
+import { BandeiraUf } from "./Bandeira";
 import { SiglaPartido } from "./Partido";
 import { Paginacao } from "./Paginacao";
 import { Plenario } from "./Plenario";
@@ -640,7 +641,16 @@ function Grupos({
               <li key={g.chave} className="cartao p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-lg font-bold">{por === "partido" ? <SiglaPartido sigla={g.chave} link={comPagina.has(g.chave)} /> : g.chave}</p>
+                    <p className="flex items-center gap-2 text-lg font-bold">
+                      {por === "partido" ? (
+                        <SiglaPartido sigla={g.chave} link={comPagina.has(g.chave)} />
+                      ) : (
+                        <>
+                          <BandeiraUf uf={g.chave} altura={16} />
+                          {g.chave}
+                        </>
+                      )}
+                    </p>
                     <p className="text-sm text-ink-3">{por === "partido" ? nomePartido(g.chave) : nomeUf(g.chave)}</p>
                   </div>
                   <div className="text-right text-sm">

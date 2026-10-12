@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
+import { BandeiraUf } from "@/components/Bandeira";
 import { CartoesResumo, TileMetrica, metricasDaCasa } from "@/components/Boletim";
-import { AtSign, FileSearch, Info, Landmark, Mail, MapPin } from "lucide-react";
+import { AtSign, FileSearch, Info, Landmark, Mail } from "lucide-react";
 import { nomePartido } from "@/lib/partidos";
 import { resumoRapido } from "@/lib/resumo";
 import { GraficoMensal } from "@/components/GraficoMensal";
@@ -150,7 +151,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                   <b>{p.partido}</b> <span className="hidden text-sm opacity-80 sm:inline">{nomePartido(p.partido)}</span>
                 </Link>
                 <Link href={`/estado/${p.uf.toLowerCase()}`} className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 hover:border-ink-3">
-                  <MapPin size={16} aria-hidden /> {nomeUf(p.uf)}
+                  <BandeiraUf uf={p.uf} altura={14} /> {nomeUf(p.uf)}
                 </Link>
                 {anos != null && (
                   <span className="rounded-lg border border-line px-3 py-1.5">
