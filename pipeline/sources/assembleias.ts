@@ -180,7 +180,8 @@ export async function coletarAssembleias(tse: CandidatoTSE[], anoGastos: number[
       id,
       casa: "assembleia",
       cargo: c.codCargo === 8 ? "Deputado(a) Distrital" : "Deputado(a) Estadual",
-      nome: ext?.nome ?? nomeProprio(c.nomeUrna),
+      // Some assemblies publish names in capitals ("PABLO BREGENSE"); shown as people write them
+      nome: ext?.nome ? (ext.nome === ext.nome.toUpperCase() ? nomeProprio(ext.nome) : ext.nome) : nomeProprio(c.nomeUrna),
       nomeCivil: nomeProprio(c.nome),
       partido: ext?.partido ?? c.partido,
       uf: c.uf,
