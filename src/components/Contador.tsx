@@ -32,8 +32,10 @@ export function Contador({ valor, formato = (n) => n.toLocaleString("pt-BR") }: 
     };
   }, [valor]);
   return (
-    <span ref={ref} aria-label={formato(valor)}>
+    <span ref={ref}>
+      {/* The animated number is hidden from screen readers, which read the final value */}
       <span aria-hidden>{formato(atual)}</span>
+      <span className="sr-only">{formato(valor)}</span>
     </span>
   );
 }

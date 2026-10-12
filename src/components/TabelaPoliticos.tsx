@@ -1,85 +1,97 @@
+"use client";
+
 import Link from "next/link";
+import type { ColumnDef } from "@tanstack/react-table";
+import { METRICAS, type ChaveMetrica } from "@/lib/metricas";
+import { nomeUf } from "@/lib/ufs";
 import type { PoliticoResumo } from "@/lib/types";
-import { moedaCurta, numero, pct } from "@/lib/format";
-import type { ChaveMetrica } from "@/lib/metricas";
-import { metrica } from "@/lib/metricas";
 import { Avatar } from "./Avatar";
 import { cargoDe } from "./Listas";
+import { SiglaPartido } from "./Partido";
+import { TabelaDados, type MetaColuna } from "./tabela/TabelaDados";
 
-const COLUNAS: { k: ChaveMetrica; r: string; f: (n?: number) => string }[] = [
-  { k: "presenca", r: "Presença", f: pct },
-  { k: "participacao", r: "Votações", f: pct },
-  { k: "fidelidade", r: "Segue o partido", f: pct },
-  { k: "gasto12m", r: "Gastos 12 meses", f: moedaCurta },
-  { k: "proposicoes", r: "Projetos", f: numero },
-];
+/** Columns shown at first; every other metric can be turned on in "Colunas". */
+const VISIVEIS: ChaveMetrica[] = ["presenca", "participacao", "fidelidade", "gasto12m", "proposicoes"];
 
-/** Dense, scannable table on desktop; one card per person on phones, led by the sorted metric. */
-export function TabelaPoliticos({ itens, destaque, linkOrdem }: { itens: PoliticoResumo[]; destaque?: ChaveMetrica; linkOrdem?: (k: ChaveMetrica) => string }) {
-  const def = destaque ? metrica(destaque) : undefined;
+/**
+ * Everyone in a sortable, configurable table on computers and one card per person on phones.
+ * Metric columns come from metricas.ts, so names and formats match the rest of the site.
+ */
+export function TabelaPoliticos({
+  itens,
+  ordem = "",
+  dir = "asc",
+  hrefOrdem = {},
+  csv,
+  id = "politicos",
+}: {
+  itens: PoliticoResumo[];
+  ordem?: string;
+  dir?: "asc" | "desc";
+  /** Address that sorts by each column (by column id); without it the table is not sortable */
+  hrefOrdem?: Record<string, string>;
+  csv?: string;
+  /** Name under which column choices are remembered */
+  id?: string;
+}) {
+  const meta = (id: string, extra: MetaColuna = {}): MetaColuna => ({ hrefOrdem: hrefOrdem[id], ordenado: ordem === id ? dir : undefined, ...extra });
+  const colunas: ColumnDef<PoliticoResumo, unknown>[] = [
+    {
+      id: "nome",
+      header: "Nome",
+      size: 280,
+      meta: meta("nome", { fixa: true }),
+      cell: ({ row: { original: p } }) => (
+        <Link href={`/politico/${p.id}`} className="flex items-center gap-3">
+          <Avatar src={p.foto} nome={p.nome} size={32} />
+          <span className="min-w-0">
+            <span className="block truncate font-semibold hover:underline">{p.nome}</span>
+            <span className="block truncate text-ink-3">{cargoDe(p)}</span>
+          </span>
+        </Link>
+      ),
+    },
+    { id: "partido", header: "Partido", size: 110, cell: ({ row: { original: p } }) => <SiglaPartido sigla={p.partido} /> },
+    { id: "uf", header: "Estado", size: 90, meta: { explicacao: "Estado que a pessoa representa" }, cell: ({ row: { original: p } }) => <abbr title={nomeUf(p.uf)}>{p.uf}</abbr> },
+    {
+      id: "inicioPolitica",
+      header: "Na política desde",
+      size: 130,
+      meta: { direita: true, oculta: true, explicacao: "Ano do primeiro cargo eletivo encontrado" },
+      cell: ({ row: { original: p } }) => p.inicioPolitica ?? "",
+    },
+    ...METRICAS.map((d): ColumnDef<PoliticoResumo, unknown> => ({
+      id: d.chave,
+      header: d.titulo,
+      size: 130,
+      meta: meta(d.chave, { direita: true, explicacao: d.pergunta, oculta: !VISIVEIS.includes(d.chave) }),
+      cell: ({ row: { original: p } }) => <span className={ordem === d.chave ? "font-semibold" : "text-ink-2"}>{d.formato(p.m[d.chave])}</span>,
+    })),
+  ];
+  const def = METRICAS.find((m) => m.chave === ordem);
   return (
-    <>
-      <ul className="divide-y divide-line cartao rounded-xl md:hidden">
-        {itens.map((p) => (
-          <li key={p.id}>
-            <Link href={`/politico/${p.id}`} className="flex items-center gap-3 px-3 py-3">
-              <Avatar src={p.foto} nome={p.nome} size={40} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-semibold">{p.nome}</span>
-                <span className="block truncate text-sm text-ink-3">
-                  {cargoDe(p)} · {p.partido}-{p.uf}
-                </span>
-              </span>
-              <span className="shrink-0 text-right">
-                <span className="figure block text-lg font-semibold">{def ? def.formato(p.m[def.chave]) : pct(p.m.presenca)}</span>
-                <span className="block text-xs text-ink-3">{def ? def.titulo : "Presença"}</span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-      <div className="hidden overflow-x-auto cartao rounded-xl md:block">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-line text-left text-ink-3">
-              <th className="px-4 py-3 font-normal">Nome</th>
-              {COLUNAS.map((c) => (
-                <th key={c.k} className={`px-3 py-3 text-right font-normal ${destaque === c.k ? "text-ink" : ""}`}>
-                  {linkOrdem ? (
-                    <Link href={linkOrdem(c.k)} className="hover:underline">
-                      {c.r}
-                    </Link>
-                  ) : (
-                    c.r
-                  )}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {itens.map((p) => (
-              <tr key={p.id} className="hover:bg-surface-2/60">
-                <td className="px-4 py-2.5">
-                  <Link href={`/politico/${p.id}`} className="flex items-center gap-3">
-                    <Avatar src={p.foto} nome={p.nome} size={32} />
-                    <span className="min-w-0">
-                      <span className="block font-semibold hover:underline">{p.nome}</span>
-                      <span className="block text-ink-3">
-                        {cargoDe(p)} · {p.partido}-{p.uf}
-                      </span>
-                    </span>
-                  </Link>
-                </td>
-                {COLUNAS.map((c) => (
-                  <td key={c.k} className={`tnum px-3 py-2.5 text-right ${destaque === c.k ? "font-semibold" : "text-ink-2"}`}>
-                    {c.f(p.m[c.k])}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+    <TabelaDados
+      id={id}
+      linhas={itens}
+      colunas={colunas}
+      chave={(p) => p.id}
+      legenda="Políticos e seus números principais"
+      csv={csv ? { href: csv } : undefined}
+      cartao={(p) => (
+        <Link href={`/politico/${p.id}`} className="flex items-center gap-3 px-3 py-3">
+          <Avatar src={p.foto} nome={p.nome} size={40} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-semibold">{p.nome}</span>
+            <span className="block truncate text-sm text-ink-3">
+              {cargoDe(p)} · {p.partido}-{p.uf}
+            </span>
+          </span>
+          <span className="shrink-0 text-right">
+            <span className="figure block text-lg font-semibold">{(def ?? METRICAS[0]).formato(p.m[(def ?? METRICAS[0]).chave])}</span>
+            <span className="block text-xs text-ink-3">{(def ?? METRICAS[0]).titulo}</span>
+          </span>
+        </Link>
+      )}
+    />
   );
 }

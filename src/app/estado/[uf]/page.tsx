@@ -122,7 +122,7 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
                 <details className="mt-6">
                   <summary className="inline-flex items-center gap-2 botao-sec">Ver em tabela, com os números</summary>
                   <div className="mt-4">
-                    <TabelaPoliticos itens={federais} />
+                    <TabelaPoliticos itens={federais} id="estado" />
                   </div>
                 </details>
               </>

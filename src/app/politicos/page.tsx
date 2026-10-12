@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { FormFiltros, Seletor } from "@/components/Filtros";
+import { Paginacao } from "@/components/Paginacao";
 import { TabelaPoliticos } from "@/components/TabelaPoliticos";
 import { Container, Origem, Vazio } from "@/components/ui";
 import { getPoliticos } from "@/lib/data";
-import { aplicarFiltro, lerFiltro, urlFiltro } from "@/lib/filtros";
+import { aplicarFiltro, lerFiltro, urlFiltro, type Filtro } from "@/lib/filtros";
 import { numero } from "@/lib/format";
 import { METRICAS, metrica } from "@/lib/metricas";
 import { ESTADOS } from "@/lib/ufs";
@@ -25,11 +25,21 @@ export default async function Politicos({ searchParams }: PageProps<"/politicos"
     <Container className="py-10">
       <h1 className="display text-4xl font-extrabold sm:text-5xl">Todos os políticos</h1>
       <p className="mt-3 max-w-2xl text-lg text-ink-2">
-        Filtre por casa, estado ou partido e ordene por qualquer critério. Quem não tem dado para o critério escolhido aparece no fim da lista.
+        Filtre por nome, casa, estado ou partido e ordene por qualquer critério tocando no título da coluna. Escolha as colunas em “Colunas” e baixe a lista inteira em CSV. Quem
+        não tem dado para o critério escolhido aparece no fim da lista.
       </p>
 
       <div className="mt-8">
         <FormFiltros acao="/politicos">
+          <label className="flex min-w-[12rem] flex-[2] flex-col gap-1 text-sm">
+            <span className="text-ink-3">Nome</span>
+            <input
+              name="q"
+              defaultValue={f.q}
+              placeholder="Parte do nome"
+              className="rounded-lg border border-line-strong bg-surface px-3 py-2 text-ink outline-none focus:border-accent"
+            />
+          </label>
           <Seletor
             nome="casa"
             rotulo="Casa"
@@ -70,35 +80,24 @@ export default async function Politicos({ searchParams }: PageProps<"/politicos"
         {itens.length ? (
           <TabelaPoliticos
             itens={itens}
-            destaque={def?.chave}
-            linkOrdem={(k) => urlFiltro("/politicos", { ...f, ordem: k, dir: f.ordem === k && f.dir === "desc" ? "asc" : "desc", pagina: 1 })}
+            ordem={f.ordem}
+            dir={f.dir}
+            hrefOrdem={Object.fromEntries(
+              ["nome", ...METRICAS.map((m) => m.chave)].map((k) => [
+                k,
+                urlFiltro("/politicos", { ...f, ordem: k as Filtro["ordem"], dir: f.ordem === k && f.dir === "desc" ? "asc" : k === "nome" ? "asc" : "desc", pagina: 1 }),
+              ]),
+            )}
+            csv={urlFiltro("/api/politicos", { ...f, pagina: 1 })}
           />
         ) : (
           <Vazio>Ninguém corresponde a esses filtros. Tente remover um deles.</Vazio>
         )}
       </div>
 
-      {paginas > 1 && (
-        <nav aria-label="Paginação" className="mt-5 flex items-center justify-between gap-4">
-          {pagina > 1 ? (
-            <Link href={urlFiltro("/politicos", { ...f, pagina: pagina - 1 })} className="botao-sec">
-              Anterior
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className="text-sm text-ink-3">
-            Página {pagina} de {paginas}
-          </span>
-          {pagina < paginas ? (
-            <Link href={urlFiltro("/politicos", { ...f, pagina: pagina + 1 })} className="botao-sec">
-              Próxima
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )}
+      <div className="mt-6">
+        <Paginacao pagina={pagina} paginas={paginas} href={(n) => urlFiltro("/politicos", { ...f, pagina: n })} rotulo="Páginas da lista de políticos" />
+      </div>
 
       {def && (
         <Origem titulo={`Como calculamos "${def.titulo}"`}>

@@ -82,8 +82,8 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 |---|---|---|---|---|---|
 | TEMA-01 | VERIFIED | P1 | Botão de tema | Botão visível (claro, escuro, do sistema), preferência salva, sem piscar na carga, nome acessível. | |
 | PAG-01 | VERIFIED | P0 | Paginação comum | Uma função pura (`src/lib/paginacao.ts`) e um componente (`Paginacao`); página na URL; volta à página 1 quando um filtro muda; ordem estável. | |
-| PAG-02 | IN_PROGRESS | P1 | Paginação nas listas | Políticos, votações, falas e lista de votos usam PAG-01. | PAG-01 |
-| TAB-01 | NOT_STARTED | P2 | Primitivos de tabela | Avaliar TanStack Table para `/politicos` e gastos: ordenar, esconder colunas, redimensionar, exportar CSV, preferências salvas. Decidir com base em peso e acessibilidade. | PAG-01 |
+| PAG-02 | VERIFIED | P1 | Paginação nas listas | Políticos, votações, falas e lista de votos usam PAG-01. | PAG-01 |
+| TAB-01 | VERIFIED | P2 | Primitivos de tabela | Avaliar TanStack Table para `/politicos` e gastos: ordenar, esconder colunas, redimensionar, exportar CSV, preferências salvas. Decidir com base em peso e acessibilidade. | PAG-01 |
 | NAV-01 | IN_PROGRESS | P2 | Navegação | Presidente e empresas na navegação quando existirem; revisar menu do celular. | PRES-01 |
 | DS-01 | VERIFIED | P1 | Tokens e movimento | Tokens em três camadas e animações contidas já existem. Falta conferir contraste AA de todos os pares no tema escuro. | |
 
@@ -146,7 +146,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 |---|---|---|---|---|---|
 | HIST-01 | NOT_STARTED | P1 | Visões por eleição | Escolher uma eleição (ano e cargo) e ver quem disputou, quem foi eleito e por qual partido, com a data respeitada em tudo o que aparece | DADOS-01 |
 | HIST-02 | NOT_STARTED | P2 | Reprodutibilidade | Cada publicação guarda versão dos dados e manifesto; dá para baixar o retrato de uma data | |
-| CARD-01 | NOT_STARTED | P1 | Cartões e listas de políticos mais ricos | Lista de políticos com foto, partido, estado, cargo, principais números e cobertura de dados, sem ranking | TAB-01 |
+| CARD-01 | IMPLEMENTED | P1 | Cartões e listas de políticos mais ricos | Lista de políticos com foto, partido, estado, cargo, principais números e cobertura de dados, sem ranking | TAB-01 |
 | LAY-01 | NOT_STARTED | P2 | Layout mais largo e navegação revista | Páginas de dados usam a largura da tela; menu com Presidência, Empresas, Emendas e Mapa de relações também no celular | |
 | CNPJ-04 | NOT_STARTED | P2 | Dados cadastrais da Receita | Situação cadastral, atividade principal e data de abertura a partir dos dados abertos do CNPJ da Receita Federal, com data do arquivo | CNPJ-02 |
 | VOT-16 | NOT_STARTED | P2 | Sessões do Congresso e vetos | Votações em sessão conjunta e de vetos, pela API do Congresso Nacional | |
@@ -188,6 +188,9 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | A11Y-01 | Automático: `npm run a11y` (`scripts/acessibilidade.mjs`, axe-core 4.10.2, regras WCAG 2.2 A e AA) em 12 páginas nos dois temas: 0 violações depois das correções (antes: contraste, `nested-interactive` no plenário, `aria-label` proibido na paginação, área de toque pequena nos links de redes). Falta: teste manual com leitor de tela (NVDA/VoiceOver) e zoom de 200%; o ambiente não tem leitor de tela. |
 | DOC-01 | `docs/telas/{inicio,votacao,plenario,perfil,celular}.png` capturadas do site rodando com os dados reais publicados (2026-10-12), sem o indicador de desenvolvimento, e otimizadas. |
 | PROV-02 | Quatro marcas (`NATUREZAS` em `src/lib/linguagem.ts`, `SeloNatureza`): Dado oficial, Cálculo do site, Ligação feita pelo site, Feito por IA. Em cada seção do perfil, na lista de votos, nos cartões de métrica, na explicação de cada projeto e nas ligações de empresas; explicadas em `/dados`. Varredura de acessibilidade continua sem violações. |
+| TAB-01 | Decisão: adotar TanStack Table 8.21.3 (MIT, sem estilo próprio, cabe nos componentes do site). Primitivo `src/components/tabela/TabelaDados.tsx`: esconder e mostrar colunas, arrastar para mudar a largura (duplo clique volta ao tamanho original), ordenação pelo endereço (no servidor, `aria-sort` no cabeçalho), baixar a lista inteira em CSV, escolhas lembradas no aparelho (com proteção se o navegador bloquear), cartões no celular. Em uso em `/politicos` e nas páginas de estado. Colunas de métricas vêm de `metricas.ts`. Conferido no navegador: ordenar por gastos muda o endereço, ligar “Patrimônio declarado” acrescenta a coluna e ela continua depois de recarregar, CSV de `/api/politicos` traz as 11 linhas filtradas mais o cabeçalho; acessibilidade sem violações. |
+| PAG-02 | `Paginacao` comum em votos da votação, votos do perfil, projetos do perfil, catálogo de votações, políticos, falas, empresas e emendas. Nenhuma paginação própria restante (`grep` por “Próxima” só acha o componente comum). |
+| CARD-01 | Lista de políticos com busca por nome, foto, cargo, partido com nome completo, estado e todas as métricas disponíveis como colunas opcionais. Falta: cobertura de dados na própria lista. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças

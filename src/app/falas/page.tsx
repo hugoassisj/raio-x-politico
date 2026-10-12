@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { FormFiltros, Seletor } from "@/components/Filtros";
+import { Paginacao } from "@/components/Paginacao";
 import { Container, Fonte, Origem, Vazio } from "@/components/ui";
 import { buscarFalas } from "@/lib/busca-falas";
 import { getPoliticos } from "@/lib/data";
@@ -133,27 +134,9 @@ export default async function Falas({ searchParams }: PageProps<"/falas">) {
         </div>
       )}
 
-      {paginas > 1 && (
-        <nav aria-label="Paginação" className="mt-6 flex items-center justify-between">
-          {pagina > 1 ? (
-            <Link href={url(pagina - 1)} className="botao-sec">
-              Anterior
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className="text-sm text-ink-3">
-            Página {pagina} de {paginas}
-          </span>
-          {pagina < paginas ? (
-            <Link href={url(pagina + 1)} className="botao-sec">
-              Próxima
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )}
+      <div className="mt-6">
+        <Paginacao pagina={Math.min(pagina, paginas)} paginas={paginas} href={url} rotulo="Páginas de falas" />
+      </div>
 
       <Origem>
         <p>
