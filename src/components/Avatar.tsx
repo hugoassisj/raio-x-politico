@@ -1,11 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { iniciais } from "@/lib/format";
 
 /** Official photo with an initials fallback (photo hosts are slow or missing for some members). */
 export function Avatar({ src, nome, size = 56, className = "" }: { src?: string; nome: string; size?: number; className?: string }) {
   const [erro, setErro] = useState(false);
+  const ref = useRef<HTMLImageElement>(null);
+  // An image can fail before hydration attaches onError; detect that case on mount.
+  useEffect(() => {
+    const img = ref.current;
+    if (img?.complete && img.naturalWidth === 0) setErro(true);
+  }, []);
   const style = { width: size, height: Math.round(size * 1.25) };
   if (!src || erro) {
     return (
@@ -23,6 +29,7 @@ export function Avatar({ src, nome, size = 56, className = "" }: { src?: string;
   return (
     // eslint-disable-next-line @next/next/no-img-element -- official photos are served by government hosts as-is
     <img
+      ref={ref}
       src={src}
       alt=""
       loading="lazy"

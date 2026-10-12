@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { data, idade, iniciais, moedaCurta, pct } from "./format";
 import { aplicarFiltro, lerFiltro, urlFiltro } from "./filtros";
-import { METRICAS, distribuicao, percentil } from "./metricas";
+import { METRICAS, distribuicao, metrica, parcela, percentil } from "./metricas";
 import { fraseResumo } from "./resumo";
 import { trecho } from "./busca-falas";
 import { filtrar, type ItemIndice } from "@/components/Busca";
@@ -57,6 +57,13 @@ describe("list filters", () => {
 });
 
 describe("peer comparison", () => {
+  it("never rounds a comparison to 0% or 100% when it is not exact", () => {
+    expect(parcela(0.2)).toBe("menos de 1%");
+    expect(parcela(99.6)).toBe("mais de 99%");
+    expect(parcela(0)).toBe("0%");
+    expect(parcela(72.4)).toBe("72%");
+    expect(metrica("presenca").comparacao(parcela(72.4), "dos senadores")).toBe("Presença maior que a de 72% dos senadores");
+  });
   it("percentile counts strictly lower peers", () => {
     expect(percentil(5, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])).toBe(40);
     expect(percentil(5, [1, 2])).toBeUndefined();

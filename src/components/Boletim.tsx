@@ -1,5 +1,5 @@
 import type { Casa } from "@/lib/types";
-import { METRICAS, NOME_PARES, percentil, type ChaveMetrica, type DefMetrica } from "@/lib/metricas";
+import { METRICAS, NOME_PARES, parcela, percentil, type ChaveMetrica, type DefMetrica } from "@/lib/metricas";
 import { Fonte } from "./ui";
 
 type Dist = { min: number; max: number; mediana: number; p10: number; p90: number; n: number; valores: number[] };
@@ -43,6 +43,14 @@ export function TileMetrica({
 }) {
   const p = percentil(valor, dist?.valores ?? []);
   const pares = NOME_PARES[casa];
+  const extremo =
+    valor != null && dist && dist.n >= 5
+      ? valor >= dist.max
+        ? `Ninguém entre os ${pares.replace(/^dos /, "")} tem valor maior`
+        : valor <= dist.min
+          ? `Ninguém entre os ${pares.replace(/^dos /, "")} tem valor menor`
+          : undefined
+      : undefined;
   return (
     <article className="flex flex-col rounded-xl border border-line bg-surface p-4 sm:p-5">
       <h3 className="text-sm font-semibold text-ink-2">{def.pergunta}</h3>
@@ -65,7 +73,7 @@ export function TileMetrica({
               </div>
             </>
           )}
-          {p != null && <p className="mt-2 text-sm text-ink-2">{def.comparacao(p, pares)}.</p>}
+          {p != null && <p className="mt-2 text-sm text-ink-2">{extremo ?? def.comparacao(parcela(p), pares)}.</p>}
         </>
       )}
       <details className="group mt-auto pt-3 text-sm">
