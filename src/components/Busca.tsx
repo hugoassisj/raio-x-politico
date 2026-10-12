@@ -115,7 +115,7 @@ export function Busca({ grande = false, autoFocus = false }: { grande?: boolean;
         />
       </div>
       {aberto && q.trim() && (
-        <ul id={listId} role="listbox" className="absolute z-40 mt-2 max-h-[70vh] w-full overflow-auto rounded-xl border border-line bg-surface p-1 shadow-lg">
+        <ul id={listId} role="listbox" className="absolute z-40 mt-2 max-h-[70vh] w-full overflow-auto cartao rounded-xl p-1 shadow-lg">
           {res.length === 0 && <li className="px-3 py-3 text-sm text-ink-3">{indice.length ? "Ninguém encontrado com esse nome." : "Carregando…"}</li>}
           {res.map((it, i) => (
             <li

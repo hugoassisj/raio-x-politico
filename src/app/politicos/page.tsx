@@ -81,7 +81,7 @@ export default async function Politicos({ searchParams }: PageProps<"/politicos"
       {paginas > 1 && (
         <nav aria-label="Paginação" className="mt-5 flex items-center justify-between gap-4">
           {pagina > 1 ? (
-            <Link href={urlFiltro("/politicos", { ...f, pagina: pagina - 1 })} className="rounded-lg border border-line bg-surface px-4 py-2 font-semibold hover:border-ink-3">
+            <Link href={urlFiltro("/politicos", { ...f, pagina: pagina - 1 })} className="botao-sec">
               Anterior
             </Link>
           ) : (
@@ -91,7 +91,7 @@ export default async function Politicos({ searchParams }: PageProps<"/politicos"
             Página {pagina} de {paginas}
           </span>
           {pagina < paginas ? (
-            <Link href={urlFiltro("/politicos", { ...f, pagina: pagina + 1 })} className="rounded-lg border border-line bg-surface px-4 py-2 font-semibold hover:border-ink-3">
+            <Link href={urlFiltro("/politicos", { ...f, pagina: pagina + 1 })} className="botao-sec">
               Próxima
             </Link>
           ) : (

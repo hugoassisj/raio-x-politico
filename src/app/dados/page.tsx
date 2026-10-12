@@ -40,7 +40,7 @@ export default async function Dados() {
             ["Código e dados abertos", "O código que coleta e calcula está no GitHub. Qualquer pessoa pode auditar, apontar erros e reproduzir os números."],
             ["Sem raspagem de redes", "Conteúdo de redes sociais só entra por APIs oficiais das plataformas. Perfis vêm do que o próprio político declarou à Câmara ou ao TSE."],
           ].map(([t, d]) => (
-            <li key={t} className="rounded-xl border border-line bg-surface p-4">
+            <li key={t} className="cartao rounded-xl p-4">
               <h3 className="font-semibold">{t}</h3>
               <p className="mt-1 text-ink-2">{d}</p>
             </li>
@@ -51,7 +51,7 @@ export default async function Dados() {
       <Secao titulo="Como cada número é calculado" subtitulo="A mesma explicação que aparece em cada cartão dos perfis.">
         <div className="space-y-3">
           {METRICAS.map((m) => (
-            <details key={m.chave} className="group rounded-xl border border-line bg-surface p-4">
+            <details key={m.chave} className="group cartao rounded-xl p-4">
               <summary className="flex items-center justify-between gap-4">
                 <span>
                   <span className="block font-semibold">{m.titulo}</span>
@@ -81,7 +81,7 @@ export default async function Dados() {
 
       <Secao titulo="Fontes consultadas" subtitulo={meta ? `Situação de cada fonte na última atualização, em ${dataHora(meta.geradoEm)}.` : "Os dados ainda não foram coletados."}>
         {meta && (
-          <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+          <div className="overflow-x-auto cartao rounded-xl">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-ink-3">
@@ -111,7 +111,7 @@ export default async function Dados() {
       <Secao titulo="Salários (subsídios)" subtitulo="Valores mensais brutos definidos em lei, sem contar cota, auxílios e verba de gabinete.">
         <ul className="grid gap-4 md:grid-cols-3">
           {(meta?.subsidios ?? []).map((s) => (
-            <li key={s.cargo} className="rounded-xl border border-line bg-surface p-4">
+            <li key={s.cargo} className="cartao rounded-xl p-4">
               <p className="text-sm text-ink-3">{s.cargo}</p>
               <p className="figure mt-1 text-2xl font-bold">{moeda(s.valor)}</p>
               {s.fonte.startsWith("http") ? <Fonte href={s.fonte}>Fonte</Fonte> : <p className="mt-1 text-sm text-ink-3">{s.fonte}</p>}

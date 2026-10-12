@@ -33,7 +33,7 @@ export function SeletorComparar({ ids }: { ids: string[] }) {
         className="mt-1 w-full rounded-lg border-2 border-ink/80 bg-surface px-3 py-2 outline-none"
       />
       {q && res.length > 0 && (
-        <ul className="absolute z-30 mt-1 w-full rounded-xl border border-line bg-surface p-1 shadow-lg">
+        <ul className="absolute z-30 mt-1 w-full cartao rounded-xl p-1 shadow-lg">
           {res.map((it) => (
             <li key={it[0]}>
               <button

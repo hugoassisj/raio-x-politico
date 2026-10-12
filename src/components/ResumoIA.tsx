@@ -38,7 +38,7 @@ export function ResumoIA({ resumos, refs }: { resumos: Resumo[]; refs: Record<st
   const historico = resumos.filter((x) => x.periodo === "trimestre").slice(1, 6);
   if (!r) return null;
   return (
-    <div className="rounded-xl border border-line bg-surface">
+    <div className="cartao rounded-xl">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
         <div role="tablist" aria-label="Período do resumo" className="flex flex-wrap gap-1.5">
           {atuais.map((a, i) => (

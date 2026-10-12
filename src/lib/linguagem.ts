@@ -322,3 +322,35 @@ export const GLOSSARIO: { termo: string; padrao: RegExp; explicacao: string }[] 
   { termo: "Lei complementar", padrao: /lei complementar/i, explicacao: "Lei que detalha regras previstas na Constituição. Precisa da maioria de todos os membros para passar." },
   { termo: "Imunidade tributária", padrao: /imunidade tributária/i, explicacao: "Quando a Constituição proíbe cobrar certos impostos de algumas pessoas ou instituições." },
 ];
+
+/** Expense categories of the parliamentary quota, in everyday words. */
+const CATEGORIAS: [RegExp, string][] = [
+  [/locomocao/, "Viagens: transporte, hotel, refeições e combustível."],
+  [/divulga/, "Propaganda do mandato: anúncios, impressos, sites e redes sociais."],
+  [/fretamento de aeronaves/, "Aluguel de avião ou helicóptero."],
+  [/(locacao|fretamento) de veiculos|aluguel de veiculos/, "Aluguel de carro."],
+  [/escritorio|imoveis|locacao de bens imoveis/, "Aluguel e contas do escritório político no estado."],
+  [/combustive/, "Gasolina e outros combustíveis."],
+  [/passage/, "Passagens de avião, ônibus ou barco."],
+  [/hospedagem/, "Hotel durante viagens a trabalho."],
+  [/alimentacao/, "Refeições durante o trabalho."],
+  [/telefon/, "Contas de telefone e internet."],
+  [/postais|correio/, "Envio de cartas e encomendas pelos Correios."],
+  [/consultori|assessori|pesquisas|trabalhos tecnicos/, "Contratação de consultorias, pesquisas e serviços técnicos."],
+  [/seguranca/, "Serviço de segurança."],
+  [/graficos|copias|reproducao/, "Impressão e cópias de documentos."],
+  [/assinatura|publicacoes/, "Assinaturas de jornais, revistas e serviços de informação."],
+  [/curso|palestra|evento/, "Cursos, palestras e eventos."],
+];
+
+export function explicarCategoria(categoria: string): string | undefined {
+  const t = semAcento(categoria);
+  return CATEGORIAS.find(([re]) => re.test(t))?.[1];
+}
+
+/** Cuts a text at a word boundary, adding an ellipsis when shortened. */
+export function encurtar(texto: string, max: number): string {
+  if (texto.length <= max) return texto;
+  const corte = texto.slice(0, max);
+  return `${corte.slice(0, Math.max(corte.lastIndexOf(" "), max * 0.6)).replace(/[\s,;:.]+$/, "")}…`;
+}

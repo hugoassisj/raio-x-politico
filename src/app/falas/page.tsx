@@ -66,7 +66,7 @@ export default async function Falas({ searchParams }: PageProps<"/falas">) {
               name="q"
               defaultValue={q}
               placeholder="Ex.: reforma tributária, segurança, vacina"
-              className="rounded-lg border border-line bg-surface px-3 py-2 text-ink outline-none focus:border-ink"
+              className="rounded-lg border border-line-strong bg-surface px-3 py-2 text-ink outline-none focus:border-accent"
             />
           </label>
           <Seletor
@@ -107,7 +107,7 @@ export default async function Falas({ searchParams }: PageProps<"/falas">) {
           {r.itens.map((f) => {
             const p = porId.get(f.pid);
             return (
-              <li key={f.id} className="flex gap-3 rounded-xl border border-line bg-surface p-4">
+              <li key={f.id} className="flex gap-3 cartao rounded-xl p-4">
                 {p && <Avatar src={p.foto} nome={p.nome} size={44} />}
                 <div className="min-w-0">
                   <p className="text-sm text-ink-3">
@@ -136,7 +136,7 @@ export default async function Falas({ searchParams }: PageProps<"/falas">) {
       {paginas > 1 && (
         <nav aria-label="Paginação" className="mt-6 flex items-center justify-between">
           {pagina > 1 ? (
-            <Link href={url(pagina - 1)} className="rounded-lg border border-line bg-surface px-4 py-2 font-semibold hover:border-ink-3">
+            <Link href={url(pagina - 1)} className="botao-sec">
               Anterior
             </Link>
           ) : (
@@ -146,7 +146,7 @@ export default async function Falas({ searchParams }: PageProps<"/falas">) {
             Página {pagina} de {paginas}
           </span>
           {pagina < paginas ? (
-            <Link href={url(pagina + 1)} className="rounded-lg border border-line bg-surface px-4 py-2 font-semibold hover:border-ink-3">
+            <Link href={url(pagina + 1)} className="botao-sec">
               Próxima
             </Link>
           ) : (

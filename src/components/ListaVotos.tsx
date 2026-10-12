@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { VotoItem } from "@/lib/types";
-import { data, partesDescricao } from "@/lib/format";
-import { explicarEtapa } from "@/lib/linguagem";
+import { data } from "@/lib/format";
+import type { EtapaSimples } from "@/lib/linguagem";
 import { VotoChip } from "./ui";
 
 const canon = (s?: string) => (s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -12,7 +12,10 @@ const posicional = (s?: string) => /^(sim|nao|abstencao|obstrucao)$/.test(canon(
 
 type Filtro = "todos" | "contra" | "governo" | "ausente";
 
-export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostrarGoverno: boolean }) {
+/** A vote line already explained on the server: plain summary of the bill and what this step meant. */
+export type VotoLinha = VotoItem & { resumo?: string; etapa?: Pick<EtapaSimples, "titulo" | "tipo" | "sim"> };
+
+export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoLinha[]; mostrarGoverno: boolean }) {
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [q, setQ] = useState("");
   const [limite, setLimite] = useState(25);
@@ -30,7 +33,7 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
       if (filtro === "contra" && !(posicional(v.voto) && posicional(v.orientacaoPartido) && canon(v.voto) !== canon(v.orientacaoPartido))) return false;
       if (filtro === "governo" && !(posicional(v.voto) && posicional(v.orientacaoGoverno) && canon(v.voto) !== canon(v.orientacaoGoverno))) return false;
       if (filtro === "ausente" && canon(v.voto) !== "ausente") return false;
-      return !t || canon(`${v.titulo} ${v.descricao}`).includes(t);
+      return !t || canon(`${v.titulo} ${v.resumo ?? ""} ${v.etapa?.titulo ?? ""}`).includes(t);
     });
   }, [votos, filtro, q]);
 
@@ -66,7 +69,7 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por assunto"
-            className="w-full rounded-lg border border-line bg-surface px-3 py-1.5 text-sm outline-none focus:border-ink"
+            className="w-full rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-sm outline-none focus:border-accent"
           />
         </label>
       </div>
@@ -74,7 +77,7 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
       {lista.length === 0 ? (
         <p className="mt-4 rounded-lg bg-surface-2 px-4 py-5 text-ink-2">Nenhuma votação com esse filtro.</p>
       ) : (
-        <ul className="mt-4 divide-y divide-line rounded-xl border border-line bg-surface">
+        <ul className="mt-4 divide-y divide-line cartao rounded-xl">
           {lista.slice(0, limite).map((v) => {
             const contraPartido = posicional(v.voto) && posicional(v.orientacaoPartido) && canon(v.voto) !== canon(v.orientacaoPartido);
             return (
@@ -87,7 +90,7 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
                   <Link href={`/votacao/${v.votacaoId}`} className="font-semibold hover:underline">
                     {v.titulo}
                   </Link>
-                  {v.descricao && <Descricao texto={v.descricao} objeto={v.objeto} />}
+                  <Descricao v={v} />
                 </div>
                 <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm sm:grid sm:grid-cols-[auto_auto] sm:justify-end sm:gap-x-3">
                   <div className="flex items-center gap-1.5 sm:contents">
@@ -118,7 +121,7 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
         </ul>
       )}
       {lista.length > limite && (
-        <button onClick={() => setLimite((l) => l + 50)} className="mt-3 w-full rounded-lg border border-line bg-surface py-2.5 text-sm font-semibold hover:border-ink-3">
+        <button onClick={() => setLimite((l) => l + 50)} className="mt-3 w-full botao-sec">
           Mostrar mais ({lista.length - limite} restantes)
         </button>
       )}
@@ -126,21 +129,16 @@ export function ListaVotos({ votos, mostrarGoverno }: { votos: VotoItem[]; mostr
   );
 }
 
-function Descricao({ texto, objeto }: { texto: string; objeto?: string }) {
-  const { ementa, procedimento } = partesDescricao(texto);
-  const etapa = explicarEtapa(procedimento, objeto);
-  const oficial = procedimento.replace(/\s*Sim:.*$/s, "").trim();
+function Descricao({ v }: { v: VotoLinha }) {
   return (
     <>
-      <p className="mt-0.5 line-clamp-2 text-sm text-ink-2">{ementa}</p>
-      {etapa ? (
+      {v.resumo && <p className="mt-0.5 line-clamp-2 text-sm text-ink-2">{v.resumo}</p>}
+      {v.etapa && (
         <p className="mt-1 text-xs">
-          <span className="font-semibold text-accent-ink">{etapa.titulo}</span>
-          {etapa.tipo === "procedimento" && <span className="text-ink-3"> · sobre o andamento, não sobre o conteúdo</span>}
-          {etapa.sim && <span className="block text-ink-3">{etapa.sim}</span>}
+          <span className="font-semibold text-accent-ink">{v.etapa.titulo}</span>
+          {v.etapa.tipo === "procedimento" && <span className="text-ink-3"> · sobre o andamento, não sobre o conteúdo</span>}
+          {v.etapa.sim && <span className="block text-ink-3">{v.etapa.sim}</span>}
         </p>
-      ) : (
-        oficial && <p className="mt-0.5 line-clamp-1 text-xs text-ink-3">Nesta etapa: {oficial}</p>
       )}
     </>
   );

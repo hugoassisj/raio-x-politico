@@ -134,7 +134,7 @@ export default async function Partido({ params }: PageProps<"/partido/[sigla]">)
                   const b = geral!.medianas[k]!;
                   const max = Math.max(a, b) || 1;
                   return (
-                    <li key={k} className="rounded-xl border border-line bg-surface p-4">
+                    <li key={k} className="cartao rounded-xl p-4">
                       <p className="font-semibold">{d.pergunta}</p>
                       <div className="mt-3 space-y-2 text-sm">
                         {(

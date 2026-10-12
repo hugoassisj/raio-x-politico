@@ -16,6 +16,9 @@ import { data, idade, moeda, moedaCurta, numero, pct, plural, VAZIO } from "@/li
 import { distribuicao, metrica, NOME_CASA } from "@/lib/metricas";
 import { fraseResumo } from "@/lib/resumo";
 import { nomeUf } from "@/lib/ufs";
+import { encurtar, explicarCategoria, explicarEtapa } from "@/lib/linguagem";
+import { partesDescricao } from "@/lib/format";
+import type { VotoLinha } from "@/components/ListaVotos";
 
 export const dynamicParams = false;
 
@@ -59,6 +62,20 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
   const { id } = await params;
   const [p, todos, falas, ia, explicacoes, votacoes] = await Promise.all([getPolitico(id), getPoliticos(), getFalas(id), getIA(id), getExplicacoes(), getVotacoes()]);
   if (!p) notFound();
+  // Each vote line arrives explained: the bill in plain words when available, and what the step meant
+  const porVotacao = new Map(votacoes.map((v) => [v.id, v]));
+  const linhasVoto: VotoLinha[] = p.votos.map((v) => {
+    const completa = porVotacao.get(v.votacaoId);
+    const { ementa, procedimento } = partesDescricao(completa?.descricao ?? v.descricao ?? "");
+    const ex = completa?.materia ? explicacoes.get(completa.materia) : undefined;
+    const etapa = explicarEtapa(procedimento, completa?.objeto ?? v.objeto);
+    return {
+      ...v,
+      descricao: undefined,
+      resumo: encurtar(ex?.resumo ?? ementa, 220),
+      etapa: etapa && { titulo: etapa.titulo, tipo: etapa.tipo, sim: etapa.sim },
+    };
+  });
 
   const anoAtual = new Date().getUTCFullYear();
   const anos = p.inicioPolitica ? anoAtual - p.inicioPolitica : undefined;
@@ -242,7 +259,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               </>
             }
           >
-            <ListaVotos votos={p.votos} mostrarGoverno={p.casa === "camara"} />
+            <ListaVotos votos={linhasVoto} mostrarGoverno={p.casa === "camara"} />
           </Secao>
         )}
 
@@ -268,7 +285,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             }
           >
             <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
-              <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+              <div className="cartao rounded-xl p-4 sm:p-5">
                 <h3 className="font-semibold">Gasto por mês</h3>
                 <GraficoMensal
                   meses={p.gastos.porMes}
@@ -276,9 +293,12 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                   rotuloReferencia="média mensal dos colegas do estado"
                 />
               </div>
-              <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+              <div className="cartao rounded-xl p-4 sm:p-5">
                 <h3 className="mb-3 font-semibold">Em que gastou</h3>
-                <Barras itens={p.gastos.porCategoria.slice(0, 7).map((c) => ({ rotulo: c.categoria, valor: c.valor }))} formato={moedaCurta} />
+                <Barras
+                  itens={p.gastos.porCategoria.slice(0, 7).map((c) => ({ rotulo: c.categoria, valor: c.valor, detalhe: explicarCategoria(c.categoria) }))}
+                  formato={moedaCurta}
+                />
               </div>
             </div>
 
@@ -310,7 +330,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             )}
 
             <div className="mt-6 grid gap-6 lg:grid-cols-2">
-              <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+              <div className="cartao rounded-xl p-4 sm:p-5">
                 <h3 className="mb-3 font-semibold">Fornecedores que mais receberam</h3>
                 <Barras
                   itens={p.gastos.topFornecedores
@@ -319,7 +339,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                   formato={moedaCurta}
                 />
               </div>
-              <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+              <div className="cartao rounded-xl p-4 sm:p-5">
                 <h3 className="mb-2 font-semibold">Lançamentos mais recentes</h3>
                 <ul className="divide-y divide-line text-sm">
                   {p.gastos.recentes.slice(0, 8).map((g, i) => (
@@ -369,7 +389,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                   </div>
                 ))}
             </div>
-            <ul className="divide-y divide-line rounded-xl border border-line bg-surface">
+            <ul className="divide-y divide-line cartao rounded-xl">
               {p.proposicoesLista.slice(0, 15).map((x) => (
                 <li key={x.id} className="p-4">
                   <p className="text-sm text-ink-3">
@@ -433,7 +453,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             {falas.length > 0 && (
               <ol className="space-y-3">
                 {falas.slice(0, 8).map((f) => (
-                  <li key={f.id} className="rounded-xl border border-line bg-surface p-4">
+                  <li key={f.id} className="cartao rounded-xl p-4">
                     <p className="text-sm text-ink-3">
                       {data(f.data)} · {f.titulo ?? f.tipo}
                     </p>
@@ -467,11 +487,11 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             }
           >
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+              <div className="cartao rounded-xl p-4 sm:p-5">
                 <h3 className="mb-3 font-semibold">Por ano</h3>
                 <Barras itens={p.emendas.porAno.map((a) => ({ rotulo: String(a.ano), valor: a.valor }))} formato={moedaCurta} />
               </div>
-              <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+              <div className="cartao rounded-xl p-4 sm:p-5">
                 <h3 className="mb-3 font-semibold">Principais destinos</h3>
                 <Barras itens={p.emendas.destinos.slice(0, 8).map((d) => ({ rotulo: `${d.nome}${d.uf ? ` (${d.uf})` : ""}`, valor: d.valor }))} formato={moedaCurta} />
               </div>
@@ -494,7 +514,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
           }
         >
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+            <div className="cartao rounded-xl p-4 sm:p-5">
               <h3 className="mb-3 font-semibold">Linha do tempo</h3>
               {p.carreira.length ? (
                 <ol className="relative space-y-4 border-l-2 border-line pl-5">
@@ -514,7 +534,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                 <Vazio>Sem mandatos registrados nas fontes consultadas.</Vazio>
               )}
             </div>
-            <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+            <div className="cartao rounded-xl p-4 sm:p-5">
               <h3 className="mb-3 font-semibold">Eleições e patrimônio declarado</h3>
               {p.eleicoes.length ? (
                 <div className="overflow-x-auto">
@@ -572,7 +592,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
           {(p.comissoes.length > 0 || p.frentes.length > 0) && (
             <div className="mt-6 grid gap-6 lg:grid-cols-2">
               {p.comissoes.length > 0 && (
-                <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+                <div className="cartao rounded-xl p-4 sm:p-5">
                   <h3 className="mb-3 font-semibold">Comissões</h3>
                   <ul className="space-y-1.5 text-sm">
                     {p.comissoes
@@ -592,7 +612,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                 </div>
               )}
               {p.frentes.length > 0 && (
-                <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+                <div className="cartao rounded-xl p-4 sm:p-5">
                   <h3 className="mb-3 font-semibold">Frentes parlamentares ({p.frentes.length})</h3>
                   <p className="text-sm text-ink-2">{p.frentes.slice(0, 30).join(" · ")}</p>
                 </div>
@@ -603,7 +623,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
 
         <Secao id="fontes" titulo="Contato, redes e fontes" subtitulo="Tudo o que aparece nesta página pode ser conferido nos links abaixo.">
           <div className="grid gap-6 lg:grid-cols-3">
-            <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+            <div className="cartao rounded-xl p-4 sm:p-5">
               <h3 className="mb-3 font-semibold">Contato oficial</h3>
               <dl className="space-y-2 text-sm">
                 {p.perfil.email && (
@@ -631,7 +651,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                 {!p.perfil.email && !p.perfil.telefone && <dd className="text-ink-3">Contato não publicado nas fontes consultadas.</dd>}
               </dl>
             </div>
-            <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+            <div className="cartao rounded-xl p-4 sm:p-5">
               <h3 className="mb-3 font-semibold">Redes sociais</h3>
               {p.redes.length ? (
                 <ul className="space-y-2 text-sm">
@@ -649,7 +669,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
                 <Vazio>Nenhuma rede social declarada nas fontes oficiais.</Vazio>
               )}
             </div>
-            <div className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+            <div className="cartao rounded-xl p-4 sm:p-5">
               <h3 className="mb-3 font-semibold">Fontes desta página</h3>
               <ul className="space-y-2">
                 {p.fontes.map((f) => (

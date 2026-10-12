@@ -67,7 +67,7 @@ export function Plenario({ cadeiras, legenda, titulo, linhaMeta }: { cadeiras: C
       </div>
       <div aria-live="polite" className="mt-2 flex min-h-14 justify-center">
         {sel ? (
-          <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-3 py-2 shadow-2">
+          <div className="flex items-center gap-3 cartao rounded-xl px-3 py-2 shadow-2">
             <Avatar src={sel.foto} nome={sel.nome} size={40} />
             <div className="text-left">
               <p className="font-semibold leading-tight">{sel.nome}</p>

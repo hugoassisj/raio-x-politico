@@ -6,6 +6,7 @@ import { Barras, Container, Origem, Secao, Vazio } from "@/components/ui";
 import { getGastosGerais, getPoliticos } from "@/lib/data";
 import { mesAno, moeda, moedaCurta, numero } from "@/lib/format";
 import { metrica, NOME_CASA } from "@/lib/metricas";
+import { explicarCategoria } from "@/lib/linguagem";
 
 export const metadata: Metadata = {
   title: "Gastos com a cota parlamentar",
@@ -46,7 +47,7 @@ export default async function Gastos() {
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {g.porCasa.map((c) => (
-          <div key={c.casa} className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+          <div key={c.casa} className="cartao p-4 sm:p-5">
             <h2 className="font-semibold">{NOME_CASA[c.casa]}</h2>
             <p className="figure mt-2 text-3xl font-bold">{moedaCurta(c.total)}</p>
             <p className="text-sm text-ink-3">
@@ -62,13 +63,13 @@ export default async function Gastos() {
       <Secao titulo="Em que o dinheiro é gasto" subtitulo="Categorias da cota somadas para todos os parlamentares da casa.">
         <div className="grid gap-6 md:grid-cols-2">
           {g.porCasa.map((c) => (
-            <div key={c.casa} className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+            <div key={c.casa} className="cartao p-4 sm:p-5">
               <h3 className="mb-3 font-semibold">{NOME_CASA[c.casa]}</h3>
               <Barras
                 itens={g.categorias
                   .filter((x) => x.casa === c.casa)
                   .slice(0, 8)
-                  .map((x) => ({ rotulo: x.categoria, valor: x.valor }))}
+                  .map((x) => ({ rotulo: x.categoria, valor: x.valor, detalhe: explicarCategoria(x.categoria) }))}
                 formato={moedaCurta}
               />
             </div>
@@ -82,7 +83,7 @@ export default async function Gastos() {
             const l = maiores.filter((p) => p.casa === casa).slice(0, 10);
             if (!l.length) return null;
             return (
-              <div key={casa} className="rounded-xl border border-line bg-surface p-3">
+              <div key={casa} className="cartao rounded-xl p-3">
                 <h3 className="px-2 pb-1 pt-1 font-semibold">{NOME_CASA[casa]}</h3>
                 {l.map((p) => (
                   <LinhaPolitico key={p.id} p={p} valor={moedaCurta(p.m.gasto12m)} />
@@ -97,7 +98,7 @@ export default async function Gastos() {
       </Secao>
 
       <Secao titulo="Fornecedores que mais receberam" subtitulo="Empresas e pessoas pagas com a cota, somando todos os parlamentares.">
-        <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+        <div className="overflow-x-auto cartao rounded-xl">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-ink-3">
@@ -141,7 +142,7 @@ export default async function Gastos() {
             </div>
           ))}
         </div>
-        <div className="rounded-xl border border-line bg-surface p-3">
+        <div className="cartao rounded-xl p-3">
           <h3 className="px-2 pb-1 pt-1 font-semibold">Parlamentares com mais pontos de atenção</h3>
           {comAlertas.slice(0, 10).map((p) => (
             <LinhaPolitico key={p.id} p={p} valor={numero(p.m.alertas)} />

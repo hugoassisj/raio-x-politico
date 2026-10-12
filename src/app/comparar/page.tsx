@@ -56,7 +56,7 @@ export default async function Comparar({ searchParams }: PageProps<"/comparar">)
           Comece adicionando alguém pelo nome. Dica: no perfil de qualquer político há um botão &ldquo;Comparar com outro&rdquo;.
         </p>
       ) : (
-        <div className="mt-8 overflow-x-auto rounded-xl border border-line bg-surface">
+        <div className="mt-8 overflow-x-auto cartao rounded-xl">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-line">
@@ -126,7 +126,7 @@ export default async function Comparar({ searchParams }: PageProps<"/comparar">)
             {comuns.length} votações nominais em comum. Em {divergentes.length} delas, uma parte votou Sim e outra votou Não.
           </p>
           {divergentes.length > 0 && (
-            <div className="mt-4 overflow-x-auto rounded-xl border border-line bg-surface">
+            <div className="mt-4 overflow-x-auto cartao rounded-xl">
               <table className="w-full min-w-[640px] text-sm">
                 <tbody className="divide-y divide-line">
                   {divergentes.slice(0, 30).map((c) => (

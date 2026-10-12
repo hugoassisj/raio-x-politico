@@ -35,7 +35,7 @@ export function Termo({ children, explicacao }: { children: string; explicacao: 
         <span
           id={id}
           role="note"
-          className="surgir absolute left-0 top-full z-30 mt-2 block w-[min(20rem,80vw)] rounded-xl border border-line bg-surface p-3 text-left text-sm font-normal leading-snug text-ink shadow-3"
+          className="surgir absolute left-0 top-full z-30 mt-2 block w-[min(20rem,80vw)] cartao rounded-xl p-3 text-left text-sm font-normal leading-snug text-ink shadow-3"
         >
           <b className="block text-accent-ink">{children}</b>
           {explicacao}

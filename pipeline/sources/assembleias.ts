@@ -1,7 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
 import { fetchRaw, getJson, mapLimit } from "../lib/http";
 import { log } from "../lib/log";
-import { capitalizar, isoDate, nameSimilarity, nomeProprio, num } from "../lib/util";
+import { capitalizar, decodeAuto, isoDate, nameSimilarity, nomeProprio, num } from "../lib/util";
 import type { CandidatoTSE, Despesa, PoliticoParcial } from "../model";
 import { eleito, fotoTSE } from "./tse";
 
@@ -92,7 +92,7 @@ export async function coletarAssembleias(tse: CandidatoTSE[], anoGastos: number[
   try {
     const xp = new XMLParser({ ignoreAttributes: false });
     const r = await fetchRaw("https://www.al.sp.gov.br/repositorioDados/deputados/deputados.xml", { ttlHours: 24 });
-    const x = xp.parse(r.body.toString("latin1"));
+    const x = xp.parse(decodeAuto(r.body));
     const lst: any[] = [x?.Deputados?.Deputado ?? []].flat();
     for (const d of lst) {
       const id = String(d.Matricula ?? d.IdDeputado ?? d.IdSPL ?? "");
@@ -111,7 +111,7 @@ export async function coletarAssembleias(tse: CandidatoTSE[], anoGastos: number[
     status.push({ uf: "SP", fonte: "ALESP Dados Abertos", url: "https://www.al.sp.gov.br/dados-abertos/", ok: true, registros: lst.length });
     try {
       const g = await fetchRaw("https://www.al.sp.gov.br/repositorioDados/deputados/despesas_gabinetes.xml", { ttlHours: 24, timeoutMs: 300_000 });
-      const gx = xp.parse(g.body.toString("latin1"));
+      const gx = xp.parse(decodeAuto(g.body));
       const rows: any[] = [gx?.despesas?.despesa ?? gx?.Despesas?.Despesa ?? []].flat();
       const anos = new Set(anoGastos);
       for (const d of rows) {
@@ -121,7 +121,8 @@ export async function coletarAssembleias(tse: CandidatoTSE[], anoGastos: number[
           pid: `alesp-${d.Matricula}`,
           ano,
           mes: Number(d.Mes),
-          categoria: d.Tipo ?? "Despesa de gabinete",
+          // "D - MATERIAIS E SERVIÇOS GRÁFICOS" -> "Materiais e serviços gráficos"
+          categoria: d.Tipo ? capitalizar(String(d.Tipo).replace(/^[A-Z]\s*-\s*/, "")) : "Despesa de gabinete",
           fornecedor: d.Fornecedor ?? "",
           doc: String(d.CNPJ ?? "").replace(/\D/g, ""),
           valor: num(d.Valor),

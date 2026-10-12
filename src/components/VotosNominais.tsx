@@ -30,12 +30,12 @@ export function VotosNominais({ votos, conhecidos }: { votos: VotacaoDetalhe["vo
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por nome, partido ou estado"
-            className="w-full rounded-lg border border-line bg-surface px-3 py-2 outline-none focus:border-ink"
+            className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2 outline-none focus:border-accent"
           />
         </label>
         <label>
           <span className="sr-only">Filtrar por voto</span>
-          <select value={voto} onChange={(e) => setVoto(e.target.value)} className="rounded-lg border border-line bg-surface px-3 py-2 outline-none focus:border-ink">
+          <select value={voto} onChange={(e) => setVoto(e.target.value)} className="rounded-lg border border-line-strong bg-surface px-3 py-2 outline-none focus:border-accent">
             <option value="">Todos os votos</option>
             {tipos.map((t) => (
               <option key={t} value={t}>
@@ -66,7 +66,7 @@ export function VotosNominais({ votos, conhecidos }: { votos: VotacaoDetalhe["vo
         ))}
       </ul>
       {!todos && !q && lista.length > INICIAL && (
-        <button type="button" onClick={() => setTodos(true)} className="mt-5 rounded-lg border border-line bg-surface px-4 py-2 font-semibold hover:border-ink-3">
+        <button type="button" onClick={() => setTodos(true)} className="mt-5 botao-sec">
           Mostrar todos os {lista.length} votos
         </button>
       )}

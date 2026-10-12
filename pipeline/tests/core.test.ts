@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nameSimilarity, nomeProprio, num, isoDate, validDoc, windows, norm } from "../lib/util";
+import { decodeAuto, nameSimilarity, nomeProprio, num, isoDate, validDoc, windows, norm } from "../lib/util";
 import {
   calcularGastos,
   calcularPresenca,
@@ -34,6 +34,10 @@ const dep = (id: string, partido: string, extra: Partial<PoliticoParcial> = {}):
 });
 
 describe("util", () => {
+  it("decodes UTF-8 when valid and Latin-1 otherwise", () => {
+    expect(decodeAuto(new TextEncoder().encode("SERVIÇOS GRÁFICOS"))).toBe("SERVIÇOS GRÁFICOS");
+    expect(decodeAuto(Uint8Array.from([0x53, 0x45, 0x52, 0x56, 0x49, 0xc7, 0x4f, 0x53]))).toBe("SERVIÇOS");
+  });
   it("parses Brazilian numbers", () => {
     expect(num("1.234,56")).toBe(1234.56);
     expect(num("1234.56")).toBe(1234.56);

@@ -19,7 +19,7 @@ export function TabelaPoliticos({ itens, destaque, linkOrdem }: { itens: Politic
   const def = destaque ? metrica(destaque) : undefined;
   return (
     <>
-      <ul className="divide-y divide-line rounded-xl border border-line bg-surface md:hidden">
+      <ul className="divide-y divide-line cartao rounded-xl md:hidden">
         {itens.map((p) => (
           <li key={p.id}>
             <Link href={`/politico/${p.id}`} className="flex items-center gap-3 px-3 py-3">
@@ -38,7 +38,7 @@ export function TabelaPoliticos({ itens, destaque, linkOrdem }: { itens: Politic
           </li>
         ))}
       </ul>
-      <div className="hidden overflow-x-auto rounded-xl border border-line bg-surface md:block">
+      <div className="hidden overflow-x-auto cartao rounded-xl md:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-line text-left text-ink-3">

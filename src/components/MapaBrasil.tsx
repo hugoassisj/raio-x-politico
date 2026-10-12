@@ -103,7 +103,7 @@ export function MapaBrasil({ camadas, resumoUf }: { camadas: CamadaMapa[]; resum
             </text>
           ))}
         </svg>
-        <div aria-live="polite" className="absolute bottom-0 left-0 max-w-[44%] rounded-xl border border-line bg-surface/95 p-3 shadow-sm">
+        <div aria-live="polite" className="absolute bottom-0 left-0 max-w-[44%] cartao rounded-xl/95 p-3 shadow-sm">
           {uf && info ? (
             <>
               <p className="font-display text-lg font-bold leading-tight">{nome(uf)}</p>

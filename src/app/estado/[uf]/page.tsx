@@ -120,9 +120,7 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
               <>
                 <GradeRostos membros={federais} detalhe={(m) => m.partido} />
                 <details className="mt-6">
-                  <summary className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-4 py-2 font-semibold hover:border-ink-3">
-                    Ver em tabela, com os números
-                  </summary>
+                  <summary className="inline-flex items-center gap-2 botao-sec">Ver em tabela, com os números</summary>
                   <div className="mt-4">
                     <TabelaPoliticos itens={federais} />
                   </div>

@@ -90,6 +90,18 @@ export function decode(data: Uint8Array, encoding: "utf8" | "latin1" = "utf8") {
   return new TextDecoder(encoding === "latin1" ? "latin1" : "utf-8").decode(data).replace(/^﻿/, "");
 }
 
+/**
+ * Decodes text whose encoding the server does not state reliably: UTF-8 when the bytes are valid
+ * UTF-8, Latin-1 otherwise. (ALESP serves UTF-8 files; reading them as Latin-1 garbled accents.)
+ */
+export function decodeAuto(data: Uint8Array): string {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(data).replace(/^\uFEFF/, "");
+  } catch {
+    return decode(data, "latin1");
+  }
+}
+
 export function parseCsv(text: string, delimiter = ";"): Record<string, string>[] {
   return parse(text, {
     delimiter,
