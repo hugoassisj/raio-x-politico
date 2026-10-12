@@ -1,0 +1,27 @@
+name: Erro nos dados
+description: Um número, nome ou informação não bate com a fonte oficial
+title: "[Dados] "
+labels: ["dados"]
+body:
+  - type: input
+    id: pagina
+    attributes:
+      label: Página com o problema
+      description: Link da página do Raio-X Político
+      placeholder: https://raio-x-politico.vercel.app/politico/dep-204379
+    validations:
+      required: true
+  - type: textarea
+    id: problema
+    attributes:
+      label: O que está errado
+      description: Qual valor aparece e qual deveria aparecer
+    validations:
+      required: true
+  - type: input
+    id: fonte
+    attributes:
+      label: Link da fonte oficial
+      description: Onde o valor correto pode ser conferido (Câmara, Senado, TSE...)
+    validations:
+      required: true

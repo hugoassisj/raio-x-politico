@@ -1,0 +1,95 @@
+name: Atualizar dados
+
+on:
+  schedule:
+    # Every day at 06:17 UTC (03:17 in Brasília), after the houses publish the previous day
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Coletar só estas fontes (ex.: senado,camara). Vazio = todas"
+        required: false
+      dias:
+        description: "Janela em dias para votos, presença e discursos"
+        required: false
+        default: "365"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  coletar:
+    name: Coletar, calcular e publicar
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      NODE_OPTIONS: --max-old-space-size=6144
+      PORTAL_TRANSPARENCIA_API_KEY: ${{ secrets.PORTAL_TRANSPARENCIA_API_KEY }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      TIKTOK_RESEARCH_TOKEN: ${{ secrets.TIKTOK_RESEARCH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # HTTP responses are cached between runs with per-endpoint TTLs, so only new data is downloaded
+      - name: Restaurar cache de coleta
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: coleta-${{ github.run_id }}
+          restore-keys: coleta-
+
+      - name: Coletar dados públicos
+        run: npm run pipeline -- ${{ inputs.only && format('--only={0}', inputs.only) || '' }} --dias=${{ inputs.dias || '365' }}
+
+      - name: Resumos de IA
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        run: npm run pipeline:ai
+
+      - name: Testar o build com os dados novos
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Publicar dados
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "Nenhuma mudança nos dados."
+          else
+            git commit -m "Atualiza dados públicos ($(date -u +%Y-%m-%d))"
+            git pull --rebase origin main
+            git push
+          fi
+
+      - name: Carregar no banco
+        if: ${{ env.DATABASE_URL != '' }}
+        run: npm run db:migrate && npm run pipeline:db
+
+      - name: Resumo da execução
+        if: always()
+        run: |
+          if [ -f data/meta.json ]; then
+            node -e '
+              const m = require("./data/meta.json");
+              const linhas = ["| Fonte | Situação | Registros | Observação |", "|---|---|---:|---|"];
+              for (const f of m.fontes) linhas.push(`| ${f.nome} | ${f.status} | ${f.registros} | ${(f.erro ?? "").replace(/\|/g, "/").slice(0, 160)} |`);
+              linhas.push("", "Totais: " + JSON.stringify(m.totais));
+              console.log(linhas.join("\n"));
+            ' >> "$GITHUB_STEP_SUMMARY"
+          fi

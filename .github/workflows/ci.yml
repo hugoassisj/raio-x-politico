@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Lint, tipos, testes e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      # Builds against the published snapshot when present, otherwise against fictional demo data,
+      # so a broken page never reaches production.
+      - name: Build
+        run: |
+          if [ -f data/meta.json ]; then
+            npm run build
+          else
+            npm run demo
+            DATA_DIR=data-demo npm run build
+          fi
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
