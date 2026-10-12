@@ -188,7 +188,16 @@ describe("Câmara collector", () => {
       [/\/eventos\?idOrgao=180/, { dados: [{ id: 1, dataHoraInicio: "2026-05-05T14:00", descricaoTipo: "Sessão Deliberativa", situacao: "Encerrada" }], links: [] }],
       [/\/eventos\/1\/deputados/, { dados: [{ id: 204379 }] }],
       [/\/votacoes\?idOrgao=180/, { dados: [{ id: "2611313-34", dataHoraRegistro: "2026-09-03T17:29:39", descricao: "Aprovado. Sim: 300; Não: 100", aprovacao: 1 }], links: [] }],
-      [/\/votacoes\/2611313-34$/, { dados: { idEvento: 82965, proposicoesAfetadas: [{ siglaTipo: "PLP", numero: 74, ano: 2026, ementa: "Regime fiscal" }] } }],
+      [
+        /\/votacoes\/2611313-34$/,
+        {
+          dados: {
+            idEvento: 82965,
+            proposicoesAfetadas: [{ id: 2600000, siglaTipo: "PLP", numero: 74, ano: 2026, ementa: "Regime fiscal" }],
+            ultimaAberturaVotacao: { descricao: "Votação do Requerimento de retirada de pauta" },
+          },
+        },
+      ],
       [/\/votacoes\/2611313-34\/votos/, { dados: [{ tipoVoto: "Não", deputado_: { id: 204379, nome: "Fulano", siglaPartido: "PP", siglaUf: "AP" } }] }],
       [
         /\/votacoes\/2611313-34\/orientacoes/,
@@ -222,7 +231,14 @@ describe("Câmara collector", () => {
     expect(p.comissoes?.[0]).toMatchObject({ sigla: "CCJC", atual: true });
 
     expect(r.sessoes).toEqual([{ id: "1", data: "2026-05-05", presentes: ["dep-204379"] }]);
-    expect(r.votacoes[0]).toMatchObject({ id: "cam-2611313-34", titulo: "PLP 74/2026", orientacaoGoverno: "Sim", resultado: "Aprovada" });
+    expect(r.votacoes[0]).toMatchObject({
+      id: "cam-2611313-34",
+      titulo: "PLP 74/2026",
+      orientacaoGoverno: "Sim",
+      resultado: "Aprovada",
+      materia: "cam-2600000",
+      objeto: "Votação do Requerimento de retirada de pauta",
+    });
 
     expect(p.proposicoesTotal).toBe(42);
     expect(p.proposicoesPorTipo).toMatchObject({ PL: 40, PEC: 2 });

@@ -181,6 +181,8 @@ export interface VotacaoResumo {
   /** Secret ballot: only official totals are published; the list of voters shows presence, not the vote */
   secreta?: boolean;
   porPartido: { partido: string; sim: number; nao: number; outros: number }[];
+  /** What was opened for voting, as the house describes it (e.g. a request to postpone) */
+  objeto?: string;
   /** Key of the bill being voted (see MateriaVotada), e.g. "cam-2351506" */
   materia?: string;
   /** Plain subject areas (see src/lib/assuntos.ts), for filtering */

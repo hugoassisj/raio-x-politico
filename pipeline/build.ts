@@ -393,6 +393,7 @@ export function resumoVotacao(v: VotacaoDetalhe): VotacaoResumo {
     porPartido: v.porPartido,
     materia: v.materia,
     assuntos: v.assuntos,
+    objeto: v.objeto,
   };
 }
 

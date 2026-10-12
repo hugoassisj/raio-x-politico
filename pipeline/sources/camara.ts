@@ -210,6 +210,13 @@ export async function coletarCamara(opts: { hoje: Date; diasVotos: number; anosG
           })),
           orientacoes,
           materia: (prop.id ?? prop.idProposicao) ? `cam-${prop.id ?? prop.idProposicao}` : undefined,
+          // What exactly was opened for voting, e.g. "Requerimento de retirada de pauta"; the result
+          // text alone often says only "Rejeitado o Requerimento"
+          objeto:
+            String(d.ultimaAberturaVotacao?.descricao ?? d.descUltimaAberturaVotacao ?? "")
+              .replace(/\s+/g, " ")
+              .trim()
+              .slice(0, 400) || undefined,
           url: d.idEvento ? `https://www.camara.leg.br/evento-legislativo/${d.idEvento}` : undefined,
         };
         return det2;
