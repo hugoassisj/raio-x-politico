@@ -35,7 +35,7 @@ export interface DefMetrica {
 }
 
 /** Plain words for the coverage states shown next to each number. */
-export const ROTULO_COBERTURA = { disponivel: "Dados completos", parcial: "Dados parciais", indisponivel: "Sem dados" } as const;
+export const ROTULO_COBERTURA = { disponivel: "Dados completos", parcial: "Dados parciais", indisponivel: "Sem dados", "nao-se-aplica": "Não se aplica" } as const;
 
 const CAM = { nome: "Câmara dos Deputados - Dados Abertos", url: "https://dadosabertos.camara.leg.br" };
 const SEN = { nome: "Senado Federal - Dados Abertos", url: "https://www12.senado.leg.br/dados-abertos" };

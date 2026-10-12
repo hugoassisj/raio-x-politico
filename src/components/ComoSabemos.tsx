@@ -1,7 +1,8 @@
-import { CircleAlert, CircleCheck, CircleDashed } from "lucide-react";
+import { CircleAlert, CircleCheck, CircleDashed, CircleMinus } from "lucide-react";
 import type { ReactNode } from "react";
 import { dataHora } from "@/lib/format";
 import { ROTULO_COBERTURA, type DefMetrica } from "@/lib/metricas";
+import type { CoberturaSecao, EstadoCobertura } from "@/lib/cobertura";
 import type { Casa } from "@/lib/types";
 import { Fonte } from "./ui";
 
@@ -69,8 +70,8 @@ function Item({ rotulo, children }: { rotulo: string; children: ReactNode }) {
 }
 
 /** Whether the data behind a number is complete, partial or missing, said plainly. */
-export function Cobertura({ estado, motivo }: { estado: "disponivel" | "parcial" | "indisponivel"; motivo?: string }) {
-  const Icone = estado === "disponivel" ? CircleCheck : estado === "parcial" ? CircleDashed : CircleAlert;
+export function Cobertura({ estado, motivo }: { estado: EstadoCobertura; motivo?: string }) {
+  const Icone = estado === "disponivel" ? CircleCheck : estado === "parcial" ? CircleDashed : estado === "nao-se-aplica" ? CircleMinus : CircleAlert;
   const cor = estado === "disponivel" ? "text-sim" : estado === "parcial" ? "text-alerta" : "text-ink-3";
   return (
     <p className={`flex items-start gap-1.5 text-sm ${cor}`}>
@@ -96,5 +97,42 @@ export function ComoSabemosMetrica({ def, casa, coletadoEm }: { def: DefMetrica;
       coletadoEm={coletadoEm}
       cobertura={cob ? { estado: cob.estado, motivo: cob.motivo } : { estado: "disponivel" }}
     />
+  );
+}
+
+/**
+ * What the site has about this person, section by section. Every gap says why, so an empty
+ * section is never mistaken for "zero".
+ */
+export function CoberturaPerfil({ itens }: { itens: CoberturaSecao[] }) {
+  const cor: Record<EstadoCobertura, string> = { disponivel: "text-sim", parcial: "text-alerta", indisponivel: "text-ink-3", "nao-se-aplica": "text-ink-3" };
+  const icone: Record<EstadoCobertura, typeof CircleCheck> = { disponivel: CircleCheck, parcial: CircleDashed, indisponivel: CircleAlert, "nao-se-aplica": CircleMinus };
+  return (
+    <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {itens.map((c) => {
+        const I = icone[c.estado];
+        const corpo = (
+          <>
+            <I className={`mt-0.5 h-4 w-4 shrink-0 ${cor[c.estado]}`} aria-hidden />
+            <span className="min-w-0">
+              <span className="font-semibold">{c.titulo}</span>
+              <span className={`ml-1.5 text-sm ${cor[c.estado]}`}>{ROTULO_COBERTURA[c.estado]}</span>
+              {c.motivo && <span className="block text-sm text-ink-3">{c.motivo}</span>}
+            </span>
+          </>
+        );
+        return (
+          <li key={c.titulo}>
+            {c.estado === "disponivel" || c.estado === "parcial" ? (
+              <a href={`#${c.id}`} className="flex items-start gap-2 rounded-lg p-2 hover:bg-surface-2">
+                {corpo}
+              </a>
+            ) : (
+              <div className="flex items-start gap-2 p-2">{corpo}</div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }

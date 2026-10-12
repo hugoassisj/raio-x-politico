@@ -23,6 +23,8 @@ import { votouDiferente } from "@/lib/votos";
 import { NOME_REDE, separarRedes } from "@/lib/redes";
 import { urlCorrecao } from "@/lib/site";
 import { IconeRede } from "@/components/IconeRede";
+import { CoberturaPerfil } from "@/components/ComoSabemos";
+import { coberturaDoPerfil } from "@/lib/cobertura";
 import { ListaProjetos, type ProjetoLinha } from "@/components/ListaProjetos";
 import { BensDeclarados, Campanhas, LinhaDaVida, MandatosRegistrados, ResumoVida } from "@/components/VidaPublica";
 
@@ -207,6 +209,11 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
           {fraseResumo(p) && <p className="mt-3 max-w-3xl text-xl leading-relaxed">{fraseResumo(p)}</p>}
           <div className="mt-6">
             <CartoesResumo itens={resumoRapido(p, todos)} />
+          </div>
+          <div className="cartao mt-8 p-4 sm:p-5">
+            <h3 className="font-semibold">O que encontramos sobre {p.nome}</h3>
+            <p className="mb-2 text-sm text-ink-3">Quando falta algum dado, dizemos por quê. Falta de dado não quer dizer zero.</p>
+            <CoberturaPerfil itens={coberturaDoPerfil(p, falas.length)} />
           </div>
           <h2 className="display mt-14 text-2xl font-bold">Todos os números</h2>
           <p className="mt-1 text-ink-2">

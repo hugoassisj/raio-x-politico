@@ -100,7 +100,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 
 | ID | Situação | P | O que é | Critérios de aceite | Depende de |
 |---|---|---|---|---|---|
-| PERF-01 | IN_PROGRESS | P1 | Cobertura por seção | Cada seção do perfil diz se o dado está completo, parcial, indisponível ou não se aplica. Já existe nas métricas (`ComoSabemos`); falta nas seções. | |
+| PERF-01 | VERIFIED | P1 | Cobertura por seção | Cada seção do perfil diz se o dado está completo, parcial, indisponível ou não se aplica. Já existe nas métricas (`ComoSabemos`); falta nas seções. | |
 | PERF-02 | IMPLEMENTED | P1 | Vida pública desde 1994 | Linha do tempo, partidos, bens e contas. Falta conferir com dados reais. | DADOS-01 |
 | PRES-01 | IMPLEMENTED | P0 | Presidente da República | Página do Presidente atual, encontrável na navegação; eleições, bens e contas de campanha pelo TSE; atos oficiais com fonte. Testes. | DADOS-01 |
 | CONT-01 | VERIFIED | P1 | “Contato, redes e fontes” | Dividir em Contato, Redes sociais, Sites oficiais, Fontes e transparência, Sobre os dados; ícones iguais para cada rede. | |
@@ -160,6 +160,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | CONT-01 | Perfil dividido em Contato, Redes sociais, Sites oficiais e institucionais, Fontes e transparência, Sobre os dados. Ícones das redes do Simple Icons (licença CC0, versão fixa 16.32.0), em uma cor só; LinkedIn e Kwai usam ícone genérico porque o Simple Icons não publica a marca. Teste `src/lib/redes.test.ts` (ordem fixa e sem repetição; formulário de correção com a página preenchida). Conferido nos dois temas (`dep-104552` claro, `sen-5672` escuro). |
 | PRES-01 | Implementado, falta dado real. Coleta: `coletarCandidaturasPresidente` lê só o arquivo nacional (`_BR`) de cada eleição geral; `agruparPresidenciaveis` junta a mesma pessoa entre anos por título, CPF ou nascimento e nome, mantém o perfil de quem já é acompanhado e cria um id `pres-` que não revela documento; a vida inteira dessas pessoas entra na mesma varredura do TSE, com bens e contas. Atos: medidas provisórias e projetos do Executivo dos arquivos anuais da Câmara. Página `/presidencia` e `/presidencia/[id]`, “Presidência” na navegação e nas perguntas. Testes: “TSE Presidency” em `pipeline/tests/fontes.test.ts` (arquivo nacional, 2º turno, união de chaves, id sem documento, ordem sem ranking) e “Presidência” em `src/lib/votos.test.ts` (quem está no cargo antes e depois da posse). Conferido no navegador com dados fictícios (`npm run demo`), claro e escuro, 1280 px e 390 px sem rolagem lateral; com os dados reais atuais a página mostra o aviso de dados ainda não coletados. Falta: execução completa do TSE publicar `presidencia.json`. |
 | PL-01 | Primeiro autor e coautor pela ordem de assinatura dos arquivos da Câmara (teste de contrato atualizado), contagem por papel no perfil, lista com filtros (papel, tipo, texto), situação em palavras simples e paginação comum. Conferido em `/politico/dep-104552` (“Viraram lei” mostra 3 de 95). Falta: os dados reais ganharem o campo `papel` na próxima coleta; histórico de tramitação passo a passo (hoje há o link para a tramitação completa). |
+| PERF-01 | `coberturaDoPerfil` (`src/lib/cobertura.ts`, testes em `src/lib/cobertura.test.ts`) e o cartão “O que encontramos sobre…” no resumo de cada perfil, com quatro estados (completo, parcial, sem dados, não se aplica) e o motivo de cada lacuna, reaproveitando os motivos de `metricas.ts`. Conferido em `dep-104552` e `est-ac-10001601427`. |
 | PAG-01 | Testes de `src/lib/paginacao.ts` (fatiar, limitar página fora do intervalo, números com reticências, leitura defensiva). Componente `src/components/Paginacao.tsx` em uso na lista de votos. |
 
 ## 5. Fontes, documentação e licenças
@@ -192,6 +193,7 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 
 ## 8. Registro de progresso
 
+- **2026-10-12 (7):** cobertura por seção no perfil (PERF-01). Achado: nomes de deputados estaduais vindos do TSE aparecem em maiúsculas (ex.: “PABLO BREGENSE”); registrar e corrigir na coleta das assembleias.
 - **2026-10-12 (6):** identidade de partido sem cor (PART-02); cores ficam bloqueadas (PART-01).
 - **2026-10-12 (5):** Presidência (PRES-01) e autoria (PL-01). Pergunta nova em `perguntas.ts`, README e PRODUCT.md. Próximo: PART-01/02, PERF-01, conferir a execução de dados.
 - **2026-10-12 (4):** seção de contato refeita (CONT-01); situação do projeto depois da votação (VOT-09); endereços do projeto definidos uma vez (`src/lib/site.ts`).
