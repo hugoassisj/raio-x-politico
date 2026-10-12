@@ -42,13 +42,7 @@ export function ResumoIA({ resumos, refs }: { resumos: Resumo[]; refs: Record<st
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
         <div role="tablist" aria-label="Período do resumo" className="flex flex-wrap gap-1.5">
           {atuais.map((a, i) => (
-            <button
-              key={a.periodo}
-              role="tab"
-              aria-selected={sel === i}
-              onClick={() => setSel(i)}
-              className={`rounded-full border px-3 py-1 text-sm ${sel === i ? "border-ink bg-ink text-paper" : "border-line text-ink-2 hover:border-ink-3"}`}
-            >
+            <button key={a.periodo} role="tab" aria-selected={sel === i} onClick={() => setSel(i)} className={`chip ${sel === i ? "chip-ativo" : ""}`}>
               {ROTULO[a.periodo]}
             </button>
           ))}

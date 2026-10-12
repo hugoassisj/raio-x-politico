@@ -101,13 +101,13 @@ export default async function Partido({ params }: PageProps<"/partido/[sigla]">)
           <Secao titulo="Onde o partido está no plenário" subtitulo="As cadeiras do partido aparecem em destaque. Passe o dedo ou o mouse para ver quem é.">
             <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
               {p.cadeiras.camara > 0 && (
-                <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+                <div className="cartao p-4 sm:p-6">
                   <h3 className="text-center font-semibold">Câmara · {p.cadeiras.camara} de 513</h3>
                   <Plenario cadeiras={plenario.cadeiras} legenda={[]} titulo={`Cadeiras do ${sigla} na Câmara`} />
                 </div>
               )}
               {p.cadeiras.senado > 0 && (
-                <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+                <div className="cartao p-4 sm:p-6">
                   <h3 className="text-center font-semibold">Senado · {p.cadeiras.senado} de 81</h3>
                   <Plenario cadeiras={plenarioSenado.cadeiras} legenda={[]} titulo={`Cadeiras do ${sigla} no Senado`} />
                 </div>
@@ -164,7 +164,7 @@ export default async function Partido({ params }: PageProps<"/partido/[sigla]">)
 
         {recentes.length > 0 && (
           <Secao titulo="Como votou recentemente" subtitulo="Votos dos membros do partido nas votações mais recentes.">
-            <ul className="divide-y divide-line rounded-2xl border border-line bg-surface">
+            <ul className="divide-y divide-line cartao">
               {recentes.map((v) => {
                 const g = v.porPartido.find((x) => x.partido === sigla)!;
                 return (

@@ -3,99 +3,219 @@
 @import "@fontsource-variable/atkinson-hyperlegible-next/index.css";
 
 /*
- * Design tokens. Light is the default; dark follows the OS unless the visitor picks a theme
- * (data-theme on <html>). Vote colors were validated for color-vision deficiencies and are
- * always paired with a text label.
+ * Design tokens in three layers:
+ *
+ *  1. Primitives: raw color steps (OKLCH, so lightness steps look even). Never used directly in
+ *     components.
+ *  2. Semantic: what a color is for (page, card, text, border, accent, vote). Components use only
+ *     these. Light and dark themes redefine this layer; primitives stay the same.
+ *  3. Components: a few shared recipes (.cartao, .chip, .botao) built from semantic tokens.
+ *
+ * Neutrals are tinted toward the accent hue instead of pure gray. Saturated color is reserved for
+ * meaning: the accent marks what can be tapped or is selected, vote colors mean Sim/Não/other and
+ * are always paired with a text label (validated for color-vision deficiencies). Party colors are
+ * deliberately avoided, so no screen reads as favoring a side.
  */
 :root {
+  /* 1. Primitives */
+  --neutro-0: oklch(100% 0 0);
+  --neutro-50: oklch(97.7% 0.006 255);
+  --neutro-100: oklch(95.4% 0.009 255);
+  --neutro-150: oklch(92.8% 0.012 255);
+  --neutro-200: oklch(90.2% 0.014 255);
+  --neutro-300: oklch(81% 0.02 255);
+  --neutro-500: oklch(54% 0.035 255);
+  --neutro-600: oklch(44% 0.04 255);
+  --neutro-800: oklch(30% 0.045 255);
+  --neutro-900: oklch(24.5% 0.05 255);
+
+  /* Neutrals for the dark theme */
+  --noite-950: oklch(17% 0.022 255);
+  --noite-900: oklch(20.5% 0.024 255);
+  --noite-850: oklch(24.5% 0.026 255);
+  --noite-800: oklch(28.5% 0.028 255);
+  --noite-700: oklch(36% 0.03 255);
+  --noite-400: oklch(68% 0.025 255);
+  --noite-250: oklch(81% 0.02 255);
+  --noite-100: oklch(94.5% 0.008 255);
+
+  --azul-50: oklch(96.5% 0.02 262);
+  --azul-100: oklch(93.5% 0.035 262);
+  --azul-400: oklch(68% 0.14 262);
+  --azul-300: oklch(78% 0.1 262);
+  --azul-500: oklch(52.5% 0.19 262);
+  --azul-600: oklch(46.5% 0.185 262);
+  --azul-700: oklch(41% 0.16 262);
+  --azul-noite-800: oklch(27% 0.07 262);
+  --azul-noite-900: oklch(23% 0.055 262);
+
+  --amarelo-300: oklch(89.5% 0.15 92);
+  --amarelo-500: oklch(80% 0.155 85);
+
+  /* 2. Semantic (light) */
   color-scheme: light;
-  --paper: #f3f5f8;
-  --surface: #ffffff;
-  --surface-2: #e9edf2;
-  --ink: #0f2238;
-  --ink-2: #3f4f63;
-  --ink-3: #66768b;
-  --line: #d9e0e8;
-  --mark: #ffd84d;
-  --mark-ink: #0f2238;
-  --grifo: #ffd84d;
-  --focus: #1f5fd1;
-  --link: #1d52b8;
+  --paper: var(--neutro-50);
+  --surface: var(--neutro-0);
+  --surface-2: var(--neutro-100);
+  --surface-3: var(--neutro-150);
+  --line: var(--neutro-200);
+  --line-strong: var(--neutro-300);
+  --ink: var(--neutro-900);
+  --ink-2: var(--neutro-600);
+  --ink-3: var(--neutro-500);
+  --banda: var(--neutro-900);
+  --banda-ink: var(--neutro-50);
+
+  --accent: var(--azul-500);
+  --accent-hover: var(--azul-600);
+  --accent-soft: var(--azul-50);
+  --accent-soft-2: var(--azul-100);
+  --accent-ink: var(--azul-700);
+  --on-accent: var(--neutro-0);
+  --link: var(--azul-600);
+  --focus: var(--azul-500);
+
+  --mark: var(--amarelo-300);
+  --mark-ink: var(--neutro-900);
+  --grifo: var(--amarelo-300);
+
   --sim: #16855a;
+  --sim-soft: #e2f3ea;
   --nao: #d9480f;
+  --nao-soft: #fcebe2;
   --abst: #6250d6;
+  --abst-soft: #ecebfb;
   --ausente: #8a94a6;
   --alerta: #b45309;
   --alerta-bg: #fff4e5;
-  --ok-bg: #e7f5ee;
+  --ok-bg: #e2f3ea;
+
+  --shadow-1: 0 1px 2px oklch(24.5% 0.05 255 / 0.06), 0 1px 1px oklch(24.5% 0.05 255 / 0.04);
+  --shadow-2: 0 6px 16px -4px oklch(24.5% 0.05 255 / 0.1), 0 2px 4px -2px oklch(24.5% 0.05 255 / 0.06);
+  --shadow-3: 0 18px 44px -14px oklch(24.5% 0.05 255 / 0.22), 0 6px 12px -6px oklch(24.5% 0.05 255 / 0.1);
+
+  /* Motion: short and calm; everything turns off with prefers-reduced-motion */
+  --dur-1: 120ms;
+  --dur-2: 220ms;
+  --dur-3: 480ms;
+  --ease-saida: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* Semantic (dark). Same roles, values tuned for a dark page. */
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
     color-scheme: dark;
-    --paper: #0e131a;
-    --surface: #151b24;
-    --surface-2: #1d2531;
-    --ink: #e8edf3;
-    --ink-2: #b6c1cf;
-    --ink-3: #8e9bad;
-    --line: #2a3442;
-    --mark: #e3b81f;
-    --mark-ink: #0e131a;
-    --grifo: rgba(227, 184, 31, 0.42);
-    --focus: #7aa7ff;
-    --link: #8db4ff;
+    --paper: var(--noite-950);
+    --surface: var(--noite-900);
+    --surface-2: var(--noite-850);
+    --surface-3: var(--noite-800);
+    --line: var(--noite-800);
+    --line-strong: var(--noite-700);
+    --ink: var(--noite-100);
+    --ink-2: var(--noite-250);
+    --ink-3: var(--noite-400);
+    --banda: var(--azul-noite-900);
+    --banda-ink: var(--noite-100);
+    --accent: var(--azul-400);
+    --accent-hover: var(--azul-300);
+    --accent-soft: var(--azul-noite-900);
+    --accent-soft-2: var(--azul-noite-800);
+    --accent-ink: var(--azul-300);
+    --on-accent: var(--noite-950);
+    --link: var(--azul-300);
+    --focus: var(--azul-400);
+    --mark: var(--amarelo-500);
+    --mark-ink: var(--noite-950);
+    --grifo: oklch(80% 0.155 85 / 0.42);
     --sim: #2fa772;
+    --sim-soft: #12291e;
     --nao: #e2622c;
+    --nao-soft: #2e1a12;
     --abst: #9085e9;
+    --abst-soft: #1f1c3a;
     --ausente: #7d8899;
     --alerta: #f0a54a;
     --alerta-bg: #2b2114;
     --ok-bg: #12261d;
+    --shadow-1: 0 1px 2px oklch(0% 0 0 / 0.4);
+    --shadow-2: 0 8px 20px -6px oklch(0% 0 0 / 0.55);
+    --shadow-3: 0 20px 48px -12px oklch(0% 0 0 / 0.7);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #0e131a;
-  --surface: #151b24;
-  --surface-2: #1d2531;
-  --ink: #e8edf3;
-  --ink-2: #b6c1cf;
-  --ink-3: #8e9bad;
-  --line: #2a3442;
-  --mark: #e3b81f;
-  --mark-ink: #0e131a;
-  --grifo: rgba(227, 184, 31, 0.42);
-  --focus: #7aa7ff;
-  --link: #8db4ff;
+  --paper: var(--noite-950);
+  --surface: var(--noite-900);
+  --surface-2: var(--noite-850);
+  --surface-3: var(--noite-800);
+  --line: var(--noite-800);
+  --line-strong: var(--noite-700);
+  --ink: var(--noite-100);
+  --ink-2: var(--noite-250);
+  --ink-3: var(--noite-400);
+  --banda: var(--azul-noite-900);
+  --banda-ink: var(--noite-100);
+  --accent: var(--azul-400);
+  --accent-hover: var(--azul-300);
+  --accent-soft: var(--azul-noite-900);
+  --accent-soft-2: var(--azul-noite-800);
+  --accent-ink: var(--azul-300);
+  --on-accent: var(--noite-950);
+  --link: var(--azul-300);
+  --focus: var(--azul-400);
+  --mark: var(--amarelo-500);
+  --mark-ink: var(--noite-950);
+  --grifo: oklch(80% 0.155 85 / 0.42);
   --sim: #2fa772;
+  --sim-soft: #12291e;
   --nao: #e2622c;
+  --nao-soft: #2e1a12;
   --abst: #9085e9;
+  --abst-soft: #1f1c3a;
   --ausente: #7d8899;
   --alerta: #f0a54a;
   --alerta-bg: #2b2114;
   --ok-bg: #12261d;
+  --shadow-1: 0 1px 2px oklch(0% 0 0 / 0.4);
+  --shadow-2: 0 8px 20px -6px oklch(0% 0 0 / 0.55);
+  --shadow-3: 0 20px 48px -12px oklch(0% 0 0 / 0.7);
 }
 
 @theme inline {
   --color-paper: var(--paper);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-ink-3: var(--ink-3);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-banda: var(--banda);
+  --color-banda-ink: var(--banda-ink);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-soft-2: var(--accent-soft-2);
+  --color-accent-ink: var(--accent-ink);
+  --color-on-accent: var(--on-accent);
   --color-mark: var(--mark);
   --color-mark-ink: var(--mark-ink);
   --color-link: var(--link);
   --color-sim: var(--sim);
+  --color-sim-soft: var(--sim-soft);
   --color-nao: var(--nao);
+  --color-nao-soft: var(--nao-soft);
   --color-abst: var(--abst);
+  --color-abst-soft: var(--abst-soft);
   --color-ausente: var(--ausente);
   --color-alerta: var(--alerta);
   --color-alerta-bg: var(--alerta-bg);
   --color-ok-bg: var(--ok-bg);
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
   --font-sans: "Atkinson Hyperlegible Next Variable", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
 }
@@ -123,6 +243,15 @@
     outline-offset: 2px;
     border-radius: 4px;
   }
+  ::selection {
+    background: var(--mark);
+    color: var(--mark-ink);
+  }
+
+  /* Grid children may shrink below their content, so long names truncate instead of overflowing */
+  .grid > * {
+    min-width: 0;
+  }
 
   details > summary {
     cursor: pointer;
@@ -140,6 +269,7 @@
     font-stretch: 118%;
     letter-spacing: -0.015em;
     line-height: 1.05;
+    text-wrap: balance;
   }
   .figure {
     font-family: var(--font-display);
@@ -170,6 +300,173 @@
   .link:hover {
     text-decoration-thickness: 2px;
   }
+
+  /* Card: resting on the page; when it is a link it lifts slightly on hover */
+  .cartao {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-1);
+  }
+  a.cartao,
+  .cartao-link {
+    transition:
+      transform var(--dur-2) var(--ease-saida),
+      box-shadow var(--dur-2) var(--ease-saida),
+      border-color var(--dur-2) var(--ease-saida);
+  }
+  a.cartao:hover,
+  .cartao-link:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-2);
+    border-color: var(--line-strong);
+  }
+
+  /* Pills used as filters and tabs */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-2);
+    border-radius: 999px;
+    padding: 0.3rem 0.85rem;
+    font-size: 0.875rem;
+    transition:
+      background var(--dur-1),
+      border-color var(--dur-1),
+      color var(--dur-1);
+  }
+  .chip:hover {
+    border-color: var(--line-strong);
+    color: var(--ink);
+  }
+  .chip[aria-pressed="true"],
+  .chip[aria-current="page"],
+  .chip-ativo {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 700;
+  }
+
+  .botao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+    padding: 0.6rem 1.1rem;
+    transition:
+      background var(--dur-1),
+      transform var(--dur-1);
+  }
+  .botao:hover {
+    background: var(--accent-hover);
+  }
+  .botao:active {
+    transform: scale(0.98);
+  }
+  .botao-sec {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    border: 1.5px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink);
+    font-weight: 700;
+    padding: 0.55rem 1.05rem;
+    transition:
+      border-color var(--dur-1),
+      background var(--dur-1);
+  }
+  .botao-sec:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+  }
+
+  /* Entrance: content rises into place once, in order (set --i on each item) */
+  .surgir {
+    animation: surgir var(--dur-3) var(--ease-saida) both;
+    animation-delay: calc(min(var(--i, 0), 12) * 45ms);
+  }
+
+  /* Bars and seats grow from zero */
+  .crescer-x {
+    transform-origin: left center;
+    animation: crescer-x 700ms var(--ease-saida) both;
+  }
+  .assento {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: assento 520ms var(--ease-saida) both;
+    animation-delay: calc(var(--d, 0) * 1ms);
+  }
+
+  /* Live indicator next to the update time */
+  .pulso {
+    position: relative;
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--sim);
+  }
+  .pulso::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--sim);
+    animation: pulso 2.4s ease-out infinite;
+  }
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes crescer-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes assento {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes pulso {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  80%,
+  100% {
+    opacity: 0;
+    transform: scale(2.8);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -177,7 +474,12 @@
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .pulso::after {
+    display: none;
   }
 }

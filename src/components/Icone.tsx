@@ -1,4 +1,29 @@
-import { CalendarCheck, FileText, Flag, House, Landmark, Scroll, SearchCheck, Send, Users, Vote, Wallet, type LucideIcon } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  Bus,
+  CalendarCheck,
+  Cpu,
+  FileText,
+  Flag,
+  Globe,
+  GraduationCap,
+  HeartPulse,
+  House,
+  Landmark,
+  Leaf,
+  Music,
+  Scroll,
+  SearchCheck,
+  Send,
+  Shield,
+  Store,
+  Users,
+  Vote,
+  Wallet,
+  Wheat,
+  type LucideIcon,
+} from "lucide-react";
 import type { DefMetrica } from "@/lib/metricas";
 
 const MAPA: Record<DefMetrica["icone"], LucideIcon> = {
@@ -21,10 +46,18 @@ export function IconeTema({ nome, tamanho = 20, className = "" }: { nome: DefMet
   return (
     <span
       aria-hidden
-      className={`inline-flex shrink-0 items-center justify-center rounded-xl bg-surface-2 text-ink ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent-ink ${className}`}
       style={{ width: tamanho * 2, height: tamanho * 2 }}
     >
       <I size={tamanho} strokeWidth={2} />
     </span>
   );
+}
+
+const ASSUNTO: Record<string, LucideIcon> = { HeartPulse, GraduationCap, Landmark, Store, Briefcase, Shield, Leaf, Wheat, Bus, Users, Building2, Cpu, Music, Globe };
+
+/** Icon of a subject area (see src/lib/assuntos.ts). */
+export function IconeAssunto({ nome, className = "h-4 w-4" }: { nome: string; className?: string }) {
+  const I = ASSUNTO[nome] ?? FileText;
+  return <I className={className} aria-hidden />;
 }

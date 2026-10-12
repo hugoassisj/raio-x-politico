@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { getMeta } from "@/lib/data";
-import { dataHora } from "@/lib/format";
+import { dataCurtaHora, dataHora } from "@/lib/format";
 import { Busca } from "./Busca";
+import { NavPrincipal } from "./NavPrincipal";
 import { Container } from "./ui";
 
 const NAV = [
@@ -33,7 +34,8 @@ export function Marca() {
   );
 }
 
-export function Cabecalho() {
+export async function Cabecalho() {
+  const meta = await getMeta();
   return (
     <header className="z-30 border-b border-line bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80 lg:sticky lg:top-0">
       <a
@@ -44,14 +46,18 @@ export function Cabecalho() {
       </a>
       <Container className="flex h-16 items-center gap-4">
         <Marca />
-        <nav aria-label="Principal" className="ml-4 hidden items-center gap-1 lg:flex">
-          {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className="rounded-md px-2.5 py-1.5 text-[0.95rem] text-ink-2 hover:bg-surface-2 hover:text-ink">
-              {n.rotulo}
-            </Link>
-          ))}
-        </nav>
-        <div className="ml-auto w-full max-w-xs">
+        <NavPrincipal itens={NAV} />
+        {meta && (
+          <Link
+            href="/dados"
+            className="ml-auto hidden items-center gap-2 whitespace-nowrap rounded-full px-2 py-1 text-xs text-ink-3 hover:text-ink 2xl:inline-flex"
+            title="Situação de cada fonte na última coleta"
+          >
+            <span className="pulso" aria-hidden />
+            Atualizado {dataCurtaHora(meta.geradoEm)}
+          </Link>
+        )}
+        <div className="ml-auto w-full max-w-xs 2xl:ml-0">
           <Busca />
         </div>
       </Container>

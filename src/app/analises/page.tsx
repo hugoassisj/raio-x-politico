@@ -60,7 +60,7 @@ export default async function Analises() {
       </p>
 
       <Secao titulo="Quem gasta mais da cota falta mais?" subtitulo="Deputados federais: presença no Plenário e gasto da cota nos últimos 12 meses.">
-        <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+        <div className="cartao p-4 sm:p-6">
           <Dispersao
             pontos={gastoPresenca}
             eixoX={{ rotulo: "Presença no Plenário", formato: "pct" }}
@@ -72,7 +72,7 @@ export default async function Analises() {
       </Secao>
 
       <Secao titulo="Quem está há mais tempo na política aparece mais?" subtitulo="Deputados federais: anos desde o primeiro mandato encontrado e presença no Plenário.">
-        <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+        <div className="cartao p-4 sm:p-6">
           <Dispersao
             pontos={experiencia}
             eixoX={{ rotulo: "Anos na política", formato: "anos" }}
@@ -87,7 +87,7 @@ export default async function Analises() {
         titulo="Partidos que votam com o governo também votam mais unidos?"
         subtitulo="Cada bolha é um partido na Câmara; o tamanho é o número de deputados. Para a direita, mais votos junto com o governo; para cima, membros votando mais iguais entre si."
       >
-        <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+        <div className="cartao p-4 sm:p-6">
           <Dispersao
             pontos={bolhas}
             eixoX={{ rotulo: "Vota com o governo (valor típico)", formato: "pct" }}

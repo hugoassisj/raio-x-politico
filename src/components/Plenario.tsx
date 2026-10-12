@@ -28,6 +28,8 @@ export function Plenario({ cadeiras, legenda, titulo, linhaMeta }: { cadeiras: C
             if (!a) return null;
             const circulo = (
               <circle
+                className="assento"
+                style={{ "--d": Math.round((i / cadeiras.length) * 700) } as React.CSSProperties}
                 cx={a.x}
                 cy={a.y}
                 r={a.r}
@@ -42,7 +44,19 @@ export function Plenario({ cadeiras, legenda, titulo, linhaMeta }: { cadeiras: C
               />
             );
             return c.href ? (
-              <a key={c.id} href={c.href} aria-label={`${c.nome}, ${c.partido}-${c.uf}${c.detalhe ? `: ${c.detalhe}` : ""}`} onFocus={() => setAtivo(i)}>
+              <a
+                key={c.id}
+                href={c.href}
+                aria-label={`${c.nome}, ${c.partido}-${c.uf}${c.detalhe ? `: ${c.detalhe}` : ""}`}
+                onFocus={() => setAtivo(i)}
+                onClick={(e) => {
+                  // On touch screens the first tap shows who it is; the second opens the profile
+                  if (ativo !== i && window.matchMedia("(hover: none)").matches) {
+                    e.preventDefault();
+                    setAtivo(i);
+                  }
+                }}
+              >
                 {circulo}
               </a>
             ) : (
@@ -53,7 +67,7 @@ export function Plenario({ cadeiras, legenda, titulo, linhaMeta }: { cadeiras: C
       </div>
       <div aria-live="polite" className="mt-2 flex min-h-14 justify-center">
         {sel ? (
-          <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-3 py-2 shadow-sm">
+          <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-3 py-2 shadow-2">
             <Avatar src={sel.foto} nome={sel.nome} size={40} />
             <div className="text-left">
               <p className="font-semibold leading-tight">{sel.nome}</p>
@@ -62,6 +76,11 @@ export function Plenario({ cadeiras, legenda, titulo, linhaMeta }: { cadeiras: C
                 {sel.detalhe ? ` · ${sel.detalhe}` : ""}
               </p>
             </div>
+            {sel.href && (
+              <a href={sel.href} className="ml-2 text-sm font-semibold text-accent-ink hover:underline">
+                Ver perfil
+              </a>
+            )}
           </div>
         ) : (
           <p className="self-center text-sm text-ink-3">Passe o dedo ou o mouse sobre uma cadeira para ver quem é.</p>

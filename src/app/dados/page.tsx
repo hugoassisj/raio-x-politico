@@ -132,13 +132,13 @@ export default async function Dados() {
 
       <Secao titulo="Verifique, baixe, contribua">
         <div className="flex flex-wrap gap-3">
-          <a href={`${repo}/tree/main/data`} className="rounded-lg bg-ink px-4 py-2.5 font-semibold text-paper hover:opacity-90">
+          <a href={`${repo}/tree/main/data`} className="botao">
             Baixar todos os dados (JSON)
           </a>
-          <a href={repo} className="rounded-lg border-2 border-ink px-4 py-2 font-semibold hover:bg-ink hover:text-paper">
+          <a href={repo} className="botao-sec">
             Ver o código
           </a>
-          <a href={`${repo}/issues/new`} className="rounded-lg border-2 border-ink px-4 py-2 font-semibold hover:bg-ink hover:text-paper">
+          <a href={`${repo}/issues/new`} className="botao-sec">
             Reportar um erro
           </a>
         </div>

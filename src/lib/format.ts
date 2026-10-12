@@ -49,6 +49,15 @@ export function dataHora(iso: string | undefined) {
   return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "long", timeStyle: "short" });
 }
 
+/** "12 out, 09:09" in Brasília time */
+export function dataCurtaHora(iso: string | undefined) {
+  if (!iso) return VAZIO;
+  const d = new Date(iso);
+  const dia = d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "numeric", month: "short" }).replace(".", "");
+  const hora = d.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+  return `${dia}, ${hora}`;
+}
+
 export function idade(nasc: string | undefined, hoje = new Date()) {
   if (!nasc) return undefined;
   const [y, m, d] = nasc.split("-").map(Number);

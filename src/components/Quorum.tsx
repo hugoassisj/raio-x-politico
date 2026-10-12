@@ -17,7 +17,7 @@ export function QuorumExplicado({ regra, casa, sim, nao, outros, resultado }: { 
   const aprovado = resultado ? resultado === "Aprovada" : q.atingiu;
 
   return (
-    <div className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+    <div className="cartao p-5 sm:p-6">
       <div className="flex items-start gap-3">
         <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mark text-mark-ink" aria-hidden>
           <Info size={20} />

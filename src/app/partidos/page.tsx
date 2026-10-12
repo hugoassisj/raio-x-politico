@@ -37,11 +37,11 @@ export default async function Partidos() {
       </p>
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[1.5fr_1fr]">
-        <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+        <div className="cartao p-4 sm:p-6">
           <h2 className="text-center text-lg font-bold">Câmara dos Deputados</h2>
           <Plenario cadeiras={camara.cadeiras} legenda={camara.legenda} titulo="Câmara por posição do partido em relação ao governo" />
         </div>
-        <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+        <div className="cartao p-4 sm:p-6">
           <h2 className="text-center text-lg font-bold">Senado Federal</h2>
           <Plenario cadeiras={senado.cadeiras} legenda={senado.legenda} titulo="Senado por posição do partido em relação ao governo" />
         </div>
@@ -57,10 +57,7 @@ export default async function Partidos() {
             const f = faixaGoverno(p.governismo);
             return (
               <li key={p.sigla}>
-                <Link
-                  href={`/partido/${encodeURIComponent(p.sigla)}`}
-                  className="group block h-full rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-ink-3"
-                >
+                <Link href={`/partido/${encodeURIComponent(p.sigla)}`} className="group block h-full cartao p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="display text-2xl font-extrabold group-hover:underline">{p.sigla}</p>

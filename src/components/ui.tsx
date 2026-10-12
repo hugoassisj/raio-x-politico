@@ -78,9 +78,7 @@ export function Vazio({ children }: { children: ReactNode }) {
 }
 
 export function Pill({ children, href, ativo }: { children: ReactNode; href?: string; ativo?: boolean }) {
-  const cls = `inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm transition-colors ${
-    ativo ? "border-ink bg-ink text-paper" : "border-line bg-surface text-ink-2 hover:border-ink-3 hover:text-ink"
-  }`;
+  const cls = `chip ${ativo ? "chip-ativo" : ""}`;
   return href ? (
     <Link href={href} className={cls} aria-current={ativo ? "page" : undefined}>
       {children}
@@ -116,7 +114,7 @@ export function Barras({
               <span className="tnum shrink-0 font-semibold">{formato(it.valor)}</span>
             </div>
             <div className="mt-1 h-2 rounded-full bg-surface-2">
-              <div className="h-2 rounded-full bg-ink-2" style={{ width: `${w}%` }} />
+              <div className="crescer-x h-2 rounded-full bg-accent" style={{ width: `${w}%` }} />
             </div>
             {it.detalhe && <div className="mt-1 text-xs text-ink-3">{it.detalhe}</div>}
           </>

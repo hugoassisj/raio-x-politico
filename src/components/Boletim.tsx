@@ -53,7 +53,7 @@ export function TileMetrica({
           : undefined
       : undefined;
   return (
-    <article className="flex flex-col rounded-2xl border border-line bg-surface p-4 sm:p-5">
+    <article className="flex flex-col cartao p-4 sm:p-5">
       <div className="flex items-center gap-3">
         <IconeTema nome={def.icone} tamanho={16} />
         <div>
@@ -119,7 +119,7 @@ export function CartoesResumo({ itens }: { itens: { def: DefMetrica; valor: numb
   return (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {itens.map(({ def, valor, frase, tipico }) => (
-        <li key={def.chave} className="flex flex-col rounded-2xl border border-line bg-surface p-5">
+        <li key={def.chave} className="flex flex-col cartao p-5">
           <div className="flex items-center gap-3">
             <IconeTema nome={def.icone} tamanho={18} />
             <h3 className="font-semibold leading-tight text-ink-2">{def.pergunta}</h3>
