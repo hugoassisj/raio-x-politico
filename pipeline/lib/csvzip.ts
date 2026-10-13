@@ -38,11 +38,18 @@ export async function percorrerCsvZipArquivo(caminho: string, linha: Linha, opts
   if (size === 0) uz.push(new Uint8Array(0), true);
 }
 
-function leitor(linha: Linha, opts: Opcoes) {
+/** Exported for the memory test; pages use percorrerCsvZip and percorrerCsvZipArquivo. */
+export function leitor(linha: Linha, opts: Opcoes) {
   const uz = new Unzip();
   uz.register(UnzipInflate);
   uz.onfile = (f) => {
-    if (!/\.(csv|txt)$/i.test(f.name) || (opts.arquivo && !opts.arquivo(f.name))) return;
+    if (!/\.(csv|txt)$/i.test(f.name) || (opts.arquivo && !opts.arquivo(f.name))) {
+      // A file that is never started is kept in memory by fflate until the archive ends (the
+      // national "_BRASIL" files are gigabytes); started and ignored, its bytes just stream by.
+      f.ondata = () => {};
+      f.start();
+      return;
+    }
     const dec = new TextDecoder(opts.encoding ?? "latin1");
     let resto = "";
     let cabecalho: string[] | undefined;
