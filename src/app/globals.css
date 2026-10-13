@@ -55,6 +55,8 @@
   --amarelo-500: oklch(80% 0.155 85);
 
   /* 2. Semantic (light) */
+  /* Reading measure for intros and section explanations; titles never get a measure */
+  --medida: 96ch;
   color-scheme: light;
   --paper: var(--neutro-50);
   --surface: var(--neutro-0);
@@ -300,6 +302,9 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
     line-height: 1;
+  }
+  .medida {
+    max-width: var(--medida);
   }
   .tnum {
     font-variant-numeric: tabular-nums;

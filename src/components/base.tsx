@@ -54,10 +54,11 @@ export function Secao({
   return (
     <section id={id} className="scroll-mt-28 border-t border-line pt-8 pb-4">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
-        <div className="max-w-2xl">
-          <h2 className="display text-2xl font-bold sm:text-[1.7rem]">{titulo}</h2>
+        {/* The title takes the whole width; only the explanation keeps a reading measure */}
+        <div className="min-w-0 flex-1 basis-[32rem]">
+          <h2 className="display text-balance text-2xl font-bold sm:text-[1.7rem]">{titulo}</h2>
           {natureza && <SeloNatureza tipo={natureza} className="mt-1.5" />}
-          {subtitulo && <p className="mt-1.5 text-ink-2">{subtitulo}</p>}
+          {subtitulo && <p className="medida mt-1.5 text-pretty text-ink-2">{subtitulo}</p>}
         </div>
         {acao}
       </div>
