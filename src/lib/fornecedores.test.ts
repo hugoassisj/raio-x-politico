@@ -3,7 +3,16 @@ import { documentoPublicavel } from "./cnpj";
 import { ORDEM_FORNECEDORES_INICIAL, lerOrdemFornecedores, linhasFornecedores, ordenarFornecedores, proximaOrdem, urlFornecedores } from "./fornecedores";
 import type { EmpresaDetalhe, PoliticoResumo } from "./types";
 
-const pol = (id: string, casa: PoliticoResumo["casa"], nome = id): PoliticoResumo => ({ id, casa, cargo: "Deputado(a) Federal", nome, partido: "PT", uf: "SP", emExercicio: true, m: {} });
+const pol = (id: string, casa: PoliticoResumo["casa"], nome = id): PoliticoResumo => ({
+  id,
+  casa,
+  cargo: "Deputado(a) Federal",
+  nome,
+  partido: "PT",
+  uf: "SP",
+  emExercicio: true,
+  m: {},
+});
 const pessoas = new Map([pol("dep-1", "camara", "Ana"), pol("sen-2", "senado", "Bia"), pol("est-3", "assembleia" as PoliticoResumo["casa"], "Caio")].map((p) => [p.id, p]));
 const grafica: EmpresaDetalhe = {
   cnpj: "11222333000181",
