@@ -30,8 +30,8 @@ Este é o registro oficial do que falta fazer, do que está em andamento e do qu
 
 **Achados da auditoria**
 
-- **Não há shadcn/ui.** A especificação fala em “base shadcn/ui existente”, mas o projeto usa Tailwind v4 com componentes próprios (`ui.tsx`, receitas `.cartao`, `.chip`, `.botao`). Decisão: manter os componentes próprios e os tokens atuais; não introduzir shadcn só por introduzir (registrado em DEC-01).
-- **Tabelas:** não há TanStack Table. Tabelas são HTML com ordenação por URL (`/politicos`) ou filtros no cliente (`VotosNominais`).
+- **shadcn/ui adotado em 2026-10-12** (revoga DEC-01, registrado no PRODUCT.md): `components.json`, primitivos em `src/components/ui/`, tokens mapeados para a camada semântica em `globals.css`, variante `dark:` ligada ao `data-theme`. Os componentes próprios do site ficaram em `src/components/base.tsx` (antes `ui.tsx`).
+- **Tabelas:** TanStack Table 8 dentro de `TabelaDados` (sobre o Table do shadcn), com ordem, filtros por coluna e página no endereço. Tabelas simples usam os mesmos primitivos com a classe `tabela`.
 - **Tema:** os tokens escuros existem, mas não há botão para trocar o tema nem preferência salva.
 - **Paginação:** cada lista resolve do seu jeito (“mostrar mais” em `VotosNominais`, cortes fixos em outras). Não há componente comum nem estado na URL.
 - **Partido na época do voto:** a lista de votos de cada votação traz o partido registrado pela Casa naquele voto. Em 20.228 dos 110.872 votos guardados, esse partido é diferente do partido atual da pessoa. Ou seja, a fonte guarda o partido da época, e a interface deve usar esse, não o atual.
@@ -51,7 +51,7 @@ Este é o registro oficial do que falta fazer, do que está em andamento e do qu
 | UX | Votação: os números do resultado não filtram a lista; não dá para esconder uma categoria; “sem voto registrado” se mistura com “ausente”; tema sem botão; paginação desigual |
 | Dados | Histórico TSE e contas de campanha ainda não conferidos com dados reais; explicações por IA ainda não geradas (sem chave); partido por data só existe nos votos |
 | Qualidade de dados | Falta registrar a data da coleta por voto individual (hoje vale a data da coleta geral, em `meta.json`) |
-| Arquitetura | Sem primitivos de tabela e paginação compartilhados |
+| Arquitetura | Primitivos de tabela e paginação compartilhados (TAB-01, TAB-02, PAG-01); falta um seletor de período único para todo o site (PER-01) |
 | Acessibilidade | Falta conferência sistemática (teclado, leitor de tela, zoom 200%) por página |
 | Testes | Faltam testes de interface para filtros com estado na URL |
 | Operação | Execuções longas falham sem mensagem (corrigido em DADOS-02); capturas de tela do README ausentes |
@@ -89,6 +89,8 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | PAG-01 | VERIFIED | P0 | Paginação comum | Uma função pura (`src/lib/paginacao.ts`) e um componente (`Paginacao`); página na URL; volta à página 1 quando um filtro muda; ordem estável. | |
 | PAG-02 | VERIFIED | P1 | Paginação nas listas | Políticos, votações, falas e lista de votos usam PAG-01. | PAG-01 |
 | TAB-01 | VERIFIED | P2 | Primitivos de tabela | Avaliar TanStack Table para `/politicos` e gastos: ordenar, esconder colunas, redimensionar, exportar CSV, preferências salvas. Decidir com base em peso e acessibilidade. | PAG-01 |
+| TAB-02 | IMPLEMENTED | P1 | Filtros por coluna em toda tabela (shadcn) | Funil em cada cabeçalho: texto, valores (lista com busca) ou faixa de números; estado no endereço (`f_<coluna>`), aplicado no servidor e no CSV; chips dos filtros ativos; cabeçalhos alinhados (números à direita, funil sempre na borda); mesma tabela em `/politicos`, `/gastos` e `/empresas`; tabelas simples nos primitivos shadcn. | TAB-01 |
+| PER-01 | PLANNED | P1 | Seletor de período único | Um seletor no topo que governa todos os dados (gastos, votações, presença, empresas). Exige que o pipeline publique agregados por período (ou que o Postgres responda por período) em vez da janela fixa de 12 meses de `gastos.json` e do “todos os anos” de `empresas.json`. Até lá, cada soma diz o período que cobre. | DADOS-01 |
 | NAV-01 | VERIFIED | P2 | Navegação | Presidente e empresas na navegação quando existirem; revisar menu do celular. | PRES-01 |
 | DS-01 | VERIFIED | P1 | Tokens e movimento | Tokens em três camadas e animações contidas já existem. Falta conferir contraste AA de todos os pares no tema escuro. | |
 
@@ -157,6 +159,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | HIST-02 | VERIFIED P2 | Reprodutibilidade | Cada publicação guarda versão dos dados e manifesto; dá para baixar o retrato de uma data | |
 | CARD-01 | IMPLEMENTED | P1 | Cartões e listas de políticos mais ricos | Lista de políticos com foto, partido, estado, cargo, principais números e cobertura de dados, sem ranking | TAB-01 |
 | LAY-01 | VERIFIED | P2 | Layout mais largo e navegação revista | Páginas de dados usam a largura da tela; menu com Presidência, Empresas, Emendas e Mapa de relações também no celular | |
+| LAY-02 | VERIFIED | P1 | Títulos e subtítulos usam a largura de propósito | Nenhum título (h1, h2) fica em caixa estreita; só intros e explicações têm medida de leitura, uma só para o site (`.medida`, `--medida: 96ch`), com `text-balance` nos títulos e `text-pretty` nos parágrafos. Prova: `Secao` em `base.tsx`; em `/empresa/…` o h2 passou de 2 linhas a 450 px para 1 linha com caixa de 1.360 px, subtítulo com máximo de 1.082 px (medido no navegador a 1.440 px, 2026-10-13); os cabeçalhos de página seguem a mesma regra no componente `CabecalhoPagina` da frente de navegação. | |
 | CNPJ-04 | BLOCKED | P2 | Dados cadastrais da Receita | Situação cadastral, atividade principal e data de abertura a partir dos dados abertos do CNPJ da Receita Federal, com data do arquivo. Bloqueio: os dados abertos da Receita são arquivos mensais de vários GB (dez partes de “Estabelecimentos”), pesados demais para a coleta diária; a consulta por CNPJ no site da Receita exige captcha e não tem API pública. Caminho: tarefa mensal própria que baixa só as partes de estabelecimentos e guarda apenas os 39 mil CNPJs que o site publica. | CNPJ-02 |
 | VOT-16 | BLOCKED | P2 | Sessões do Congresso e vetos | Votações em sessão conjunta e de vetos, pela API do Congresso Nacional. Bloqueio: a lista de votações do Senado só cobre a própria Casa (conferido em 2026-10-12: 37 votações, todas `casaSessao=SF`), e o Congresso Nacional não publica API documentada de votos nominais. Caminho: conferir se a API da Câmara lista sessões conjuntas por órgão, ou ler as páginas de vetos do Congresso. | |
 | CORR-01 | VERIFIED | P1 | Registro público de correções | Página com cada correção feita: o que estava errado, o que mudou, quando e a fonte | PROV-03 |
@@ -187,6 +190,71 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | INFO-09 | IMPLEMENTED | P2 | Resultados de eleição no mapa (por estado) | Votos por candidato e por estado (presidente, 2022 e 2026) no hub, com coletor novo do TSE (votação nominal por município e zona): `pipeline/sources/tse-resultados.ts`, `resultados.json`, `getResultados`, `candidatosRelevantes`/`parteVotosPorUf` e seção própria no hub. Por município continua fora (volume e desenho ficam para depois). Falta: conferir na tela com `resultados.json` real e a coleta do CI publicar o arquivo. | |
 | INFO-10 | IMPLEMENTED | P2 | Comparecimento, abstenção, brancos e nulos | `participacaoPorUf` (abstenção sobre aptos; brancos e nulos sobre comparecimento) a partir do detalhe da apuração do TSE, camadas na mesma seção do INFO-09. Falta: conferência na tela com dados reais. | INFO-09 |
 | INFO-11 | VERIFIED | P2 | Gráficos existentes melhorados | Plenário redesenhado como meia-rosca limpa (sem corredor central, arcos completos, total no centro, à la diagrama clássico de parlamento), mantendo os testes de layout; `GraficoMensal` ganhou linhas de grade com valores redondos. | |
+
+### 4.11 Arquitetura da informação e navegação (adendo “Redesenho da navegação”)
+
+**Inventário de rotas (conferido no código em 2026-10-12, antes do redesenho).** Cada página do app, de onde era alcançada e o que decidimos. “Só por botão” quer dizer que a página não aparecia em nenhum menu.
+
+| Rota | O que é | Como era alcançada | Problema | Decisão |
+|---|---|---|---|---|
+| `/` | Início: busca, mapa, perguntas, últimas votações | Marca | | Página de entrada; sem trilha |
+| `/politicos` | Lista de todos os políticos (filtros na URL) | Menu, perguntas | | Entrada da seção **Políticos** |
+| `/politico/[id]` | Perfil | Listas, busca, mapas | Trilha era `Início / Estado / Nome` (estado é relação, não hierarquia) | Trilha `Início > Políticos > Nome`; estado continua como chip no cabeçalho |
+| `/estado/[uf]` | Quem representa o estado | Mapa, atalho de estado, perfil | Em nenhum menu; trilha `Início / Estado` | Filha de Políticos: `Início > Políticos > Estado` |
+| `/comparar` | Até 4 pessoas lado a lado | Botão no perfil, menu “Mais”, rodapé | Só por botão no computador | Filha de Políticos, na navegação da seção |
+| `/partidos` | Partidos no Congresso | Menu | | Entrada da seção **Partidos** |
+| `/partido/[sigla]` | Partido | Listas, chips | | `Início > Partidos > Sigla` |
+| `/votacoes` | Catálogo de votações | Menu, início | | Entrada da seção **Votações** |
+| `/votacao/[id]` | Votação | Listas, matriz | | `Início > Votações > Título` |
+| `/falas` | Busca nos discursos | Menu, início, perfil | | Filha de Votações (atividade do Congresso) |
+| `/eleicoes` | Candidaturas por eleição desde 1994 | Menu “Mais”, rodapé | Só no rodapé no computador; nenhuma página aponta para ela | Entrada da seção **Eleições** |
+| `/presidencia` | Eleições para Presidente e atos do governo | Menu | Tinha o mesmo peso de “Políticos” no menu | Filha de Eleições |
+| `/presidencia/[id]` | Quem disputou a Presidência | Presidência | | `Início > Eleições > Presidência > Nome` |
+| `/gastos` | Gastos da cota | Menu, perguntas | Nenhuma página aponta para ela | Filha de **Dinheiro público** |
+| `/emendas` | Emendas por cidade | Menu “Mais”, rodapé, infográficos | Só no rodapé no computador | Filha de Dinheiro público |
+| `/empresas` | Empresas e CNPJ | Menu | | Filha de Dinheiro público |
+| `/empresa/[cnpj]` | Empresa | Fornecedores, doadores | | `Início > Dinheiro público > Empresas > Nome` |
+| `/relacoes` | Mapa de relações | Perfil, empresa, menu “Mais” | Só por botão no computador | Filha de Dinheiro público |
+| `/dinheiro` (nova) | Visão geral do dinheiro público: cota, emendas, empresas, relações | | A seção não tinha página de entrada; `/gastos` como entrada daria uma trilha com nome diferente do título | Entrada da seção, com os totais e as quatro portas |
+| `/infograficos` | Mapas e comparações | Menu, perguntas | | Entrada da seção **Infográficos** |
+| `/analises` | Cruzamentos de dados | Rodapé | Órfã: só no rodapé | Filha de Infográficos |
+| `/como-funciona` | Como a política funciona | Menu, início, votação | | Entrada da seção **Como funciona** |
+| `/sobre` | O que é o Raio-X Político | Início, rodapé | | Filha de Como funciona |
+| `/dados` | Fontes, metodologia e limites | Rodapé, início, perfil | | Filha de Como funciona; também no rodapé (transparência) |
+| `/correcoes` | Registro de correções | Rodapé, menu “Mais” | Só no rodapé no computador | Filha de Como funciona; também no rodapé |
+| `/api/{indice,politicos,fornecedores,relacoes}` | Dados para busca, tabelas e grafo | Código | | Utilidade interna, fora da navegação |
+| `/sitemap.xml`, `/robots.txt` | Para buscadores | | Lista fixa de páginas, desatualizada (faltavam 7 páginas) | Gerado a partir do registro de navegação |
+
+**Achados da auditoria:** o cabeçalho tinha 9 itens no mesmo nível (Presidência ao lado de Políticos; Falas ao lado de Gastos) e 8 páginas só no rodapé; o rodapé repetia o menu inteiro (17 links); o menu do celular agrupava por pergunta com nomes diferentes dos do cabeçalho; cada página de detalhe desenhava a própria trilha (três estilos: barra, seta, nenhuma) e a trilha do perfil passava pelo estado; nenhuma página de lista tinha trilha nem ligação com as irmãs; a regra de “seção ativa” estava copiada em dois componentes com listas diferentes. Sem rotas duplicadas nem obsoletas: lista no plural e detalhe no singular é a convenção já usada, mantida (nenhum link antigo quebra).
+
+**Arquitetura da informação (DEC-10).** Sete seções além do Início, cada uma com uma página de entrada, agrupadas pela pergunta que a pessoa faz. O registro único é `src/lib/navegacao.ts`; cabeçalho, menu do celular, rodapé, trilhas, navegação de seção, sitemap e testes leem de lá.
+
+| Seção | Pergunta | Entrada | Páginas da seção | Detalhes |
+|---|---|---|---|---|
+| Políticos | Quem é e o que faz quem me representa? | `/politicos` | Comparar | Perfil, Estado |
+| Partidos | Como os partidos agem no Congresso? | `/partidos` | | Partido |
+| Votações | O que foi votado e dito? | `/votacoes` | O que disseram | Votação |
+| Eleições | Quem disputou e quem venceu? | `/eleicoes` | Presidência | Candidato à Presidência |
+| Dinheiro público | Para onde vai o dinheiro ligado aos parlamentares? | `/dinheiro` | Gastos da cota, Emendas por cidade, Empresas e CNPJ, Mapa de relações | Empresa |
+| Infográficos | Como meu estado e meu partido se comparam? | `/infograficos` | Cruzamentos de dados | |
+| Como funciona | Como a política e este site funcionam? | `/como-funciona` | O que é o Raio-X, Fontes e metodologia, Correções | |
+
+Regras: (1) trilha só em páginas filhas e de detalhe (`Início > Seção > [Página] > Atual`), nunca na entrada de uma seção nem no Início, porque o cabeçalho já marca a seção; (2) a trilha segue a hierarquia, não as relações (o estado do deputado é um chip no cabeçalho do perfil, não um degrau da trilha); (3) toda página estática de uma seção com mais de uma página mostra a navegação da seção (chips com a atual marcada); (4) o cabeçalho tem só as sete seções, a busca e o tema; (5) no celular, a barra inferior leva ao Início, Políticos e Votações, e “Menu” abre todas as seções com as suas páginas; (6) o rodapé tem a marca, as seções e a transparência do projeto (fontes, correções, código, dados, avisar erro), sem repetir as páginas filhas; (7) toda página nova entra no registro, e o teste `src/lib/navegacao.test.ts` falha se uma rota do app ficar fora dele.
+
+| ID | Situação | P | O que é | Critérios de aceite | Depende de |
+|---|---|---|---|---|---|
+| NAV-10 | NOT_STARTED | P1 | Inventário de rotas | Toda rota de `src/app` listada acima com acesso atual, problema e decisão; teste que falha se uma rota nova ficar fora do registro. | |
+| NAV-11 | NOT_STARTED | P1 | Auditoria da navegação atual | Achados registrados (acima): páginas só por botão, órfãs, duplicadas, rodapé e menu inconsistentes. | NAV-10 |
+| NAV-12 | NOT_STARTED | P1 | Arquitetura da informação | Seções, entradas, filhas e regras documentadas (tabela acima) e implementadas em `src/lib/navegacao.ts`, único lugar que define a navegação. | NAV-11 |
+| NAV-13 | NOT_STARTED | P1 | Cabeçalho | Marca compacta, sete seções com a atual marcada (`aria-current`), busca e tema; fixo no computador com 56 px; funciona com teclado, toque e mouse; sem itens falsos. | NAV-12 |
+| NAV-14 | NOT_STARTED | P1 | Trilhas padronizadas | Um componente (`Trilha`) com `aria-label="Você está em"`, lista ordenada, último item sem link e com `aria-current="page"`, título longo cortado com o texto completo no `title`; usado em todos os detalhes e páginas filhas; entrada de seção sem trilha. | NAV-12 |
+| NAV-15 | NOT_STARTED | P1 | Rodapé | Três grupos (marca, seções, transparência); sem repetir páginas filhas; fontes, correções, código e “avisar erro” sempre visíveis; em coluna única no celular. | NAV-12 |
+| NAV-16 | NOT_STARTED | P1 | Padrão de cabeçalho de página | `CabecalhoPagina` (trilha, navegação da seção, sobrelinha, título, descrição) em toda página estática; detalhes usam `Trilha` e o próprio bloco de identidade. | NAV-14 |
+| NAV-17 | NOT_STARTED | P1 | Navegação contextual nos dois sentidos | Páginas irmãs ligadas pela navegação da seção; `/dinheiro` leva às quatro páginas de dinheiro; perfil liga a estado, partido, comparar e relações; detalhe volta para a lista pela trilha; página não encontrada oferece busca e as seções. | NAV-16 |
+| NAV-18 | NOT_STARTED | P1 | Rotas e acesso direto | Nenhuma rota renomeada (links antigos seguem valendo); `/dinheiro` nova; sitemap gerado do registro; filtros continuam na URL; páginas dinâmicas inválidas caem em “não encontrada”. | NAV-12 |
+| NAV-19 | NOT_STARTED | P1 | Celular e tablet | Barra inferior (Início, Políticos, Votações, Menu) com todas as seções no “Menu”, fechando ao navegar e com Esc; trilha quebra linha; chips da seção quebram linha; sem rolagem lateral a 390 px. | NAV-13 |
+| NAV-20 | NOT_STARTED | P1 | Acessibilidade da navegação | Foco visível em todos os links e botões do cabeçalho, menu e trilha; `aria-current`; `aria-expanded` no menu; varredura axe sem violações nas páginas novas e refeitas. | NAV-13, NAV-14 |
+| NAV-21 | NOT_STARTED | P1 | Testes e conferência | `src/lib/navegacao.test.ts` (registro cobre todas as rotas, seção ativa por caminho, trilha); lint, typecheck, vitest, build; páginas conferidas no navegador (computador e 390 px). | NAV-13 a NAV-20 |
 
 ### 4.8 Provas de cada item conferido
 
@@ -220,6 +288,7 @@ Formato de cada item: **ID**, situação, prioridade, o que é, critérios de ac
 | A11Y-01 | Automático: `npm run a11y` (`scripts/acessibilidade.mjs`, axe-core 4.10.2, regras WCAG 2.2 A e AA) em 12 páginas nos dois temas: 0 violações depois das correções (antes: contraste, `nested-interactive` no plenário, `aria-label` proibido na paginação, área de toque pequena nos links de redes). Falta: teste manual com leitor de tela (NVDA/VoiceOver) e zoom de 200%; o ambiente não tem leitor de tela. |
 | DOC-01 | `docs/telas/{inicio,votacao,plenario,perfil,celular}.png` capturadas do site rodando com os dados reais publicados (2026-10-12), sem o indicador de desenvolvimento, e otimizadas. |
 | PROV-02 | Quatro marcas (`NATUREZAS` em `src/lib/linguagem.ts`, `SeloNatureza`): Dado oficial, Cálculo do site, Ligação feita pelo site, Feito por IA. Em cada seção do perfil, na lista de votos, nos cartões de métrica, na explicação de cada projeto e nas ligações de empresas; explicadas em `/dados`. Varredura de acessibilidade continua sem violações. |
+| TAB-02 | `src/lib/tabela.ts` (modelo puro: ler, escrever, aplicar e descrever filtros; testes em `tabela.test.ts`), `TabelaDados.tsx` refeito nos primitivos shadcn (Table, Button, Popover, Checkbox, Input, DropdownMenu, Badge). `/politicos` (`filtros.ts`, percentuais filtrados em %), `/gastos` (`fornecedores.ts`), `/empresas` (nova `src/lib/empresas.ts`, `TabelaEmpresas.tsx`, CSV em `/api/empresas`). Chrome com dados reais: funil de “Parlamentares” com “a partir de 100” leva a `?f_parlamentares=100..#fornecedores`, 5 de 50 linhas, chip e funil marcados; “Partido: MDB” em `/politicos` → 144 pessoas; menu “Colunas” com os 15 itens. A diferença entre “Fornecedores que mais receberam” (12 meses: TAM R$ 857 mil) e “Quem mais recebe da cota” em `/empresas` (todos os anos: TAM R$ 22,5 mi) ficou explicada nas duas páginas, e o caminho de `/empresas` passou a levar à própria lista, na mesma ordem. Falta: `/comparar`, `/eleicoes` e `PainelVotos` ainda em `<table>` simples (arquivos da sessão de partidos). |
 | TAB-01 | Decisão: adotar TanStack Table 8.21.3 (MIT, sem estilo próprio, cabe nos componentes do site). Primitivo `src/components/tabela/TabelaDados.tsx`: esconder e mostrar colunas, arrastar para mudar a largura (duplo clique volta ao tamanho original), ordenação pelo endereço (no servidor, `aria-sort` no cabeçalho), baixar a lista inteira em CSV, escolhas lembradas no aparelho (com proteção se o navegador bloquear), cartões no celular. Em uso em `/politicos` e nas páginas de estado. Colunas de métricas vêm de `metricas.ts`. Conferido no navegador: ordenar por gastos muda o endereço, ligar “Patrimônio declarado” acrescenta a coluna e ela continua depois de recarregar, CSV de `/api/politicos` traz as 11 linhas filtradas mais o cabeçalho; acessibilidade sem violações. |
 | PAG-02 | `Paginacao` comum em votos da votação, votos do perfil, projetos do perfil, catálogo de votações, políticos, falas, empresas e emendas. Nenhuma paginação própria restante (`grep` por “Próxima” só acha o componente comum). |
 | CARD-01 | Lista de políticos com busca por nome, foto, cargo, partido com nome completo, estado e todas as métricas disponíveis como colunas opcionais. Falta: cobertura de dados na própria lista. |
@@ -303,6 +372,7 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 
 ## 8. Registro de progresso
 
+- **2026-10-13 (16):** regra de largura para títulos e subtítulos (LAY-02); correção de formatação que derrubava o CI; subagente convertendo os filtros de estado e partido para seletores com bandeira e logo (FILT-01, em andamento).
 - **2026-10-13 (15):** identidade de partido (cor, logo) e bandeiras em todo lugar, por decisão da pessoa (PART-01/02/03 saem de bloqueado para conferido; DEC-08). Vazamento de memória do fflate corrigido na véspera; execução completa 38327910613 em andamento.
 - **2026-10-12 (14):** frente de infográficos (4.10) entregue: página `/infograficos` no menu (INFO-01), mapa por estado reutilizável com tabela, painel e legendas com valores (INFO-02), “Como votou cada estado” na página da votação filtrando a lista pelo `uf` (INFO-03), matriz partidos × votações (INFO-04), emendas com mapa de destino/pago/por morador/autor e rankings por cidade, partido e autor lendo `emendas.json` (INFO-05), representação com população IBGE 2024 (INFO-06), mapa municipal de emendas em cada página de estado com malhas oficiais do IBGE e ligação por nome marcada como ligação do site (INFO-08, DEC-08/09), plenário redesenhado como meia-rosca com o total no centro e grade de valores no gráfico mensal (INFO-11). Resultados de eleição por estado (INFO-09/10) implementados pela frente de resultados, com a seção no mesmo hub. Correções de base: `.next*` fora do ESLint; espera de 1,6 s na varredura de acessibilidade (animações de entrada davam falso contraste). Coordenação entre as três sessões paralelas por mensagem direta, cada uma nos seus arquivos.
 - **2026-10-12 (12):** redesenho pedido: páginas mais largas (LAY-01), cabeçalhos e seletor de colunas refeitos (TAB-02), menu “Mais” no celular (NAV-01), eleições (HIST-01), correções públicas (CORR-01), partido no tempo (PART-04), cabeçalhos de segurança (SEG-01). Execução de dados de 19:19 em andamento; a anterior “terminou” sem publicar e agora isso vira falha com o nome da etapa.
@@ -315,6 +385,7 @@ Os dados públicos do governo federal seguem a Lei de Acesso à Informação (Le
 - **2026-10-12 (8):** CNPJ-01 e correção de privacidade (PRIV-01).
 - **2026-10-12 (7):** cobertura por seção no perfil (PERF-01). Achado: nomes de deputados estaduais vindos do TSE aparecem em maiúsculas (ex.: “PABLO BREGENSE”); registrar e corrigir na coleta das assembleias.
 - **2026-10-12 (6):** identidade de partido sem cor (PART-02); cores ficam bloqueadas (PART-01).
+- **2026-10-12 (6):** shadcn/ui instalado (`ui.tsx` → `base.tsx`); `TabelaDados` refeito nos primitivos com filtros por coluna no endereço (TAB-02) em `/politicos`, `/gastos` e `/empresas`; período de cada soma explicado nas duas páginas. PER-01 (seletor de período único) planejado. Próximo: trocar as tabelas simples de `/comparar`, `/eleicoes` e `PainelVotos` pelos primitivos quando a sessão de partidos liberar os arquivos.
 - **2026-10-12 (5):** Presidência (PRES-01) e autoria (PL-01). Pergunta nova em `perguntas.ts`, README e PRODUCT.md. Próximo: PART-01/02, PERF-01, conferir a execução de dados.
 - **2026-10-12 (4):** seção de contato refeita (CONT-01); situação do projeto depois da votação (VOT-09); endereços do projeto definidos uma vez (`src/lib/site.ts`).
 - **2026-10-12 (3):** botão de tema; votos do perfil com filtros na URL e paginação; catálogo com período e paginação comum; critérios de assunto e tipos de voto publicados em “Como funciona”. O pipeline deixou de gravar “Ausente” para quem não tem registro (agora grava vazio, lido como “sem voto registrado”; arquivos antigos com “Ausente” são lidos do mesmo jeito). Próximo: CONT-01, PART-01/02, PRES-01, PERF-01.
