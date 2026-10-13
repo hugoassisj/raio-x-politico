@@ -1,3 +1,4 @@
+import { SeletorIdentidade } from "@/components/SeletorIdentidade";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -171,7 +172,7 @@ export default async function Empresa({ params, searchParams }: PageProps<"/empr
             )}
             <Fonte href={RECEITA}>Consultar o CNPJ na Receita Federal</Fonte>
           </div>
-          <p className="mt-5 max-w-3xl text-ink-2">
+          <p className="medida mt-5 text-ink-2">
             Todas as ligações abaixo foram confirmadas pelo mesmo CNPJ nos registros oficiais. Receber por um serviço ou doar para campanha é legal dentro das regras; estar aqui
             não é sinal de nada errado.
           </p>
@@ -210,7 +211,7 @@ export default async function Empresa({ params, searchParams }: PageProps<"/empr
                   className="rounded-lg border border-line-strong bg-surface px-3 py-2 text-ink outline-none focus:border-accent"
                 />
               </label>
-              {partidos.length > 1 && <Seletor nome="partido" rotulo="Partido" valor={partido} opcoes={[["", "Todos"], ...partidos.map((p): [string, string] => [p, p])]} />}
+              {partidos.length > 1 && <SeletorIdentidade tipo="partido" nome="partido" rotulo="Partido" valor={partido} opcoes={partidos} textoTodos="Todos os partidos" />}
               <Seletor nome="ordem" rotulo="Ordem" valor={ordem} opcoes={Object.entries(ORDENS).map(([k, v]): [string, string] => [k, v])} />
               <button type="submit" className="botao-sec">
                 Aplicar

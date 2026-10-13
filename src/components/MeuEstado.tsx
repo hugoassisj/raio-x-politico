@@ -6,6 +6,7 @@ import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useSyncExternalStore } from "react";
 import { Avatar } from "./Avatar";
+import { SeletorIdentidade } from "./SeletorIdentidade";
 import { plural } from "@/lib/format";
 import { ESTADOS, nomeUf } from "@/lib/ufs";
 
@@ -59,22 +60,10 @@ export function useUf() {
 export function SeletorUf({ rotulo = "Seu estado", compacto = false }: { rotulo?: string; compacto?: boolean }) {
   const uf = useUf();
   return (
-    <label className={`inline-flex items-center gap-2 ${compacto ? "text-sm" : ""}`}>
+    <span className={`inline-flex items-center gap-2 ${compacto ? "text-sm" : ""}`}>
       <MapPin className="h-4 w-4 text-accent" aria-hidden />
-      <span className="text-ink-2">{rotulo}</span>
-      <select
-        value={uf}
-        onChange={(e) => definirUf(e.target.value)}
-        className="rounded-lg border border-line-strong bg-surface px-2 py-1 font-semibold text-ink outline-none focus:border-accent"
-      >
-        <option value="">Escolha</option>
-        {ESTADOS.map((e) => (
-          <option key={e.uf} value={e.uf}>
-            {e.nome}
-          </option>
-        ))}
-      </select>
-    </label>
+      <SeletorIdentidade tipo="uf" nome="uf" rotulo={rotulo} rotuloClasse="text-ink-2" embutido valor={uf} textoTodos="Escolha" aoMudar={definirUf} />
+    </span>
   );
 }
 

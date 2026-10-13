@@ -1,3 +1,4 @@
+import { SeletorIdentidade } from "@/components/SeletorIdentidade";
 import { Uf } from "@/components/Bandeira";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -46,10 +47,10 @@ export default async function Emendas({ searchParams }: PageProps<"/emendas">) {
   return (
     <Container className="py-10">
       <h1 className="display text-4xl font-extrabold sm:text-5xl">Emendas por cidade</h1>
-      <p className="mt-3 max-w-3xl text-lg text-ink-2">
+      <p className="medida mt-3 text-lg text-ink-2">
         Emendas são a parte do orçamento federal que deputados e senadores escolhem para onde vai. Procure sua cidade para ver quem mandou dinheiro, quanto e quanto já foi pago.
       </p>
-      <p className="mt-2 max-w-3xl text-ink-3">Hoje mostramos as transferências especiais (“Emendas Pix”), que vão direto para prefeituras e governos estaduais.</p>
+      <p className="medida mt-2 text-ink-3">Hoje mostramos as transferências especiais (“Emendas Pix”), que vão direto para prefeituras e governos estaduais.</p>
 
       {destino ? (
         <Secao
@@ -101,7 +102,7 @@ export default async function Emendas({ searchParams }: PageProps<"/emendas">) {
                   className="rounded-lg border border-line-strong bg-surface px-3 py-2 text-ink outline-none focus:border-accent"
                 />
               </label>
-              <Seletor nome="uf" rotulo="Estado" valor={uf} opcoes={[["", "Todos os estados"], ...ESTADOS.map((e) => [e.uf, e.nome] as [string, string])]} />
+              <SeletorIdentidade tipo="uf" nome="uf" rotulo="Estado" valor={uf} textoTodos="Todos os estados" />
             </FormFiltros>
           </div>
 

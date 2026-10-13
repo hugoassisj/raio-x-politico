@@ -38,6 +38,7 @@ import { Avatar } from "./Avatar";
 import { BandeiraUf, Uf } from "./Bandeira";
 import { SiglaPartido } from "./Partido";
 import { Paginacao } from "./Paginacao";
+import { SeletorIdentidade } from "./SeletorIdentidade";
 import { Plenario } from "./Plenario";
 import { VotoChip } from "./base";
 
@@ -205,21 +206,29 @@ function Painel({
               className="h-11 w-full rounded-lg border border-line-strong bg-surface pl-9 pr-3 outline-none focus:border-accent"
             />
           </label>
-          <Escolha
+          <SeletorIdentidade
+            tipo="partido"
+            nome="partido"
             rotulo="Partido"
-            valor=""
+            rotuloClasse="mb-1 block text-sm font-semibold text-ink-2"
+            className="min-w-40 flex-1 sm:flex-1"
+            multiplo
+            selecionados={f.partidos}
+            opcoes={partidos}
+            textoTodos={f.partidos.length ? "Somar outro partido" : "Todos os partidos"}
             aoMudar={(p) => p && mudar(alternarPartido(f, p))}
-            opcoes={[
-              { valor: "", rotulo: f.partidos.length ? "Somar outro partido" : "Todos os partidos" },
-              ...partidos.map((p) => ({ valor: p, rotulo: `${f.partidos.includes(p) ? "✓ " : ""}${p}` })),
-            ]}
           />
           {ufs.length > 1 && (
-            <Escolha
+            <SeletorIdentidade
+              tipo="uf"
+              nome="uf"
               rotulo="Estado"
+              rotuloClasse="mb-1 block text-sm font-semibold text-ink-2"
+              className="min-w-40 flex-1 sm:flex-1"
               valor={f.uf}
+              opcoes={ufs}
+              textoTodos="Todos os estados"
               aoMudar={(uf) => mudar({ ...f, uf, pagina: 1 })}
-              opcoes={[{ valor: "", rotulo: "Todos os estados" }, ...ufs.map((u) => ({ valor: u, rotulo: `${u} · ${nomeUf(u)}` }))]}
             />
           )}
           <Escolha

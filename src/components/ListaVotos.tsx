@@ -21,7 +21,7 @@ import {
   type FiltroVotosPerfil,
 } from "@/lib/votos";
 import { Paginacao } from "./Paginacao";
-import { VotoChip } from "./ui";
+import { VotoChip } from "./base";
 
 const POR_PAGINA = 25;
 

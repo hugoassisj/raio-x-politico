@@ -1,3 +1,4 @@
+import { SeletorIdentidade } from "@/components/SeletorIdentidade";
 import { Uf } from "@/components/Bandeira";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -51,10 +52,10 @@ export default async function Eleicoes({ searchParams }: PageProps<"/eleicoes">)
   return (
     <Container className="py-10">
       <h1 className="display text-4xl font-extrabold sm:text-5xl">Eleições</h1>
-      <p className="mt-3 max-w-3xl text-lg text-ink-2">
+      <p className="medida mt-3 text-lg text-ink-2">
         Escolha uma eleição e veja quem disputou, por qual partido <b>naquela eleição</b> e com qual resultado. O partido mostrado é o da candidatura, não o de hoje.
       </p>
-      <p className="mt-2 max-w-3xl text-ink-3">
+      <p className="medida mt-2 text-ink-3">
         Mostramos as candidaturas das pessoas acompanhadas pelo site (parlamentares em exercício) e de quem disputou a Presidência, não a lista completa de cada eleição.
       </p>
 
@@ -76,7 +77,7 @@ export default async function Eleicoes({ searchParams }: PageProps<"/eleicoes">)
             <FormFiltros acao="/eleicoes">
               <input type="hidden" name="ano" value={ano} />
               <Seletor nome="cargo" rotulo="Cargo" valor={cargo} opcoes={[["", "Todos os cargos"], ...cargos.map((c) => [c, c] as [string, string])]} />
-              <Seletor nome="uf" rotulo="Estado" valor={uf} opcoes={[["", "Todos"], ...ESTADOS.map((e) => [e.uf, e.nome] as [string, string])]} />
+              <SeletorIdentidade tipo="uf" nome="uf" rotulo="Estado" valor={uf} textoTodos="Todos os estados" />
               <label className="flex min-w-[12rem] flex-[2] flex-col gap-1 text-sm">
                 <span className="text-ink-3">Nome</span>
                 <input name="q" defaultValue={t(sp.q)} className="rounded-lg border border-line-strong bg-surface px-3 py-2 text-ink outline-none focus:border-accent" />
