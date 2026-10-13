@@ -1,6 +1,17 @@
 import { nomeUf } from "@/lib/ufs";
 import { temBandeira } from "@/lib/bandeiras";
 
+/** The flag followed by the state code, for compact rows. */
+export function Uf({ uf, altura = 11, nome = false }: { uf: string; altura?: number; nome?: boolean }) {
+  const sigla = uf.toUpperCase();
+  return (
+    <span className="whitespace-nowrap">
+      <BandeiraUf uf={sigla} altura={altura} className="mr-1" />
+      {nome ? nomeUf(sigla) : sigla}
+    </span>
+  );
+}
+
 /**
  * The flag of a state, as a small contextual image next to its name. Renders nothing for an unknown
  * code, so a missing flag never leaves a broken image. Always paired with the state name in text:

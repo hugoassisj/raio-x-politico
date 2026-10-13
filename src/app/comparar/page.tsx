@@ -1,10 +1,12 @@
+import { SiglaPartido } from "@/components/Partido";
+import { Uf } from "@/components/Bandeira";
 import type { Metadata } from "next";
 import { VAZIO } from "@/lib/format";
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { cargoDe } from "@/components/Listas";
 import { SeletorComparar } from "@/components/SeletorComparar";
-import { Container, Origem } from "@/components/ui";
+import { Container, Origem } from "@/components/base";
 import { getPolitico } from "@/lib/data";
 import { METRICAS } from "@/lib/metricas";
 import type { PoliticoDetalhe } from "@/lib/types";
@@ -70,7 +72,7 @@ export default async function Comparar({ searchParams }: PageProps<"/comparar">)
                           {p.nome}
                         </Link>
                         <span className="block text-ink-3">
-                          {cargoDe(p)} · {p.partido}-{p.uf}
+                          {cargoDe(p)} · <SiglaPartido sigla={p.partido} /> · <Uf uf={p.uf} />
                         </span>
                         <Link href={semEsta(p.id)} className="mt-1 inline-block text-xs text-ink-3 underline">
                           Remover

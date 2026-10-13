@@ -1,14 +1,16 @@
+import { Uf } from "@/components/Bandeira";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GradeRostos } from "@/components/Rostos";
 import { BarraVotos } from "@/components/Listas";
 import { Plenario } from "@/components/Plenario";
-import { Container, Origem, Secao } from "@/components/ui";
+import { Container, Origem, Secao } from "@/components/base";
 import { cadeirasPorPartido } from "@/lib/cadeiras";
 import { getAgregados, getPoliticos, getVotacoes } from "@/lib/data";
 import { data, moedaCurta, pct } from "@/lib/format";
 import { metrica, NOME_CASA, type ChaveMetrica } from "@/lib/metricas";
+import { CorPartido, LogoPartido } from "@/components/Partido";
 import { faixaGoverno, nomePartido, resumirPartidos } from "@/lib/partidos";
 import type { Casa } from "@/lib/types";
 
@@ -60,7 +62,13 @@ export default async function Partido({ params }: PageProps<"/partido/[sigla]">)
             </Link>{" "}
             / <span className="text-ink-2">{sigla}</span>
           </nav>
-          <h1 className="display text-5xl font-extrabold sm:text-6xl">{sigla}</h1>
+          <h1 className="display flex flex-wrap items-center gap-4 text-5xl font-extrabold sm:text-6xl">
+            <LogoPartido sigla={sigla} altura={64} />
+            <span className="inline-flex items-center gap-3">
+              <CorPartido sigla={sigla} className="h-4 w-4" />
+              {sigla}
+            </span>
+          </h1>
           <p className="mt-1 text-xl text-ink-2">{p.nome}</p>
           <dl className="mt-6 grid max-w-2xl grid-cols-3 gap-3">
             {(
@@ -191,7 +199,7 @@ export default async function Partido({ params }: PageProps<"/partido/[sigla]">)
           if (!lista.length) return null;
           return (
             <Secao key={casa} titulo={`${NOME_CASA[casa]} (${lista.length})`}>
-              <GradeRostos membros={lista} detalhe={(m) => m.uf} />
+              <GradeRostos membros={lista} detalhe={(m) => <Uf uf={m.uf} altura={10} />} />
             </Secao>
           );
         })}

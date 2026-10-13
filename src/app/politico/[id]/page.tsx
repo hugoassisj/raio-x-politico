@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
-import { BandeiraUf } from "@/components/Bandeira";
+import { BandeiraUf, Uf } from "@/components/Bandeira";
+import { ChipPartido } from "@/components/Partido";
 import { CartoesResumo, TileMetrica, metricasDaCasa } from "@/components/Boletim";
 import { AtSign, FileSearch, Info, Landmark, Mail } from "lucide-react";
-import { nomePartido } from "@/lib/partidos";
 import { resumoRapido } from "@/lib/resumo";
 import { GraficoMensal } from "@/components/GraficoMensal";
 import { cargoDe } from "@/components/Listas";
 import { ListaVotos } from "@/components/ListaVotos";
 import { ResumoIA } from "@/components/ResumoIA";
-import { Barras, Container, Fonte, Origem, Secao, Vazio } from "@/components/ui";
+import { Barras, Container, Fonte, Origem, Secao, Vazio } from "@/components/base";
 import { getExplicacoes, getFalas, getIA, getPolitico, getPoliticos, getVotacoes, urlDadoBruto } from "@/lib/data";
 import { data, idade, moeda, moedaCurta, numero, pct, plural } from "@/lib/format";
 import { distribuicao, metrica, NOME_CASA } from "@/lib/metricas";
@@ -123,7 +123,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
             </Link>{" "}
             /{" "}
             <Link href={`/estado/${p.uf.toLowerCase()}`} className="hover:underline">
-              {nomeUf(p.uf)}
+              <Uf uf={p.uf} altura={11} nome />
             </Link>{" "}
             / <span className="text-ink-2">{p.nome}</span>
           </nav>
@@ -147,9 +147,7 @@ export default async function PaginaPolitico({ params }: PageProps<"/politico/[i
               <h1 className="display mt-1 hidden text-5xl font-extrabold sm:block">{p.nome}</h1>
               {p.nomeCivil && p.nomeCivil.toLowerCase() !== p.nome.toLowerCase() && <p className="mt-1 text-ink-3">Nome completo: {p.nomeCivil}</p>}
               <div className="mt-4 flex flex-wrap gap-2">
-                <Link href={`/partido/${encodeURIComponent(p.partido)}`} className="inline-flex items-center gap-2 rounded-lg bg-ink px-3 py-1.5 text-paper hover:opacity-90">
-                  <b>{p.partido}</b> <span className="hidden text-sm opacity-80 sm:inline">{nomePartido(p.partido)}</span>
-                </Link>
+                <ChipPartido sigla={p.partido} href={`/partido/${encodeURIComponent(p.partido)}`} />
                 <Link href={`/estado/${p.uf.toLowerCase()}`} className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 hover:border-ink-3">
                   <BandeiraUf uf={p.uf} altura={14} /> {nomeUf(p.uf)}
                 </Link>

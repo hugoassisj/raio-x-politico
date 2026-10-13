@@ -1,5 +1,7 @@
 "use client";
 
+import { SiglaPartido } from "./Partido";
+import { Uf } from "./Bandeira";
 import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useSyncExternalStore } from "react";
@@ -111,7 +113,7 @@ export function VotosDoMeuEstado({ votos, membros, casa }: { votos: VotoPessoa[]
     <div className="cartao p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-bold">
-          Os {cargo} de {nomeUf(uf)}
+          Os {cargo} de <Uf uf={uf} altura={14} nome />
         </h3>
         <SeletorUf rotulo="Trocar" compacto />
       </div>
@@ -143,7 +145,9 @@ function Linha({ v }: { v: VotoPessoa }) {
       <Avatar src={v.foto} nome={v.nome} size={40} />
       <span className="min-w-0 flex-1">
         <span className="block truncate font-semibold">{v.nome}</span>
-        <span className="block text-sm text-ink-3">{v.partido}</span>
+        <span className="block text-sm text-ink-3">
+          <SiglaPartido sigla={v.partido} />
+        </span>
       </span>
       <span className={`shrink-0 rounded-md px-2 py-0.5 text-sm font-bold ${COR[v.voto] ?? "bg-surface-2 text-ink-2"}`}>{v.voto || "Não votou"}</span>
     </>

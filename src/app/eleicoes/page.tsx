@@ -1,9 +1,10 @@
+import { Uf } from "@/components/Bandeira";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FormFiltros, Seletor } from "@/components/Filtros";
 import { Paginacao } from "@/components/Paginacao";
 import { SiglaPartido } from "@/components/Partido";
-import { Container, Origem, Vazio } from "@/components/ui";
+import { Container, Origem, Vazio } from "@/components/base";
 import { ROTULO_RESULTADO, rotuloResultado } from "@/lib/carreira";
 import { getCandidaturas } from "@/lib/data";
 import { numero } from "@/lib/format";
@@ -126,7 +127,17 @@ export default async function Eleicoes({ searchParams }: PageProps<"/eleicoes">)
                       </td>
                       <td>
                         {c.cargo}
-                        <span className="block text-xs text-ink-3">{c.municipio ? `${c.municipio} (${c.uf})` : c.uf === "BR" ? "Brasil" : nomeUf(c.uf)}</span>
+                        <span className="block text-xs text-ink-3">
+                          {c.uf === "BR" ? (
+                            "Brasil"
+                          ) : c.municipio ? (
+                            <>
+                              {c.municipio} <Uf uf={c.uf} altura={10} />
+                            </>
+                          ) : (
+                            <Uf uf={c.uf} altura={10} nome />
+                          )}
+                        </span>
                       </td>
                       <td>
                         <SiglaPartido sigla={c.partido} />

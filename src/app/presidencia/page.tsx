@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Landmark } from "lucide-react";
-import { Barras, Container, Fonte, Origem, Secao, Vazio } from "@/components/ui";
+import { Barras, Container, Fonte, Origem, Secao, Vazio } from "@/components/base";
 import { SiglaPartido } from "@/components/Partido";
 import { TextoComTermos } from "@/components/Termos";
 import { CARGOS } from "@/lib/cargos";
@@ -72,8 +72,8 @@ export default async function Presidencia() {
                     <Candidato c={s.emExercicio.candidato} />
                   </p>
                   <p className="mt-1 text-ink-2">
-                    {rotuloResultado("eleito", s.emExercicio.candidato.sexo)} em {s.emExercicio.ano} ({s.emExercicio.candidato.partido}), para o mandato de {s.emExercicio.inicio} a{" "}
-                    {s.emExercicio.fim}.
+                    {rotuloResultado("eleito", s.emExercicio.candidato.sexo)} em {s.emExercicio.ano} (<SiglaPartido sigla={s.emExercicio.candidato.partido} />
+                    ), para o mandato de {s.emExercicio.inicio} a {s.emExercicio.fim}.
                   </p>
                   <p className="mt-3 text-sm text-ink-3">
                     Vem do resultado oficial do TSE. Afastamentos, renúncias e substituições (como um impeachment) não aparecem nesses arquivos.
@@ -94,7 +94,7 @@ export default async function Presidencia() {
                       {s.proxima.segundoTurno.map((c, i) => (
                         <span key={c.pessoa}>
                           {i > 0 ? " e " : ""}
-                          <Candidato c={c} /> ({c.partido})
+                          <Candidato c={c} /> (<SiglaPartido sigla={c.partido} />)
                         </span>
                       ))}
                       .

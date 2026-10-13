@@ -6,7 +6,7 @@ import { listaNatural, resumoEleicoes, rotuloResultado, trocasDePartido, type Pe
 import { SiglaPartido } from "./Partido";
 import { data, moeda, moedaCurta, numero, pct } from "@/lib/format";
 import type { CampanhaFinancas, EleicaoTSE, Mandato } from "@/lib/types";
-import { Fonte } from "./ui";
+import { Fonte } from "./base";
 
 const COR_RESULTADO: Record<NonNullable<EleicaoTSE["resultado"]>, string> = {
   eleito: "bg-sim-soft text-sim",
@@ -70,7 +70,9 @@ export function LinhaDaVida({ eleicoes, sexo }: { eleicoes: EleicaoTSE[]; sexo?:
                 {e.partido && (
                   <div className="flex gap-1.5">
                     <dt className="text-ink-3">Partido</dt>
-                    <dd className="font-semibold">{e.partido}</dd>
+                    <dd className="font-semibold">
+                      <SiglaPartido sigla={e.partido} />
+                    </dd>
                   </div>
                 )}
                 {e.numero && (

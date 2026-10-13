@@ -1,10 +1,11 @@
+import { SiglaPartido } from "@/components/Partido";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { BensDeclarados, Campanhas, LinhaDaVida, ResumoVida } from "@/components/VidaPublica";
-import { Container, Fonte, Origem, Secao, Vazio } from "@/components/ui";
+import { Container, Fonte, Origem, Secao, Vazio } from "@/components/base";
 import { getPresidencia } from "@/lib/data";
 import { data } from "@/lib/format";
 import { urlCorrecao } from "@/lib/site";
@@ -58,7 +59,14 @@ export default async function CandidatoPresidencia({ params }: PageProps<"/presi
               <p className="mt-1 text-lg text-ink-2">
                 {x.nome !== x.nomeUrna ? `${x.nome} · ` : ""}
                 {sexo === "F" ? "Candidata" : sexo === "M" ? "Candidato" : "Candidatura"} a Presidente em {presidenciais.map((e) => e.ano).join(", ")}
-                {ultima?.partido ? ` · último partido: ${ultima.partido}` : ""}
+                {ultima?.partido ? (
+                  <>
+                    {" "}
+                    · último partido: <SiglaPartido sigla={ultima.partido} />
+                  </>
+                ) : (
+                  ""
+                )}
               </p>
             </div>
           </div>

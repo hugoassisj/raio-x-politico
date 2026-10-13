@@ -6,6 +6,7 @@ import { METRICAS, type ChaveMetrica } from "@/lib/metricas";
 import { nomeUf } from "@/lib/ufs";
 import type { PoliticoResumo } from "@/lib/types";
 import { Avatar } from "./Avatar";
+import { BandeiraUf } from "./Bandeira";
 import { cargoDe } from "./Listas";
 import { SiglaPartido } from "./Partido";
 import { TabelaDados, type MetaColuna } from "./tabela/TabelaDados";
@@ -51,8 +52,19 @@ export function TabelaPoliticos({
         </Link>
       ),
     },
-    { id: "partido", header: "Partido", size: 110, cell: ({ row: { original: p } }) => <SiglaPartido sigla={p.partido} /> },
-    { id: "uf", header: "Estado", size: 90, meta: { explicacao: "Estado que a pessoa representa" }, cell: ({ row: { original: p } }) => <abbr title={nomeUf(p.uf)}>{p.uf}</abbr> },
+    { id: "partido", header: "Partido", size: 130, cell: ({ row: { original: p } }) => <SiglaPartido sigla={p.partido} logo /> },
+    {
+      id: "uf",
+      header: "Estado",
+      size: 90,
+      meta: { explicacao: "Estado que a pessoa representa" },
+      cell: ({ row: { original: p } }) => (
+        <span className="inline-flex items-center gap-1.5">
+          <BandeiraUf uf={p.uf} altura={12} />
+          <abbr title={nomeUf(p.uf)}>{p.uf}</abbr>
+        </span>
+      ),
+    },
     {
       id: "inicioPolitica",
       header: "Na política desde",
@@ -83,7 +95,7 @@ export function TabelaPoliticos({
           <span className="min-w-0 flex-1">
             <span className="block truncate font-semibold">{p.nome}</span>
             <span className="block truncate text-sm text-ink-3">
-              {cargoDe(p)} · {p.partido}-{p.uf}
+              {cargoDe(p)} · <SiglaPartido sigla={p.partido} /> · <BandeiraUf uf={p.uf} altura={11} /> {p.uf}
             </span>
           </span>
           <span className="shrink-0 text-right">

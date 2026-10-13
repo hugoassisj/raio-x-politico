@@ -35,11 +35,11 @@ import {
 } from "@/lib/votos";
 import { data as dataPt } from "@/lib/format";
 import { Avatar } from "./Avatar";
-import { BandeiraUf } from "./Bandeira";
+import { BandeiraUf, Uf } from "./Bandeira";
 import { SiglaPartido } from "./Partido";
 import { Paginacao } from "./Paginacao";
 import { Plenario } from "./Plenario";
-import { VotoChip } from "./ui";
+import { VotoChip } from "./base";
 
 const POR_PAGINA = 60;
 
@@ -236,7 +236,7 @@ function Painel({
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div role="group" aria-label="Como mostrar" className="inline-flex rounded-xl border border-line bg-surface p-1">
+          <div role="group" aria-label="Como mostrar" className="inline-flex flex-wrap rounded-xl border border-line bg-surface p-1">
             {(
               [
                 ["lista", "Lista", <LayoutGrid key="l" className="h-4 w-4" aria-hidden />],
@@ -279,7 +279,7 @@ function Painel({
             ))}
             {f.uf && (
               <Ativo aoRemover={() => mudar({ ...f, uf: "", pagina: 1 })} rotuloRemover="Tirar o filtro de estado">
-                Estado: {nomeUf(f.uf)}
+                Estado: <Uf uf={f.uf} altura={11} nome />
               </Ativo>
             )}
             {f.q.trim() && (
@@ -512,7 +512,7 @@ function Grade({ linhas }: { linhas: LinhaVoto[] }) {
           <span className="min-w-0 flex-1">
             <Nome l={l} />
             <span className="block text-sm text-ink-3">
-              <Partido l={l} /> · {l.uf}
+              <Partido l={l} /> · <BandeiraUf uf={l.uf} altura={11} /> {l.uf}
             </span>
           </span>
           <Voto l={l} />
@@ -532,7 +532,7 @@ function Detalhes({ linhas }: { linhas: LinhaVoto[] }) {
             <div className="min-w-0 flex-1">
               <Nome l={l} />
               <p className="text-sm text-ink-3">
-                <Partido l={l} /> · {nomeUf(l.uf)}
+                <Partido l={l} /> · <Uf uf={l.uf} altura={11} nome />
               </p>
               <p className="mt-1">
                 <Voto l={l} grande />
@@ -573,7 +573,9 @@ function Detalhes({ linhas }: { linhas: LinhaVoto[] }) {
                 <td>
                   <Partido l={l} />
                 </td>
-                <td>{l.uf}</td>
+                <td>
+                  <BandeiraUf uf={l.uf} altura={12} /> {l.uf}
+                </td>
                 <td>
                   <Voto l={l} grande />
                   <span className="mt-1 block max-w-72 text-xs text-ink-3">{l.explicacao}</span>

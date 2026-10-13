@@ -1,8 +1,9 @@
+import { CorPartido, LogoPartido, SiglaPartido } from "@/components/Partido";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { Plenario } from "@/components/Plenario";
-import { Container, Origem, Secao } from "@/components/ui";
+import { Container, Origem, Secao } from "@/components/base";
 import { cadeirasPorPartido } from "@/lib/cadeiras";
 import { getPoliticos, getVotacoes } from "@/lib/data";
 import { moedaCurta, pct } from "@/lib/format";
@@ -59,9 +60,15 @@ export default async function Partidos() {
               <li key={p.sigla}>
                 <Link href={`/partido/${encodeURIComponent(p.sigla)}`} className="group block h-full cartao p-5">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="display text-2xl font-extrabold group-hover:underline">{p.sigla}</p>
-                      <p className="truncate text-sm text-ink-3">{p.nome}</p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <LogoPartido sigla={p.sigla} altura={40} />
+                      <div className="min-w-0">
+                        <p className="display flex items-center gap-2 text-2xl font-extrabold group-hover:underline">
+                          <CorPartido sigla={p.sigla} />
+                          {p.sigla}
+                        </p>
+                        <p className="truncate text-sm text-ink-3">{p.nome}</p>
+                      </div>
                     </div>
                     <span className="mt-1 inline-block h-4 w-4 shrink-0 rounded-full" style={{ background: f?.cor ?? COR_SEM_DADO }} aria-hidden />
                   </div>
@@ -117,7 +124,7 @@ export default async function Partidos() {
                   href={`/partido/${encodeURIComponent(p.sigla)}`}
                   className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 hover:border-ink-3"
                 >
-                  <b>{p.sigla}</b> <span className="text-sm text-ink-3">{p.cadeiras.assembleia} estaduais</span>
+                  <SiglaPartido sigla={p.sigla} logo className="font-bold" /> <span className="text-sm text-ink-3">{p.cadeiras.assembleia} estaduais</span>
                 </Link>
               </li>
             ))}

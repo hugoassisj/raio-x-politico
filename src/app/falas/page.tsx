@@ -1,9 +1,11 @@
+import { SiglaPartido } from "@/components/Partido";
+import { Uf } from "@/components/Bandeira";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
 import { FormFiltros, Seletor } from "@/components/Filtros";
 import { Paginacao } from "@/components/Paginacao";
-import { Container, Fonte, Origem, Vazio } from "@/components/ui";
+import { Container, Fonte, Origem, Vazio } from "@/components/base";
 import { buscarFalas } from "@/lib/busca-falas";
 import { getPoliticos } from "@/lib/data";
 import { data, numero } from "@/lib/format";
@@ -117,7 +119,15 @@ export default async function Falas({ searchParams }: PageProps<"/falas">) {
                         {p.nome}
                       </Link>
                     )}
-                    {p ? ` (${p.partido}-${p.uf})` : ""} · {data(f.data)} · {f.titulo ?? f.tipo}
+                    {p ? (
+                      <>
+                        {" "}
+                        (<SiglaPartido sigla={p.partido} /> · <Uf uf={p.uf} altura={10} />)
+                      </>
+                    ) : (
+                      ""
+                    )}{" "}
+                    · {data(f.data)} · {f.titulo ?? f.tipo}
                   </p>
                   <p className="mt-1.5">{f.trecho ? <Trecho texto={f.trecho} /> : <span className="line-clamp-3">{f.texto}</span>}</p>
                   <p className="mt-2">

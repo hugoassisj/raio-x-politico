@@ -1,3 +1,5 @@
+import { BandeiraUf } from "./Bandeira";
+import { SiglaPartido } from "./Partido";
 import Link from "next/link";
 import type { PoliticoResumo, VotacaoResumo } from "@/lib/types";
 import { data, partesDescricao } from "@/lib/format";
@@ -31,7 +33,7 @@ export function LinhaPolitico({ p, valor, detalhe }: { p: PoliticoResumo; valor?
       <span className="min-w-0 flex-1">
         <span className="block truncate font-semibold group-hover:underline">{p.nome}</span>
         <span className="block truncate text-sm text-ink-3">
-          {cargoDe(p)} · {p.partido}-{p.uf}
+          {cargoDe(p)} · <SiglaPartido sigla={p.partido} /> · <BandeiraUf uf={p.uf} altura={11} /> {p.uf}
           {detalhe ? ` · ${detalhe}` : ""}
         </span>
       </span>

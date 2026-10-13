@@ -1,9 +1,9 @@
 "use client";
 
+import { Uf } from "./Bandeira";
 import { ArrowRight, MapPin } from "lucide-react";
 import Link from "next/link";
 import { definirUf, useUf } from "./MeuEstado";
-import { nomeUf } from "@/lib/ufs";
 
 /** Returning visitors: one tap back to their own representatives. */
 export function AtalhoEstado({ resumoUf }: { resumoUf: Record<string, { senadores: number; federais: number; estaduais: number }> }) {
@@ -14,7 +14,9 @@ export function AtalhoEstado({ resumoUf }: { resumoUf: Record<string, { senadore
     <div className="surgir mt-6 flex max-w-xl flex-wrap items-center gap-3 rounded-2xl border border-accent bg-accent-soft p-4">
       <MapPin className="h-5 w-5 shrink-0 text-accent" aria-hidden />
       <p className="min-w-0 flex-1">
-        <b>Seu estado: {nomeUf(uf)}</b>
+        <b>
+          Seu estado: <Uf uf={uf} altura={13} nome />
+        </b>
         {r && (
           <span className="block text-sm text-ink-2">
             {r.senadores} senadores, {r.federais} deputados federais e {r.estaduais} estaduais

@@ -1,5 +1,7 @@
 "use client";
 
+import { SiglaPartido } from "./Partido";
+import { Uf } from "./Bandeira";
 import { useMemo, useState } from "react";
 import { ALTURA, LARGURA, MESA, layoutPlenario, type Cadeira, type ItemLegenda } from "@/lib/plenario";
 import { Avatar } from "./Avatar";
@@ -85,7 +87,7 @@ export function Plenario({
             <div className="text-left">
               <p className="font-semibold leading-tight">{sel.nome}</p>
               <p className="text-sm text-ink-3">
-                {sel.partido}-{sel.uf}
+                <SiglaPartido sigla={sel.partido} /> · <Uf uf={sel.uf} altura={10} />
                 {sel.detalhe ? ` · ${sel.detalhe}` : ""}
               </p>
             </div>

@@ -1,3 +1,5 @@
+import { SiglaPartido } from "@/components/Partido";
+import { Uf } from "@/components/Bandeira";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Landmark, MapPin, Users } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
@@ -8,7 +10,7 @@ import { GradePerguntas } from "@/components/Perguntas";
 import { CartaoProjeto, LinhaPolitico } from "@/components/Listas";
 import { MapaBrasil, type CamadaMapa } from "@/components/MapaBrasil";
 import { Plenario } from "@/components/Plenario";
-import { Container, Fonte } from "@/components/ui";
+import { Container, Fonte } from "@/components/base";
 import { cadeirasPorPartido } from "@/lib/cadeiras";
 import { ASSUNTOS } from "@/lib/assuntos";
 import { getExplicacoes, getFalasRecentes, getMaterias, getMeta, getPoliticos, getVotacoes } from "@/lib/data";
@@ -280,7 +282,15 @@ export default async function Home() {
                             {p.nome}
                           </Link>
                         ) : null}
-                        {p ? ` · ${p.partido}-${p.uf}` : ""} · {data(f.data)}
+                        {p ? (
+                          <>
+                            {" "}
+                            · <SiglaPartido sigla={p.partido} /> · <Uf uf={p.uf} altura={10} />
+                          </>
+                        ) : (
+                          ""
+                        )}{" "}
+                        · {data(f.data)}
                       </p>
                       <p className="mt-1 line-clamp-3">{f.resumoOficial ?? f.texto}</p>
                       <p className="mt-2">

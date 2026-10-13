@@ -1,4 +1,5 @@
-import { BandeiraUf } from "@/components/Bandeira";
+import { SiglaPartido } from "@/components/Partido";
+import { BandeiraUf, Uf } from "@/components/Bandeira";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -45,7 +46,10 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
             <Link href="/" className="hover:underline">
               Início
             </Link>{" "}
-            / <span className="text-ink-2">{nomeUf(uf)}</span>
+            /{" "}
+            <span className="text-ink-2">
+              <Uf uf={uf} altura={12} nome />
+            </span>
           </nav>
           <p className="text-ink-2">Quem representa</p>
           <h1 className="display flex flex-wrap items-center gap-4 text-4xl font-extrabold sm:text-6xl">
@@ -96,7 +100,7 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
                   <div className="min-w-0">
                     <p className="font-semibold">{p.nome}</p>
                     <p className="text-sm text-ink-3">
-                      {cargoDe(p)} · {p.partido}
+                      {cargoDe(p)} · <SiglaPartido sigla={p.partido} />
                     </p>
                     <dl className="mt-2 grid grid-cols-2 gap-x-4 text-sm">
                       <dt className="text-ink-3">Presença</dt>
@@ -123,7 +127,7 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
           <div className="mt-5">
             {federais.length ? (
               <>
-                <GradeRostos membros={federais} detalhe={(m) => m.partido} />
+                <GradeRostos membros={federais} detalhe={(m) => <SiglaPartido sigla={m.partido} />} />
                 <details className="mt-6">
                   <summary className="inline-flex items-center gap-2 botao-sec">Ver em tabela, com os números</summary>
                   <div className="mt-4">
@@ -144,7 +148,11 @@ export default async function Estado({ params }: PageProps<"/estado/[uf]">) {
             isso muitos campos aparecem vazios.
           </p>
           <div className="mt-5">
-            {estaduais.length ? <GradeRostos membros={estaduais} detalhe={(m) => m.partido} /> : <Vazio>Sem dados da assembleia deste estado na última coleta.</Vazio>}
+            {estaduais.length ? (
+              <GradeRostos membros={estaduais} detalhe={(m) => <SiglaPartido sigla={m.partido} />} />
+            ) : (
+              <Vazio>Sem dados da assembleia deste estado na última coleta.</Vazio>
+            )}
           </div>
         </section>
       </Container>

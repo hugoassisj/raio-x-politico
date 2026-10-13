@@ -1,3 +1,4 @@
+import { Uf } from "@/components/Bandeira";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
@@ -5,7 +6,7 @@ import { CicloEmenda } from "@/components/CicloEmenda";
 import { FormFiltros, Seletor } from "@/components/Filtros";
 import { Paginacao } from "@/components/Paginacao";
 import { SiglaPartido } from "@/components/Partido";
-import { Container, Origem, Secao, Vazio } from "@/components/ui";
+import { Container, Origem, Secao, Vazio } from "@/components/base";
 import { formatarCnpj } from "@/lib/cnpj";
 import { getDestinosEmendas } from "@/lib/data";
 import { moedaCurta, numero, pct } from "@/lib/format";
@@ -126,7 +127,14 @@ export default async function Emendas({ searchParams }: PageProps<"/emendas">) {
                     <span className="min-w-0">
                       <span className="block font-semibold">
                         {d.nome}
-                        {d.uf ? ` (${d.uf})` : ""}
+                        {d.uf ? (
+                          <>
+                            {" "}
+                            <Uf uf={d.uf} altura={11} />
+                          </>
+                        ) : (
+                          ""
+                        )}
                       </span>
                       <span className="block text-sm text-ink-3">
                         {d.autores.length} {d.autores.length === 1 ? "parlamentar" : "parlamentares"} · pago {d.indicado ? pct(d.pago / d.indicado) : "0%"}
